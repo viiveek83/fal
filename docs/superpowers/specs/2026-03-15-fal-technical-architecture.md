@@ -26,6 +26,217 @@
 - **Vercel Cron execution limit:** 60s on Hobby, 300s on Pro. Scoring pipeline must complete within this window or be chunked into separate invocations.
 - **Vercel Postgres connections:** Limited compute hours on Hobby. Use connection pooling (Prisma Data Proxy or PgBouncer via Neon).
 
+### System Architecture
+
+```mermaid
+graph TB
+    subgraph Client["Client (Mobile-first Browser)"]
+        UI["React Frontend<br/>Next.js + Tailwind CSS"]
+    end
+
+    subgraph Vercel["Vercel Platform"]
+        subgraph NextJS["Next.js Monolith"]
+            Pages["Pages / App Router"]
+            API["API Routes"]
+            Auth["Auth.js<br/>OAuth + Credentials"]
+
+            subgraph Services["Core Services"]
+                LVS["Lineup Validation<br/>Service"]
+                MIS["Match Import<br/>Service"]
+                SP["Stat Parser"]
+                FPE["Fantasy Points<br/>Engine"]
+                GWA["Gameweek<br/>Aggregator"]
+                LBS["Leaderboard<br/>Service"]
+            end
+        end
+
+        Cron1["Vercel Cron 1<br/>Import (every 30m)"]
+        Cron2["Vercel Cron 2<br/>Score (every 30m, +15m offset)"]
+    end
+
+    subgraph External["External"]
+        SportMonks["SportMonks API<br/>€29/mo"]
+    end
+
+    subgraph Database["PostgreSQL (Neon)"]
+        DB[(Database)]
+    end
+
+    UI -->|"HTTPS"| Pages
+    UI -->|"REST"| API
+    API --> Auth
+    API --> LVS
+    API --> LBS
+
+    Cron1 -->|"triggers"| MIS
+    MIS -->|"GET /fixtures?include=<br/>batting,bowling,balls"| SportMonks
+    MIS --> SP
+    SP -->|"PlayerPerformance"| DB
+
+    Cron2 -->|"triggers"| FPE
+    FPE -->|"reads PlayerPerformance"| DB
+    FPE --> GWA
+    GWA -->|"bench subs, multipliers,<br/>chips"| GWA
+    GWA --> LBS
+    LBS -->|"PlayerScore,<br/>Leaderboard"| DB
+
+    LVS -->|"validates"| DB
+    API -->|"Prisma ORM"| DB
+
+    style Client fill:#1a1a2e,color:#fff
+    style Vercel fill:#0a0a1a,color:#fff
+    style NextJS fill:#111128,color:#fff
+    style Services fill:#1a1a3e,color:#fff
+    style External fill:#2d1b69,color:#fff
+    style Database fill:#004BA0,color:#fff
+```
+
+### Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    User ||--o{ Team : manages
+    League ||--o{ Team : contains
+    League ||--|| User : "admin (adminUserId)"
+    Team ||--o{ TeamPlayer : has
+    Player ||--o{ TeamPlayer : "assigned to"
+    Team ||--o{ Lineup : submits
+    Gameweek ||--o{ Lineup : "per gameweek"
+    Lineup ||--o{ LineupSlot : contains
+    Player ||--o{ LineupSlot : fills
+    Gameweek ||--o{ Match : includes
+    Match ||--o{ PlayerPerformance : "raw stats"
+    Player ||--o{ PlayerPerformance : performs
+    Gameweek ||--o{ PlayerScore : "aggregated"
+    Player ||--o{ PlayerScore : scores
+    Team ||--o{ ChipUsage : activates
+    Gameweek ||--o{ ChipUsage : "used in"
+
+    User {
+        string id PK
+        string email
+        string name
+        string image
+    }
+    League {
+        string id PK
+        string name
+        string inviteCode UK
+        string adminUserId FK
+        int maxManagers
+        string season
+    }
+    Team {
+        string id PK
+        string name
+        string userId FK
+        string leagueId FK
+    }
+    TeamPlayer {
+        string id PK
+        string teamId FK
+        string playerId FK
+        string leagueId FK
+    }
+    Player {
+        string id PK
+        string name
+        string iplTeam
+        string role "BAT/BOWL/ALL/WK"
+        string apiPlayerId
+    }
+    Gameweek {
+        string id PK
+        int number
+        datetime lockTime
+        datetime startDate
+        datetime endDate
+        string status
+    }
+    Match {
+        string id PK
+        string gameweekId FK
+        string homeTeam
+        string awayTeam
+        datetime date
+        string scoringStatus "scheduled/imported/scored"
+        string apiMatchId
+    }
+    Lineup {
+        string id PK
+        string teamId FK
+        string gameweekId FK
+    }
+    LineupSlot {
+        string id PK
+        string lineupId FK
+        string playerId FK
+        string slotType "XI/BENCH"
+        int benchPriority "1-4 or null"
+        string role "CAPTAIN/VC/null"
+    }
+    PlayerPerformance {
+        string id PK
+        string playerId FK
+        string matchId FK
+        int runs
+        int ballsFaced
+        int fours
+        int sixes
+        int wickets
+        int maidens
+        float overs
+        int catches
+        int stumpings
+        int runouts
+        int dotBalls
+        boolean didBat
+        boolean didPlay
+    }
+    PlayerScore {
+        string id PK
+        string playerId FK
+        string gameweekId FK
+        int totalPoints
+        json breakdown
+    }
+    ChipUsage {
+        string id PK
+        string teamId FK
+        string gameweekId FK
+        string chipType "TC/BB/PP/BWL"
+    }
+```
+
+### Scoring Pipeline Flow
+
+```mermaid
+flowchart LR
+    subgraph Cron1["Cron 1: Import"]
+        A["Poll SportMonks<br/>/livescores"] --> B{"New completed<br/>matches?"}
+        B -->|Yes| C["GET /fixtures/{id}<br/>?include=batting,<br/>bowling,balls"]
+        B -->|No| Z1["Sleep"]
+        C --> D["Parse response"]
+        D --> E["Write<br/>PlayerPerformance"]
+        E --> F["Set Match<br/>scoringStatus =<br/>'imported'"]
+    end
+
+    subgraph Cron2["Cron 2: Score"]
+        G["Find matches<br/>status = 'imported'"] --> H["Calculate base<br/>fantasy points"]
+        H --> I["Aggregate across<br/>matches in GW"]
+        I --> J{"Gameweek<br/>ended?"}
+        J -->|Yes| K["Apply bench<br/>auto-subs"]
+        J -->|No| L["Skip subs"]
+        K --> M["Apply C/VC<br/>multipliers"]
+        L --> M
+        M --> N["Apply chip<br/>effects"]
+        N --> O["Update<br/>leaderboard"]
+        O --> P["Set Match<br/>scoringStatus =<br/>'scored'"]
+    end
+
+    Cron1 -.->|"Match.scoringStatus<br/>coordinates"| Cron2
+```
+
 ## 2. Core Services
 
 All services run within the Next.js monolith as modules:
@@ -38,11 +249,7 @@ All services run within the Next.js monolith as modules:
 6. **Lineup Validation Service** — Enforces squad size, player uniqueness within league, lineup lock timing
 
 ### Service Flow:
-```
-Cricket Data API → Match Import Service → Raw Match Data (per Match)
-    → Stat Parser → Fantasy Points Engine → Gameweek Aggregator
-    → Leaderboard Service
-```
+See System Architecture and Scoring Pipeline Flow diagrams in Section 1.
 
 ## 3. Database Entities
 
@@ -60,22 +267,7 @@ Cricket Data API → Match Import Service → Raw Match Data (per Match)
 - **ChipUsage** — Which chip a team used in which gameweek
 
 ### Entity Relationships:
-```
-User 1──N Team
-League 1──N Team
-League 1──1 User (adminUserId)
-Team 1──N TeamPlayer
-Player 1──N TeamPlayer
-Team 1──N Lineup
-Gameweek 1──N Lineup (one per team per gameweek)
-Gameweek 1──N Match
-Match 1──N PlayerPerformance
-Player 1──N PlayerPerformance
-Gameweek 1──N PlayerScore (aggregated)
-Player 1──N PlayerScore
-Team 1──N ChipUsage
-Gameweek 1──N ChipUsage
-```
+See Entity Relationship Diagram in Section 1 for full schema with fields and relationships.
 
 ### Uniqueness Constraints:
 - `TeamPlayer`: unique(`leagueId`, `playerId`) — a player can only be on one team per league
