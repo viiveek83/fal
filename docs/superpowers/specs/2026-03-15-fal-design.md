@@ -258,15 +258,51 @@ Every screen has a subtle app bar: FAL logo (IPL gradient, 70% opacity) left, pa
 ### Bottom Navigation:
 5 tabs: Home, Lineup, Board, Players, League — with active tab indicator using CSK→SRH gradient bar.
 
-### Screen Inventory:
-All screen mockups are in `docs/superpowers/specs/mockups/`:
+### Screen Designs:
 
-1. **Dashboard** (`01-dashboard.html`) — Gameweek countdown, lineup status, mini leaderboard, GW recap with top scorers (IPL team color stripes), upcoming matches with team color gradients, chip tracker
-2. **Lineup Management** (`02-lineup.html`) — Playing XI with IPL team color bars, Captain (CSK gold badge) and VC (KKR purple badge), bench section with priority ordering, chip selector, validation checklist, lock countdown
-3. **Leaderboard** (`03-leaderboard.html`) — Podium for top 3 (gold/blue/teal gradients), full rankings with avatars, position deltas, GW history bar chart
-4. **League Admin** (`04-league-admin.html`) — League info card, invite code with copy button, manager list with IPL-colored avatars, roster upload (CSV drag-drop), team roster status (complete/incomplete indicators), league settings
-5. **Player Registry** (`05-players.html`) — Search bar, role filter pills (BAT/BOWL/ALL/WK in role colors), IPL team filter chips, player cards with team accent bars, mini stats, season points, ownership badges
-6. **Match Scores** (`06-match-scores.html`) — Match header with team colors, player scoring breakdowns (event-by-event with points), captain/VC multiplier display, bench substitution indicators, match point totals
+Interactive mockups are in `docs/superpowers/specs/mockups/` (HTML files).
+
+---
+
+#### 1. Dashboard
+Gameweek countdown, lineup status, mini leaderboard, GW recap with top scorers (IPL team color stripes), upcoming matches with team color gradients, chip tracker.
+
+![Dashboard](mockups/screenshots/01-dashboard.png)
+
+---
+
+#### 2. Lineup Management
+Playing XI with IPL team color bars, Captain (CSK gold badge) and VC (KKR purple badge), bench section with priority ordering, chip selector, validation checklist, lock countdown.
+
+![Lineup Management](mockups/screenshots/02-lineup.png)
+
+---
+
+#### 3. Leaderboard
+Podium for top 3 (gold/blue/teal gradients), full rankings with avatars, position deltas, GW history bar chart.
+
+![Leaderboard](mockups/screenshots/03-leaderboard.png)
+
+---
+
+#### 4. League Admin
+League info card, invite code with copy button, manager list with IPL-colored avatars, roster upload (CSV drag-drop), team roster status (complete/incomplete indicators), league settings.
+
+![League Admin](mockups/screenshots/04-league-admin.png)
+
+---
+
+#### 5. Player Registry
+Search bar, role filter pills (BAT/BOWL/ALL/WK in role colors), IPL team filter chips, player cards with team accent bars, mini stats, season points, ownership badges.
+
+![Player Registry](mockups/screenshots/05-players.png)
+
+---
+
+#### 6. Match Scores
+Match header with team colors, player scoring breakdowns (event-by-event with points), captain/VC multiplier display, bench substitution indicators, match point totals.
+
+![Match Scores](mockups/screenshots/06-match-scores.png)
 
 ### Role Badge Colors:
 - BAT → CSK Yellow (#F9CD05)
@@ -274,51 +310,11 @@ All screen mockups are in `docs/superpowers/specs/mockups/`:
 - ALL → GT Teal (#0EB1A2)
 - WK → RR Pink (#EA1A85)
 
-## 14. Technical Architecture (Phase 1)
+## 14. Technical Architecture
 
-### Monolithic Next.js:
-- Single Next.js app on Vercel
-- API routes for backend logic
-- React frontend (mobile-first)
-- PostgreSQL (Vercel Postgres or Neon) + Prisma ORM
-- Auth.js for authentication (OAuth + credentials)
-- Vercel Cron for match data polling
-
-### Core Services (within the monolith):
-1. **Match Import Service** — Polls cricket API, stores raw match data
-2. **Stat Parser** — Extracts player performance stats from raw data
-3. **Fantasy Points Engine** — Applies scoring rules, calculates base points
-4. **Gameweek Aggregator** — Bench subs, multipliers, chips, team totals
-5. **Leaderboard Service** — Rankings, season totals, history
-
-### Database Entities:
-- **User** — Platform user (auth)
-- **League** — Fantasy competition container
-- **Team** — Manager's team within a league
-- **Player** — Real IPL player (from API)
-- **Lineup** — Weekly playing XI selection
-- **Gameweek** — Weekly scoring period
-- **PlayerPerformance** — Raw match statistics
-- **PlayerScore** — Calculated fantasy points
-- **ChipUsage** — Which chips used in which gameweek
-
-## 15. Future Roadmap (Phase 2+)
-
-### Auction Engine:
-- Real-time bidding with WebSockets
-- $100M manager budget, $1M starting price, $0.5M bid increment
-- 10-second timer (reset on each bid)
-- Bid validation: remaining budget must allow filling remaining roster at $1M each
-- Anti-sniping, auto-bid, reconnect handling
-
-### Mid-Season Auction:
-- After 30 IPL matches
-- Managers can sell players back (90% market value) and bid for replacements
-
-### Market System:
-- Dynamic player pricing based on performance
-- Price history graphs
-
-### Engagement Features:
-- Power rankings, player analytics
-- Trade analyzer, AI lineup suggestions
+See [Technical Architecture Document](2026-03-15-fal-technical-architecture.md) for full details including:
+- Phase 1 monolithic Next.js architecture
+- Core services and database entities
+- Data ingestion pipeline
+- API route design
+- Phase 2+ roadmap (auction engine, market system)
