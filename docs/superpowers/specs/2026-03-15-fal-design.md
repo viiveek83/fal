@@ -312,15 +312,38 @@ Match header with team colors, player scoring breakdowns (event-by-event with po
 
 ## 14. Open Issues & Design Gaps
 
+### Industry Comparison (FAL vs Dream11 vs IPL Official)
+
+| Category | FAL | Dream11 T20 | IPL Official |
+|---|---|---|---|
+| Run | +1 | +1 | +1 |
+| Four bonus | +1 | +1 | +1 |
+| Six bonus | +2 | +2 | +2 |
+| 30-run bonus | +4 | — | — |
+| 50-run bonus | +8 | +8 | — |
+| 100-run bonus | +16 | +16 | — |
+| Wicket | +25 | +25 | +25 |
+| **Dot ball** | **+1** | **—** | **—** |
+| Maiden over | +8 | +8 | +8 |
+| 3-wicket bonus | +8 | — (4W: +8) | — |
+| 5-wicket bonus | +16 | +16 | — |
+| **SR bonus/penalty** | **—** | **-2 to -6** (SR < 70, min 10 balls) | **+2** (SR ≥ 120, min 10 balls) |
+| **ER bonus/penalty** | **—** | **+6 to -6** (tiered, min 2 overs) | **+2 to +4 bonus** (ER < 8, min 2 overs) |
+| Duck | -2 (all players) | -2 (excludes bowlers) | -10 (excludes bowlers) |
+| Catch | +8 | +8 | +10 |
+| Runout | +6 (flat) | +12 direct / +8 thrower / +4 catcher | +12 |
+| Stumping | +12 | +12 | +20 |
+| Starting XI bonus | — | +4 | — |
+
 ### Scoring Balance
 
-| # | Issue | Detail | Status |
-|---|-------|--------|--------|
-| 1 | **Bowling points overpowered** | A single wicket (25 pts) equals 25 runs scored. In T20, a 3-wicket haul (~33 pts base + 8 bonus = 41 pts) easily outscores a 50 (50 + 4 + 8 = 62 pts) despite being far more common. Consider reducing wicket value to 20 or runs bonus to compensate. | Open |
-| 2 | **Dot ball scoring too generous** | +1 per dot ball means a 4-over spell with 12 dots = 12 pts from dots alone. This inflates bowling scores significantly. Consider +0.5 or only rewarding maiden overs. | Open |
-| 3 | **No strike rate / economy rate modifiers** | A batter scoring 20(8) and 20(20) earn the same. A bowler going 0/40 in 4 overs gets 0 penalty. SR/ER bonuses/penalties reward quality, not just volume. | Open |
-| 4 | **No negative for expensive bowling** | Bowlers who concede 12+ runs per over face no penalty. Consider economy rate penalties (e.g., ER > 12: -4 pts). | Open |
-| 5 | **Duck rule ambiguity for non-batsmen** | -2 for a duck penalizes #11 tailenders equally. Consider exempting players batting below #8 or only applying to top-order/middle-order. | Open |
+| # | Issue | Detail | Benchmark | Status |
+|---|-------|--------|-----------|--------|
+| 1 | **Bowling points overpowered** | 25 pts per wicket is industry standard, but Dream11 balances this with ER penalties (up to -6 for ER > 11). FAL has no such counterweight, making bowling disproportionately rewarding. | Dream11: ER penalties balance wicket value | Open |
+| 2 | **Dot ball scoring — unique to FAL** | Neither Dream11 nor IPL Official award dot ball points. FAL's +1 per dot inflates bowling by ~8-15 pts per match (a typical 4-over spell has 12-16 dots). This is the single biggest scoring deviation from industry. Consider removing entirely or reducing to maiden-only rewards. | Dream11: no dot ball pts. IPL Official: no dot ball pts | Open |
+| 3 | **No strike rate / economy rate modifiers** | Both Dream11 and IPL Official use SR/ER modifiers. Dream11: SR < 70 gets -2 to -6 penalty (min 10 balls); ER < 4 gets +6, ER > 11 gets -6 (min 2 overs). IPL Official: SR ≥ 120 gets +2; ER < 6 gets +4. FAL missing both is a significant gap. | Dream11: SR penalties + ER bonus/penalty. IPL: SR bonus + ER bonus | Open |
+| 4 | **No penalty for expensive bowling** | Dream11 penalizes ER 9-10: -2, 10-11: -4, 11+: -6 (min 2 overs bowled). FAL has zero downside for conceding 12+ RPO. Recommend adopting similar tiered ER penalties. | Dream11: -2 to -6 tiered penalties | Open |
+| 5 | **Duck rule should exclude bowlers** | Both Dream11 and IPL Official exempt bowlers from duck penalties. FAL penalizes all players equally. A #11 tailender getting -2 for a duck is unfair. Recommend: exclude players with "BOWL" role from duck penalty. | Dream11: excludes bowlers. IPL: excludes bowlers | Open |
 
 ### Game Mechanics
 
