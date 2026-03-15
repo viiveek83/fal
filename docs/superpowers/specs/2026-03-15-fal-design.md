@@ -310,7 +310,40 @@ Match header with team colors, player scoring breakdowns (event-by-event with po
 - ALL → GT Teal (#0EB1A2)
 - WK → RR Pink (#EA1A85)
 
-## 14. Technical Architecture
+## 14. Open Issues & Design Gaps
+
+### Scoring Balance
+
+| # | Issue | Detail | Status |
+|---|-------|--------|--------|
+| 1 | **Bowling points overpowered** | A single wicket (25 pts) equals 25 runs scored. In T20, a 3-wicket haul (~33 pts base + 8 bonus = 41 pts) easily outscores a 50 (50 + 4 + 8 = 62 pts) despite being far more common. Consider reducing wicket value to 20 or runs bonus to compensate. | Open |
+| 2 | **Dot ball scoring too generous** | +1 per dot ball means a 4-over spell with 12 dots = 12 pts from dots alone. This inflates bowling scores significantly. Consider +0.5 or only rewarding maiden overs. | Open |
+| 3 | **No strike rate / economy rate modifiers** | A batter scoring 20(8) and 20(20) earn the same. A bowler going 0/40 in 4 overs gets 0 penalty. SR/ER bonuses/penalties reward quality, not just volume. | Open |
+| 4 | **No negative for expensive bowling** | Bowlers who concede 12+ runs per over face no penalty. Consider economy rate penalties (e.g., ER > 12: -4 pts). | Open |
+| 5 | **Duck rule ambiguity for non-batsmen** | -2 for a duck penalizes #11 tailenders equally. Consider exempting players batting below #8 or only applying to top-order/middle-order. | Open |
+
+### Game Mechanics
+
+| # | Issue | Detail | Status |
+|---|-------|--------|--------|
+| 6 | **No role composition constraints** | Managers could field 11 batsmen or 11 bowlers with no restriction. Consider minimum role requirements (e.g., min 1 WK, 3 BAT, 3 BOWL, 1 ALL). | Open |
+| 7 | **Impact Sub undefined in spec** | The mockup shows an Impact Sub slot but the spec doesn't define it. Need rules: when can it be used, does it replace a bench slot, does it score differently? | Open |
+| 8 | **Chip balance — Powerplay vs Bowling Boost** | Powerplay (2x batting) benefits more players per team than Bowling Boost (2x bowling), since most teams have 5-6 batters vs 4-5 bowlers in XI. Powerplay may be strictly better. | Open |
+| 9 | **No transfer/trade mechanism in Phase 1** | If a player gets injured mid-season, the manager is stuck. Consider a simple free-agent pickup (drop one, pick one unclaimed) even in Phase 1. | Open |
+| 10 | **Captain/VC didn't play — harsh penalty** | Both absent = no multipliers for anyone. Consider auto-promoting highest scorer to captain in this edge case. | Open |
+
+### Missing Product Features
+
+| # | Issue | Detail | Status |
+|---|-------|--------|--------|
+| 11 | **No head-to-head matchup mode** | Only cumulative leaderboard exists. Weekly H2H adds engagement (common in FPL, Dream11). Consider as Phase 1 or early Phase 2. | Open |
+| 12 | **No notifications system** | No alerts for lineup lock, gameweek results, or scoring updates. Even basic email/push notifications would improve retention. | Open |
+| 13 | **No player injury/availability status** | Managers have no in-app info about whether a player is likely to play. Consider surfacing availability data from cricket APIs. | Open |
+| 14 | **No gameweek history/recap per team** | Spec mentions leaderboard history but no per-team breakdown of past gameweeks (who scored what, which subs triggered, chip effects). | Open |
+| 15 | **No social/community features** | No league chat, no trash talk, no activity feed. These drive engagement in competing platforms. | Open |
+| 16 | **Manual auction has no guardrails** | Admin uploads rosters with no validation beyond squad size. No budget enforcement, no draft order, no fairness checks. | Open |
+
+## 15. Technical Architecture
 
 See [Technical Architecture Document](2026-03-15-fal-technical-architecture.md) for full details including:
 - Phase 1 monolithic Next.js architecture
