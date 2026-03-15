@@ -18,7 +18,7 @@ FAL is a fantasy cricket platform for IPL where teams are built via auction (man
 - Bench auto-substitution
 - 4 strategy chips (Triple Captain, Bench Boost, Powerplay, Bowling Boost)
 - Leaderboard tracking
-- API-sourced IPL player registry (CricketData.org free tier or SportMonks)
+- API-sourced IPL player registry (SportMonks Cricket API, €29/mo)
 
 **Out of Scope (Phase 2+):**
 - Real-time auction engine with WebSockets
@@ -197,10 +197,9 @@ Leaderboard recalculates after each match completes (live updates within a gamew
 Cricket Data API → Match Import Service → Raw Match Data Storage → Stat Parser → Fantasy Points Engine → Gameweek Aggregator → Leaderboard Service
 
 ### API Strategy:
-- **Primary (Recommended):** SportMonks Cricket API (€29/mo Major plan, 14-day free trial) — composable includes, production-ready ball-by-ball, confirmed IPL 2026 coverage
-- **Alternative:** CricketData.org (paid plan required for scorecards; free tier only covers match lists)
-- **Fallback:** Admin can manually input match stats if API is unavailable
-- See [Technical Architecture](2026-03-15-fal-technical-architecture.md) Section 4 for full API evaluation and field mapping
+- **Primary:** SportMonks Cricket API — €29/mo Major plan (14-day free trial), composable includes, production-ready ball-by-ball, confirmed IPL 2026 coverage
+- **Fallback:** Admin can manually input match stats via CSV upload if API is unavailable
+- See [Technical Architecture](2026-03-15-fal-technical-architecture.md) Section 4 for full API evaluation (4 providers compared) and field mapping
 
 ### Required Stats from API:
 - Runs scored, Fours hit, Sixes hit, Balls faced

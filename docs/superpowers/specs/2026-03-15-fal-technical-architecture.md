@@ -87,19 +87,26 @@ Gameweek 1──N ChipUsage
 
 > Scoring rules and pipeline details are defined in the [Design Spec](2026-03-15-fal-design.md) Sections 6, 9, and 11. This section covers implementation-specific concerns only.
 
+### Provider Landscape
+
+No cricket API provides scorecard-level data (batting, bowling, fielding stats) for free. All providers require a paid plan for the data FAL needs.
+
 ### API Comparison
 
-| | CricketData.org | SportMonks |
-|---|---|---|
-| **Base URL** | `https://api.cricapi.com/v1/` | `https://cricket.sportmonks.com/api/v2.0/` |
-| **Auth** | API key in query param | API token in query param |
-| **Free tier** | 500 req/day (match list, current matches only) | 14-day trial, then forever-free plan (limited) |
-| **Paid tier** | Required for Fantasy API (scorecard, points) | €29/mo Major plan (20 leagues inc. IPL) |
-| **IPL coverage** | Yes | Yes (confirmed IPL 2026) |
-| **Scorecard endpoint** | `v1/match_scorecard?id={matchId}` | `GET /fixtures/{id}?include=batting,bowling,lineup,runs` |
-| **Composable includes** | No (fixed response shape) | Yes (`batting`, `bowling`, `lineup`, `runs`, `balls`, `venue`, `toss`) |
-| **Ball-by-ball** | "Testing" — not production ready | Available via `?include=balls` |
-| **Fantasy points** | Built-in (`v1/match_points`) | Not built-in (calculate ourselves) |
+| | SportMonks | CricketData.org | Roanuz | EntitySport |
+|---|---|---|---|---|
+| **Base URL** | `cricket.sportmonks.com/api/v2.0/` | `api.cricapi.com/v1/` | `sports.roanuz.com/` | `rest.entitysport.com/v2/` |
+| **Auth** | API token (query param) | API key (query param) | API key | API key |
+| **Pricing** | **€29/mo** (Major, 26 leagues) | Paid (price unlisted, contact required) | **~$240/season** | **$250/mo** (Pro) or **$450/mo** (Elite for fantasy) |
+| **Free tier** | 14-day trial only | 500 req/day (match lists only, no scorecards) | Unknown | None |
+| **IPL coverage** | Yes (confirmed IPL 2026) | Yes | Yes (IPL 2026, 70+ matches) | Yes |
+| **Scorecard** | `GET /fixtures/{id}?include=batting,bowling` | `v1/match_scorecard?id={matchId}` | Yes | Yes |
+| **Composable includes** | Yes (`batting`, `bowling`, `lineup`, `runs`, `balls`, `venue`, `toss`) | No (fixed response) | Yes | Yes |
+| **Ball-by-ball** | Yes (`?include=balls`) — production ready | "Testing" — not production ready | Yes (detailed: fielder, thrower, ball speed) | Yes |
+| **Built-in fantasy pts** | No (calculate ourselves) | Yes (`v1/match_points`) | Yes (fantasy API) | Yes (Elite plan only, $450/mo) |
+| **Rate limit** | 3,000 calls/hr per entity | 500 req/day (free) | Unknown | 500K–2M calls/mo |
+| **Fielding data** | Partial (needs ball-by-ball computation) | Yes (dedicated catching array) | Yes (per-ball fielder data) | Yes |
+| **Dot balls** | Compute from ball-by-ball | Not available | Compute from ball-by-ball | Unknown |
 
 ### Batting Scorecard Fields
 
@@ -144,18 +151,30 @@ Gameweek 1──N ChipUsage
 
 **Recommendation:** Use SportMonks with ball-by-ball if dot balls are kept. If dot balls are dropped (per Issue #2), either API works without ball-by-ball data.
 
-### API Decision: SportMonks Recommended
+### Recommendation: SportMonks (€29/mo Major Plan)
 
-| Factor | CricketData.org | SportMonks | Winner |
-|---|---|---|---|
-| Scorecard access | Paid only | Paid (€29/mo) | Tie |
-| Composable includes | No | Yes (1 request = full scorecard) | SportMonks |
-| Ball-by-ball | Testing/unreliable | Production ready | SportMonks |
-| Fielding data | Dedicated catching array | Needs separate computation | CricketData |
-| Built-in fantasy points | Yes (but our rules differ) | No | N/A |
-| IPL 2026 confirmed | Unclear | Yes (blog post) | SportMonks |
+| Factor | SportMonks | Runner-up |
+|---|---|---|
+| **Cost** | €29/mo (~$31/mo) | Roanuz ~$240/season (~$30/mo amortized) |
+| **Single request = full scorecard** | Yes (composable includes) | CricketData: No (fixed response) |
+| **Ball-by-ball production ready** | Yes | CricketData: "Testing" status |
+| **IPL 2026 confirmed** | Yes (blog post + demo) | Roanuz: Yes |
+| **Rate limit headroom** | 3,000/hr (FAL needs ~5/day) | More than enough on any plan |
+| **Fielding data gap** | Catches/stumpings/runouts need ball-by-ball computation | CricketData has dedicated catching array |
 
-**Verdict:** SportMonks is the primary recommendation. CricketData's built-in fantasy points are tempting but use their own rules (not ours), and their ball-by-ball API isn't production-ready.
+**Why SportMonks wins:**
+1. **Cheapest option** at €29/mo — EntitySport is 8x more ($250/mo), Roanuz is comparable but less documented
+2. **One API call gets everything** — `GET /fixtures/{id}?include=batting,bowling,lineup,runs,balls` returns the full scorecard + ball-by-ball in a single request
+3. **Ball-by-ball is production-ready** — critical if we keep dot ball scoring (Design Spec Issue #2)
+4. **IPL 2026 explicitly supported** — confirmed in their blog with working demos
+5. **3,000 calls/hour** — FAL needs ~5 requests per match day, so massive headroom for retries and re-imports
+
+**Trade-offs accepted:**
+- No built-in fantasy points (we calculate our own — this is actually better since FAL has custom scoring rules)
+- Fielding stats (catches, stumpings, runouts) not in standard batting/bowling includes — must extract from ball-by-ball data or scorecard text. This is solvable but adds parsing complexity.
+- Off-season cost: €29/mo even when IPL isn't running. Cancel and resubscribe seasonally to save ~€200/year.
+
+**Fallback:** Admin manual stat entry via CSV upload if API is unavailable for a match. Design spec already supports this.
 
 ## 5. Data Ingestion Pipeline
 
