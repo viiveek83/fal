@@ -302,45 +302,60 @@ scheduled → completed → scoring → scored
 
 ## 6. API Routes (Phase 1)
 
+All routes require authentication via Auth.js session unless noted. Routes marked **(admin)** require the calling user to be the league admin (`league.adminUserId === session.userId`) or platform admin. Routes marked **(owner)** require the calling user to own the team (`team.userId === session.userId`).
+
+**Error responses** (standard across all routes):
+- `401` — Not authenticated (no valid session)
+- `403` — Forbidden (not admin/owner for this resource)
+- `404` — Resource not found
+- `409` — Conflict (e.g., chip already used this season, player already on another team)
+- `422` — Validation failure (e.g., invalid lineup, lock in effect)
+- `423` — Locked (lineup lock in effect, no edits allowed)
+
 ### Auth:
-- `POST /api/auth/[...nextauth]` — Auth.js handler
+- `POST /api/auth/[...nextauth]` — Auth.js handler (public)
 
 ### Leagues:
-- `POST /api/leagues` — Create league (creator becomes admin)
-- `GET /api/leagues` — List user's leagues
-- `GET /api/leagues/[id]` — League detail (settings, invite code, manager list)
-- `POST /api/leagues/[id]/join` — Join via invite code
-- `PUT /api/leagues/[id]/settings` — Update league settings (admin only)
-- `DELETE /api/leagues/[id]/managers/[userId]` — Remove manager (admin only)
+- `POST /api/leagues` — Create league (caller becomes admin)
+- `GET /api/leagues` — List leagues the current user belongs to
+- `GET /api/leagues/[id]` — League detail: settings, invite code, manager list **(member)**
+- `GET /api/leagues/[id]/teams` — List all teams in the league with manager names **(member)**
+- `POST /api/leagues/[id]/join` — Join via invite code (returns 409 if league full)
+- `PUT /api/leagues/[id]/settings` — Update league settings **(admin)**
+- `DELETE /api/leagues/[id]/managers/[userId]` — Remove a manager and their team **(admin)**
 
-### Rosters:
-- `POST /api/leagues/[id]/roster` — Upload roster CSV (admin)
-- `GET /api/teams/[teamId]/squad` — View team squad
+### Teams:
+- `GET /api/teams/[teamId]` — Team detail: name, manager, squad size **(owner or league member)**
+- `GET /api/teams/[teamId]/squad` — List players on this team **(owner or league member)**
+- `POST /api/leagues/[id]/roster` — Upload roster CSV for all teams **(admin)**
 
 ### Lineups:
-- `GET /api/teams/[teamId]/lineups/[gameweekId]` — Get lineup for a specific team and gameweek
-- `PUT /api/teams/[teamId]/lineups/[gameweekId]` — Submit/update lineup (playing XI, captain, VC, bench order)
-- `POST /api/teams/[teamId]/lineups/[gameweekId]/chip` — Activate chip
+- `GET /api/teams/[teamId]/lineups/[gameweekId]` — Get lineup (playing XI, bench order, captain, VC, chip) **(owner)**
+- `PUT /api/teams/[teamId]/lineups/[gameweekId]` — Submit/update lineup (upsert). Returns 423 if locked **(owner)**
+- `POST /api/teams/[teamId]/lineups/[gameweekId]/chip` — Activate chip. Returns 409 if already used this season, 423 if locked **(owner)**
+- `DELETE /api/teams/[teamId]/lineups/[gameweekId]/chip` — Deactivate chip before lock **(owner)**
 
 ### Scoring:
-- `GET /api/scores/[gameweekId]?leagueId=X` — Get gameweek scores for a league
-- `POST /api/scoring/import` — Trigger match import (admin)
-- `POST /api/scoring/recalculate/[matchId]` — Re-import and recalculate a specific match (admin)
+- `GET /api/leagues/[leagueId]/scores/[gameweekId]` — Gameweek scores for all teams in a league **(member)**
+- `GET /api/teams/[teamId]/scores/[gameweekId]` — Detailed score breakdown for a single team (per-player points, subs, multipliers) **(owner or league member)**
+- `POST /api/scoring/import` — Trigger match import + scoring pipeline **(admin)**
+- `POST /api/scoring/recalculate/[matchId]` — Reset match to `completed` and re-score **(admin)**
+- `GET /api/scoring/status` — List matches with their `scoringStatus` (scheduled/completed/scoring/scored) **(admin)**
 
 ### Season Admin:
-- `POST /api/admin/season/init` — Import IPL fixture list from SportMonks, create Match + Gameweek rows (admin, one-time per season)
+- `POST /api/admin/season/init` — Import IPL fixture list from SportMonks, create Match + Gameweek rows **(admin, one-time per season)**
 
 ### Leaderboard:
-- `GET /api/leaderboard/[leagueId]` — Get league standings
-- `GET /api/leaderboard/[leagueId]/history` — Gameweek-by-gameweek history
+- `GET /api/leaderboard/[leagueId]` — Current league standings (total points, rank, GW points) **(member)**
+- `GET /api/leaderboard/[leagueId]/history` — Gameweek-by-gameweek points per team **(member)**
 
 ### Players:
-- `GET /api/players` — List/search players (with role/team filters)
-- `GET /api/players/[id]` — Player detail + season stats
+- `GET /api/players?role=BAT&team=MI&page=1&limit=25` — Search/filter players with pagination **(authenticated)**
+- `GET /api/players/[id]` — Player detail: name, role, IPL team, current season stats **(authenticated)**
 
 ### Gameweeks:
-- `GET /api/gameweeks/current` — Current gameweek info (lock time, matches)
-- `GET /api/gameweeks` — List all gameweeks with status
+- `GET /api/gameweeks/current` — Current gameweek info (number, lock time, matches, status) **(authenticated)**
+- `GET /api/gameweeks` — List all gameweeks with status and match counts **(authenticated)**
 
 ## 7. Hosting & Cost Breakdown
 
