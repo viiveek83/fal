@@ -19,12 +19,12 @@
 | Database | Vercel Postgres (powered by Neon) |
 | ORM | Prisma |
 | Auth | Auth.js (OAuth + credentials) |
-| Deployment | Vercel (Pro plan — $20/mo) |
-| Cron | Vercel Cron Jobs (Pro required for sub-daily frequency) |
+| Deployment | Vercel (Hobby — free) |
+| Cron | Vercel Cron (daily) + admin-triggered API routes |
 | Database | Neon PostgreSQL (free tier — 0.5GB, 100 compute-hrs/mo) |
 
 ### Platform Constraints:
-- **Vercel Pro required:** Hobby plan limits cron jobs to once per day and non-commercial use. Pro provides minute-level cron, 300s function duration, and commercial use rights.
+- **Vercel Hobby plan:** Cron jobs limited to once per day, function duration max 60s, non-commercial use only. Sufficient for FAL with hybrid scoring approach (daily cron + admin-triggered imports).
 - **Neon free tier:** 0.5GB storage, 100 compute-hrs/mo, 10K pooled connections. Sufficient for Phase 1 (~15 managers, 74 matches). Auto-suspends after 5 min idle.
 
 ### System Architecture
@@ -33,9 +33,10 @@
 graph TB
     User["👤 Manager<br/>(Mobile Browser)"]
 
-    subgraph Vercel["Vercel (Pro — $20/mo)"]
+    subgraph Vercel["Vercel (Hobby — Free)"]
         App["Next.js App<br/>React Frontend + API Routes + Auth.js"]
-        Cron["Vercel Cron Jobs<br/>Import & Score"]
+        Cron["Daily Cron<br/>(safety net)"]
+        AdminBtn["Admin 'Import Scores'<br/>button (on-demand)"]
     end
 
     subgraph NeonDB["Neon (Free tier)"]
@@ -46,9 +47,9 @@ graph TB
 
     User -->|"HTTPS"| App
     App -->|"Prisma ORM"| DB
-    Cron -->|"triggers scoring pipeline"| App
+    Cron -->|"daily batch<br/>(midnight)"| App
+    AdminBtn -->|"on-demand after<br/>each match"| App
     App -->|"fetch scorecards"| SportMonks
-    Cron -.->|"every 30m<br/>during IPL season"| SportMonks
 
     style Vercel fill:#0a0a1a,color:#fff,stroke:#333
     style NeonDB fill:#004BA0,color:#fff
@@ -56,47 +57,36 @@ graph TB
     style DB fill:#004BA0,color:#fff
     style SportMonks fill:#2d1b69,color:#fff
     style Cron fill:#1a1a3e,color:#fff
+    style AdminBtn fill:#1a1a3e,color:#fff
 ```
 
-**Everything runs on Vercel** — frontend, API, cron jobs, and database. Vercel Postgres is powered by Neon under the hood and is included in Vercel's platform (Hobby: 256MB storage, Pro: 512MB+). No separate DB hosting needed.
+**Everything runs free** — Vercel Hobby (frontend, API, daily cron) + Neon free tier (PostgreSQL). Admin triggers score imports on-demand after each match via a button in the admin panel. Daily cron at midnight catches anything missed.
 
 ### Scoring Pipeline Flow
 
 ```mermaid
 flowchart LR
-    subgraph Init["Season Init (one-time)"]
-        S1["GET /fixtures<br/>?filter[season_id]=X"] --> S2["Pre-load all<br/>Match rows with<br/>dates & teams"]
+    subgraph Init["Season Init (one-time, admin)"]
+        S1["GET /fixtures<br/>?filter[season_id]=X"] --> S2["Pre-load all<br/>Match + Gameweek<br/>rows"]
     end
 
-    subgraph Cron1["Cron 1: Import (every 30m, 2pm-midnight IST, Mar-May)"]
-        A["Query local Match<br/>table: any matches<br/>today?"] --> A1{"Matches<br/>today?"}
-        A1 -->|No| Z1["Exit early<br/>(no API call)"]
-        A1 -->|Yes| B["GET /livescores<br/>→ check completed"]
-        B --> B1{"New completed<br/>matches?"}
-        B1 -->|No| Z1
-        B1 -->|Yes| C["GET /fixtures/{id}<br/>?include=batting,<br/>bowling,balls"]
-        C --> D["Parse response"]
-        D --> E["Write<br/>PlayerPerformance"]
-        E --> F["Set Match<br/>scoringStatus =<br/>'imported'"]
+    subgraph Trigger["Two ways to trigger scoring"]
+        T1["👤 Admin taps<br/>'Import Scores'<br/>(after each match)"]
+        T2["🕐 Daily Cron<br/>(midnight, safety net)"]
     end
 
-    subgraph Cron2["Cron 2: Score (every 30m, +15m offset)"]
-        G["Find matches<br/>status = 'imported'"] --> G1{"Any to<br/>score?"}
-        G1 -->|No| Z2["Exit early"]
-        G1 -->|Yes| H["Calculate base<br/>fantasy points"]
-        H --> I["Aggregate across<br/>matches in GW"]
-        I --> J{"Gameweek<br/>ended?"}
-        J -->|Yes| K["Apply bench<br/>auto-subs"]
-        J -->|No| L["Skip subs"]
-        K --> M["Apply C/VC<br/>multipliers"]
-        L --> M
-        M --> N["Apply chip<br/>effects"]
-        N --> O["Update<br/>leaderboard"]
-        O --> P["Set Match<br/>scoringStatus =<br/>'scored'"]
+    subgraph Pipeline["Scoring Pipeline (same code, either trigger)"]
+        A["Check for completed<br/>matches not yet imported"] --> B["GET /fixtures/{id}<br/>?include=batting,<br/>bowling,balls"]
+        B --> C["Parse → write<br/>PlayerPerformance"]
+        C --> D["Calculate fantasy<br/>points"]
+        D --> E["Aggregate GW totals<br/>+ bench subs<br/>+ C/VC + chips"]
+        E --> F["Update leaderboard"]
+        F --> G["Set Match<br/>scoringStatus =<br/>'scored'"]
     end
 
-    Init -.->|"Match table<br/>pre-populated"| Cron1
-    Cron1 -.->|"Match.scoringStatus<br/>coordinates"| Cron2
+    Init -.->|"Match table<br/>pre-populated"| Trigger
+    T1 -->|"POST /api/scoring/import"| Pipeline
+    T2 -->|"invokes same endpoint"| Pipeline
 ```
 
 ## 2. Core Services
@@ -253,46 +243,37 @@ At the start of the IPL season, admin triggers a one-time fixture import:
 ```
 This pre-populates the Match table so cron jobs can check locally whether matches are scheduled today — **zero API calls on non-match days.**
 
-### Cron Schedule
+### Hybrid Scoring Strategy (Hobby-compatible)
 
-Both crons run on a fixed Vercel Cron schedule during IPL season hours:
+Vercel Hobby limits cron to once per day. Instead of paying for Pro ($20/mo), we use a hybrid approach:
+
+**Primary: Admin-triggered import (on-demand)**
+After each IPL match ends, admin taps "Import Scores" in the admin panel → `POST /api/scoring/import`. This runs the full pipeline (import + score + leaderboard) as a single API route handler within Hobby's 60s function limit.
+
+**Safety net: Daily cron (midnight)**
 ```
-# Cron 1: Import — every 30 min, 2pm-midnight IST (8:30am-6:30pm UTC), Mar-May
-*/30 8-18 * 3-5 *
-
-# Cron 2: Score — same window, offset by 15 min
-15,45 8-18 * 3-5 *
+# Runs once daily at midnight UTC — catches any matches admin missed
+0 0 * * *
 ```
+Same pipeline code, just triggered by cron instead of admin button.
 
-### Cron Splitting Strategy (Vercel 60s limit)
+### Scoring Pipeline (single unified flow)
 
-Two separate Vercel Cron jobs to stay within execution limits:
-
-**Cron 1: Import**
+Both triggers invoke the same pipeline:
 ```
-1. Query local Match table: any matches scheduled today?
-   → No matches today → exit immediately (no API call, ~1s)
-2. GET /livescores → check for newly completed matches
-   → No new completions → exit (~2s)
-3. For each completed match not yet imported:
+1. Query Match table for completed matches not yet scored
+   → None found → exit (~1s)
+2. For each unscored match:
    a. GET /fixtures/{id}?include=batting,bowling,lineup,runs,balls
    b. Parse response → write PlayerPerformance rows
-   c. Set Match.scoringStatus = 'imported'
-```
-Estimated time: ~1s (non-match day) / ~5-10s (match day with new completions)
-
-**Cron 2: Score**
-```
-1. Find matches where scoringStatus = 'imported'
-   → None found → exit immediately (~1s)
-2. For each: run Fantasy Points Engine → write PlayerScore rows
+   c. Run Fantasy Points Engine → write PlayerScore rows
+   d. Set Match.scoringStatus = 'scored'
 3. Aggregate gameweek totals
 4. Apply bench subs (only at gameweek end)
 5. Apply captain/VC multipliers + chip effects
 6. Update leaderboard
-7. Set Match.scoringStatus = 'scored'
 ```
-Estimated time: ~1s (nothing to score) / ~10-20s (scoring, pure computation + DB, no API calls)
+Estimated time: ~15-30s for a single match (well within 60s Hobby limit). On a double-header day, admin triggers after each match separately.
 
 ### Match.scoringStatus State Machine
 ```
@@ -301,8 +282,10 @@ scheduled → in_progress → completed → imported → scored
                                     (re-import resets to 'imported')
 ```
 
-### Manual Override
-Admin can trigger re-import via `POST /api/scoring/import` and re-score via `POST /api/scoring/recalculate/[matchId]`. These run as API route handlers (not cron), with Vercel's 60s API route timeout (300s on Pro).
+### Admin Controls
+- **Import & Score:** `POST /api/scoring/import` — admin taps after each match to import stats and calculate scores (primary trigger)
+- **Re-import:** `POST /api/scoring/recalculate/[matchId]` — re-fetch stats and recalculate a specific match (if API data was corrected)
+- Both run as API route handlers within Hobby's 60s function limit
 
 ## 5. API Routes (Phase 1)
 
@@ -348,60 +331,58 @@ Admin can trigger re-import via `POST /api/scoring/import` and re-score via `POS
 
 ## 6. Hosting & Cost Breakdown
 
-### Why Hobby Plan Won't Work
+### Vercel Hobby Plan Fit
 
-| Requirement | FAL Needs | Hobby (Free) | Pro ($20/mo) |
+| Requirement | FAL Needs | Hobby (Free) | Fits? |
 |---|---|---|---|
-| **Cron frequency** | Every 30 min during matches | **Once per day only** | Once per minute |
-| **Cron precision** | Precise timing for match scoring | ±59 min window | Per-minute precision |
-| **Function duration** | 10-20s (scoring pipeline) | 10s default, max 60s | 15s default, max 300s |
-| **Commercial use** | Private league with friends (gray area) | **Non-commercial only** | Commercial allowed |
-| **Team collaboration** | Solo dev for now | 1 seat | $20/seat/mo |
+| **Cron frequency** | Daily safety net | Once per day | Yes |
+| **On-demand scoring** | Admin triggers after each match | API routes (60s limit) | Yes |
+| **Function duration** | 15-30s (scoring pipeline) | Max 60s | Yes |
+| **Bandwidth** | ~15 managers, low traffic | 100 GB/mo | Yes |
+| **Commercial use** | Private league with friends | Non-commercial only | OK (personal/friends use) |
 
-**Hobby is a blocker** — cron jobs limited to once per day makes real-time match scoring impossible. FAL requires **Vercel Pro**.
+**Hobby works** with the hybrid approach — admin-triggered scoring replaces the need for frequent cron jobs.
 
 ### Monthly Cost Estimate (IPL Season — ~2 months)
 
 | Service | Plan | Cost | Notes |
 |---|---|---|---|
-| **Vercel Pro** | 1 developer seat | **$20/mo** | Includes: 1TB bandwidth, 24K build mins, 16 CPU-hrs, minute-level cron |
+| **Vercel** | Hobby | **$0** | Free — frontend, API routes, daily cron, `.vercel.app` domain |
+| **Neon Postgres** | Free tier | **$0** | 0.5GB storage, 100 compute-hrs/mo, 10K pooled connections |
 | **SportMonks** | Major plan | **€29/mo (~$31)** | 26 cricket leagues, 3,000 calls/hr, 14-day free trial |
-| **Neon Postgres** | Free tier | **$0** | 0.5GB storage, 100 compute-hrs/mo, 10K pooled connections — sufficient for Phase 1 |
 | **Auth.js** | Open source | **$0** | Self-hosted, no per-user costs |
 | **Domain** | Optional | ~$12/yr | Custom domain (Vercel provides free `.vercel.app` subdomain) |
-| | | **~$51/mo** | **Total during IPL season** |
+| | | **~$31/mo** | **Total during IPL season** |
 
 ### Annual Cost Estimate
 
 | Period | Duration | Monthly Cost | Total |
 |---|---|---|---|
-| **IPL season** | ~2 months (Mar-May) | $51/mo | $102 |
-| **Off-season (keep Vercel Pro)** | 10 months | $20/mo | $200 |
-| **Off-season (cancel SportMonks)** | 10 months | $0 | $0 |
-| | | **Annual total** | **~$302/yr** |
-
-Alternatively, cancel Vercel Pro during off-season too (downgrade to Hobby for dev work) → **~$102/yr** during IPL season only.
+| **IPL season** | ~2 months (Mar-May) | $31/mo (SportMonks only) | $62 |
+| **Off-season** | 10 months | $0 (cancel SportMonks) | $0 |
+| **Domain (optional)** | 12 months | — | $12 |
+| | | **Annual total** | **~$62-74/yr** |
 
 ### Neon Free Tier Fit Analysis
 
 | Resource | Neon Free Provides | FAL Phase 1 Needs | Fits? |
 |---|---|---|---|
-| Storage | 0.5 GB | ~74 matches × ~30 players × ~50 bytes ≈ <1 MB match data + players, leagues, lineups | Yes (well under 0.5GB) |
-| Compute hours | 100 CU-hrs/mo | Cron queries every 30m + user API calls (~15 managers) | Yes |
+| Storage | 0.5 GB | ~74 matches × ~30 players × ~50 bytes ≈ <1 MB match data + players, leagues, lineups | Yes |
+| Compute hours | 100 CU-hrs/mo | Daily cron + admin triggers + user API calls (~15 managers) | Yes |
 | Connections | 10,000 pooled (pgBouncer) | Serverless function connections (~10 concurrent) | Yes |
-| Branches | 10 | 1 (production) | Yes |
-| Idle timeout | 5 min auto-suspend | Crons keep it warm during match hours | OK |
+| Idle timeout | 5 min auto-suspend | First request after idle has ~1s cold start | OK |
 
-**Neon free tier is sufficient for Phase 1.** The 0.5GB storage limit only becomes a concern if we store ball-by-ball data (each match ≈ 300 balls × 100 bytes = 30KB, all 74 matches ≈ 2.2MB — still fine).
+**Neon free tier is sufficient for Phase 1.** Ball-by-ball storage for all 74 matches ≈ 2.2MB — well within 0.5GB.
 
 ### Cost Scaling (Phase 2+)
 
 | Trigger | Action | Added Cost |
 |---|---|---|
+| Need frequent auto-scoring | Vercel Pro (minute-level cron) | $20/mo |
 | >0.5GB DB storage | Neon Launch plan | $19/mo |
 | Multiple admins/devs | Vercel Pro seats | $20/seat/mo |
 | WebSocket auction engine | Vercel or external WS hosting | TBD |
-| Heavy traffic (public leagues) | Vercel bandwidth overages | $0.06/GB over 1TB |
+| Heavy traffic (public leagues) | Vercel Pro + bandwidth | $20/mo + $0.06/GB over 1TB |
 
 ## 7. Future Architecture (Phase 2+)
 
