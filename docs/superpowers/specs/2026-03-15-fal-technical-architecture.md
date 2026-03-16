@@ -16,12 +16,11 @@
 | Frontend | Next.js + React + TypeScript |
 | Styling | Tailwind CSS |
 | Backend | Next.js API Routes |
-| Database | Vercel Postgres (powered by Neon) |
+| Database | Neon PostgreSQL (free tier — 0.5GB, 100 compute-hrs/mo) |
 | ORM | Prisma |
 | Auth | Auth.js (OAuth + credentials) |
 | Deployment | Vercel (Hobby — free) |
 | Cron | Vercel Cron (daily) + admin-triggered API routes |
-| Database | Neon PostgreSQL (free tier — 0.5GB, 100 compute-hrs/mo) |
 
 ### Platform Constraints:
 - **Vercel Hobby plan:** Cron jobs limited to once per day, function duration max 60s, non-commercial use only. Sufficient for FAL with hybrid scoring approach (daily cron + admin-triggered imports).
@@ -76,12 +75,14 @@ flowchart LR
     end
 
     subgraph Pipeline["Scoring Pipeline (same code, either trigger)"]
-        A["Check for completed<br/>matches not yet imported"] --> B["GET /fixtures/{id}<br/>?include=batting,<br/>bowling,balls"]
-        B --> C["Parse → write<br/>PlayerPerformance"]
-        C --> D["Calculate fantasy<br/>points"]
-        D --> E["Aggregate GW totals<br/>+ bench subs<br/>+ C/VC + chips"]
-        E --> F["Update leaderboard"]
-        F --> G["Set Match<br/>scoringStatus =<br/>'scored'"]
+        A["Claim matches:<br/>SET status='scoring'<br/>WHERE status='completed'"] --> A1{"Rows<br/>claimed?"}
+        A1 -->|No| Z["Exit (nothing to do<br/>or already claimed)"]
+        A1 -->|Yes| B["GET /fixtures/{id}<br/>?include=batting,<br/>bowling,balls"]
+        B --> C["Parse + upsert<br/>PlayerPerformance"]
+        C --> D["Set Match<br/>status = 'scored'"]
+        D --> E{"GW ended?<br/>(all matches scored)"}
+        E -->|No| Z2["Done for now"]
+        E -->|Yes| F["Bench subs →<br/>C/VC multipliers →<br/>Chip effects →<br/>Update leaderboard"]
     end
 
     Init -.->|"Match table<br/>pre-populated"| Trigger
@@ -119,7 +120,7 @@ See System Architecture and Scoring Pipeline Flow diagrams in Section 1.
 - **ChipUsage** — Which chip a team used in which gameweek
 
 ### Entity Relationships:
-See Entity Relationship Diagram in Section 1 for full schema with fields and relationships.
+See entity descriptions above for fields. Key relationships: User 1→N Team, League 1→N Team, Team 1→N TeamPlayer, Player 1→N TeamPlayer, Team 1→N Lineup, Lineup 1→N LineupSlot, Gameweek 1→N Match, Match 1→N PlayerPerformance.
 
 ### Uniqueness Constraints:
 - `TeamPlayer`: unique(`leagueId`, `playerId`) — a player can only be on one team per league
@@ -224,13 +225,12 @@ No cricket API provides scorecard-level data (batting, bowling, fielding stats) 
 
 ### Requests Per Match (SportMonks)
 
-| Step | Endpoint | Includes | Requests |
-|---|---|---|---|
-| Poll for completed matches | `GET /livescores` or `GET /fixtures?filter[status]=Finished` | — | 1 (shared) |
-| Fetch full scorecard | `GET /fixtures/{id}` | `batting,bowling,lineup,runs` | 1 per match |
-| Fetch ball-by-ball (if dot balls kept) | `GET /fixtures/{id}` | `balls` | 1 per match |
+| Step | Endpoint | Requests |
+|---|---|---|
+| Poll for completed matches | `GET /fixtures?filter[status]=Finished&filter[season_id]=X` | 1 (shared) |
+| Fetch full scorecard + ball-by-ball | `GET /fixtures/{id}?include=batting,bowling,lineup,runs,balls` | 1 per match |
 
-**Double-header day total:** 1 poll + 2 scorecards + 2 ball-by-ball = **5 requests** (well within any rate limit).
+**Double-header day total:** 1 poll + 2 combined scorecard requests = **3 requests** (well within 3,000/hr rate limit).
 
 ### Season Initialization (one-time)
 
@@ -261,33 +261,46 @@ Same pipeline code, just triggered by cron instead of admin button.
 
 Both triggers invoke the same pipeline:
 ```
-1. Query Match table for completed matches not yet scored
-   → None found → exit (~1s)
-2. For each unscored match:
+1. Claim unscored matches using optimistic lock:
+   UPDATE Match SET scoringStatus = 'scoring'
+   WHERE scoringStatus = 'completed' RETURNING id
+   → No rows returned → exit (another process claimed them, or nothing to score)
+2. For each claimed match:
    a. GET /fixtures/{id}?include=batting,bowling,lineup,runs,balls
-   b. Parse response → write PlayerPerformance rows
-   c. Run Fantasy Points Engine → write PlayerScore rows
+   b. Parse response → compute dot balls, fielding stats from ball-by-ball in memory
+   c. Upsert PlayerPerformance rows (keyed on playerId + matchId)
    d. Set Match.scoringStatus = 'scored'
-3. Aggregate gameweek totals
-4. Apply bench subs (only at gameweek end)
-5. Apply captain/VC multipliers + chip effects
-6. Update leaderboard
+3. If gameweek has ended (all matches in GW are 'scored'):
+   a. Aggregate player points across matches in the gameweek
+   b. Apply bench auto-substitutions
+   c. Apply captain/VC multipliers
+   d. Apply chip effects (multiplicative with captain)
+   e. Update leaderboard
 ```
-Estimated time: ~15-30s for a single match (well within 60s Hobby limit). On a double-header day, admin triggers after each match separately.
+Steps 2a-2d run in a database transaction per match. Step 3 only runs at gameweek end.
+
+**Concurrency guard:** The `SET scoringStatus = 'scoring' WHERE scoringStatus = 'completed'` is an atomic claim — if admin and cron fire simultaneously, only one gets rows back. The other exits cleanly.
+
+**Idempotency:** All writes use upserts keyed on `(playerId, matchId)`. Re-running the pipeline for the same match overwrites, not duplicates.
+
+**Batch limit:** Pipeline processes at most 2 matches per invocation. If the midnight cron catches 3+ missed matches, it scores 2 and leaves the rest for the next daily run or manual trigger.
+
+Estimated time: ~5-10s per match (well within 60s Hobby limit with 2-match batch cap).
 
 ### Match.scoringStatus State Machine
 ```
-scheduled → in_progress → completed → imported → scored
-                                         ↑
-                                    (re-import resets to 'imported')
+scheduled → completed → scoring → scored
+                ↑                    |
+                └── (re-score) ──────┘
 ```
+`scheduled` = fixture pre-loaded, `completed` = match finished, `scoring` = claimed by pipeline (concurrency lock), `scored` = fantasy points written. Re-score resets to `completed` for reprocessing.
 
 ### Admin Controls
 - **Import & Score:** `POST /api/scoring/import` — admin taps after each match to import stats and calculate scores (primary trigger)
 - **Re-import:** `POST /api/scoring/recalculate/[matchId]` — re-fetch stats and recalculate a specific match (if API data was corrected)
 - Both run as API route handlers within Hobby's 60s function limit
 
-## 5. API Routes (Phase 1)
+## 6. API Routes (Phase 1)
 
 ### Auth:
 - `POST /api/auth/[...nextauth]` — Auth.js handler
@@ -329,7 +342,7 @@ scheduled → in_progress → completed → imported → scored
 - `GET /api/gameweeks/current` — Current gameweek info (lock time, matches)
 - `GET /api/gameweeks` — List all gameweeks with status
 
-## 6. Hosting & Cost Breakdown
+## 7. Hosting & Cost Breakdown
 
 ### Vercel Hobby Plan Fit
 
@@ -384,7 +397,7 @@ scheduled → in_progress → completed → imported → scored
 | WebSocket auction engine | Vercel or external WS hosting | TBD |
 | Heavy traffic (public leagues) | Vercel Pro + bandwidth | $20/mo + $0.06/GB over 1TB |
 
-## 7. Future Architecture (Phase 2+)
+## 8. Future Architecture (Phase 2+)
 
 ### Auction Engine:
 - Real-time bidding with WebSockets

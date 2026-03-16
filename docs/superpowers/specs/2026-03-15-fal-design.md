@@ -210,7 +210,7 @@ Cricket Data API → Match Import Service → Raw Match Data Storage → Stat Pa
 - **Dot balls:** Not available in either API's bowling summary — requires ball-by-ball data computation (SportMonks) or dropping dot ball scoring (see Issue #2)
 
 ### Ingestion Trigger:
-Phase 1: Two Vercel Cron jobs split the work to stay within 60s execution limits. See [Technical Architecture](2026-03-15-fal-technical-architecture.md) Section 5 for cron splitting strategy.
+Phase 1: Hybrid approach — admin triggers scoring on-demand after each match via an "Import Scores" button, with a daily midnight cron as safety net. Runs on Vercel Hobby (free). See [Technical Architecture](2026-03-15-fal-technical-architecture.md) Section 5 for pipeline details.
 
 ## 12. Edge Cases
 
