@@ -3,19 +3,30 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #f2f3f8; color: #1a1a2e; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+  body { background: #111; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
 
   .phone-frame {
     max-width: 393px; margin: 20px auto; background: #f2f3f8;
     border-radius: 44px; border: 2.5px solid #d0d4e0; overflow: hidden;
-    box-shadow: 0 24px 80px rgba(0,0,0,0.12);
-    position: relative;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.25);
+    position: relative; height: 852px;
   }
-  .status-bar { display: flex; justify-content: space-between; align-items: center; padding: 14px 28px 6px; font-size: 12px; font-weight: 600; color: #fff; }
-  .dynamic-island { width: 124px; height: 36px; background: #000; border-radius: 20px; margin: 0 auto; position: relative; top: -2px; }
-  .scroll-area { height: 720px; overflow-y: auto; padding-bottom: 90px; scrollbar-width: none; }
+  .status-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 28px 6px; font-size: 12px; font-weight: 600; color: #fff;
+    background: transparent; position: relative; z-index: 2;
+  }
+  .dynamic-island {
+    width: 124px; height: 36px; background: #000; border-radius: 20px;
+    margin: 0 auto; position: relative; top: -2px; z-index: 2;
+  }
+  .scroll-area {
+    height: 720px; overflow-y: auto; padding-bottom: 90px; scrollbar-width: none;
+    margin-top: -56px;
+  }
   .scroll-area::-webkit-scrollbar { display: none; }
 
   :root {
@@ -26,358 +37,597 @@
     --card-bg: #fff; --card-border: rgba(0,0,0,0.06);
   }
 
-  /* Gradient hero header */
-  .hero-header {
+  /* Hero — compact ~10% */
+  .hero {
     background: linear-gradient(160deg, #1a0a3e 0%, #2d1b69 25%, #004BA0 50%, #0EB1A2 80%, #00AEEF 100%);
-    padding: 18px 20px 22px; color: #fff;
+    padding: 64px 18px 16px; position: relative; overflow: hidden;
   }
-  .hero-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-  .hero-logo {
-    font-size: 15px; font-weight: 900; letter-spacing: -0.5px;
+  .hero::before {
+    content: ''; position: absolute; top: -30%; right: -20%;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(249,205,5,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .hero .logo {
+    font-size: 17px; font-weight: 900; letter-spacing: -0.5px;
     background: linear-gradient(135deg, var(--csk), var(--srh));
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   }
-  .hero-page-title { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
-  .league-big-name { font-size: 22px; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
-  .league-meta { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-  .meta-chip {
-    font-size: 11px; padding: 5px 12px; border-radius: 20px;
-    background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.95);
-    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255,255,255,0.2);
+  .hero .page-title {
+    font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.55);
+    background: rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 8px;
+    backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.08);
   }
 
-  .content { padding: 14px 14px 0; display: flex; flex-direction: column; gap: 10px; }
-  .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
-  .section-title { font-size: 13px; font-weight: 700; margin-bottom: 10px; color: #1a1a2e; }
+  /* League overview row */
+  .league-overview {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .league-name {
+    font-size: 20px; font-weight: 800; color: #fff; letter-spacing: -0.5px;
+  }
+  .status-badge {
+    font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 20px;
+    letter-spacing: 0.3px; text-transform: uppercase;
+  }
+  .status-active { background: rgba(13,158,95,0.2); color: #4ade80; border: 1px solid rgba(13,158,95,0.3); }
+  .status-not-started { background: rgba(255,170,0,0.2); color: #fbbf24; border: 1px solid rgba(255,170,0,0.3); }
+  .status-completed { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.15); }
 
-  /* Invite code */
-  .invite-card {
-    background: rgba(0,75,160,0.06); border: 1px solid rgba(0,75,160,0.1);
-    border-radius: 16px; padding: 14px; display: flex; align-items: center; justify-content: space-between;
+  .league-meta {
+    display: flex; align-items: center; gap: 12px; margin-top: 8px;
+    font-size: 12px; color: rgba(255,255,255,0.6); font-weight: 500;
+  }
+  .league-meta span { display: flex; align-items: center; gap: 4px; }
+
+  /* Content */
+  .content { padding: 12px 14px 0; display: flex; flex-direction: column; gap: 10px; }
+  .card {
+    background: var(--card-bg); border: 1px solid var(--card-border);
+    border-radius: 16px; padding: 14px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.04);
   }
-  .invite-label { font-size: 11px; color: #555; }
+  .section-header {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+  }
+  .section-title {
+    font-size: 13px; font-weight: 700; color: #1a1a2e; letter-spacing: -0.2px;
+  }
+
+  /* Invite code */
+  .invite-row {
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(0,75,160,0.04); border: 1px solid rgba(0,75,160,0.08);
+    border-radius: 12px; padding: 10px 12px;
+  }
+  .invite-left { display: flex; align-items: center; gap: 8px; }
+  .invite-label { font-size: 10px; color: #888; font-weight: 500; }
   .invite-code {
-    font-size: 20px; font-weight: 800; color: var(--mi); letter-spacing: 3px;
-    font-variant-numeric: tabular-nums; margin-top: 2px;
+    font-size: 15px; font-weight: 800; color: var(--mi); letter-spacing: 2px;
+    font-variant-numeric: tabular-nums;
   }
   .copy-btn {
-    font-size: 11px; font-weight: 600; color: var(--mi); padding: 8px 14px;
-    border-radius: 10px; background: rgba(0,75,160,0.1); border: 1px solid rgba(0,75,160,0.15);
-    cursor: pointer;
+    font-size: 10px; font-weight: 700; color: var(--mi); padding: 6px 12px;
+    border-radius: 8px; background: rgba(0,75,160,0.08); border: 1px solid rgba(0,75,160,0.12);
+    cursor: pointer; font-family: inherit;
   }
+  .copy-btn:active { background: rgba(0,75,160,0.15); }
 
-  /* Manager list */
+  /* Manager rows */
   .manager-row {
-    display: flex; align-items: center; padding: 10px 12px; border-radius: 12px;
-    gap: 10px; background: #f7f8fb; border: 1px solid var(--card-border);
+    display: flex; align-items: center; padding: 9px 10px; border-radius: 10px;
+    gap: 8px; background: #f7f8fb; border: 1px solid var(--card-border);
   }
   .manager-row + .manager-row { margin-top: 4px; }
+  .manager-row.you-row {
+    background: rgba(0,75,160,0.04); border: 1.5px solid rgba(0,75,160,0.1);
+  }
   .manager-avatar {
-    width: 34px; height: 34px; border-radius: 50%; display: flex;
+    width: 32px; height: 32px; border-radius: 50%; display: flex;
     align-items: center; justify-content: center;
-    font-size: 11px; font-weight: 700; color: #fff;
+    font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0;
   }
-  .manager-info { flex: 1; }
-  .manager-name { font-size: 13px; font-weight: 600; color: #1a1a2e; }
-  .manager-role { font-size: 10px; color: #999; margin-top: 1px; }
-  .manager-squad {
-    font-size: 11px; color: #555; font-variant-numeric: tabular-nums;
-  }
+  .manager-info { flex: 1; min-width: 0; }
+  .manager-name-row { display: flex; align-items: center; gap: 5px; }
+  .manager-name { font-size: 12px; font-weight: 600; color: #1a1a2e; }
   .admin-badge {
-    font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 5px;
+    font-size: 8px; font-weight: 700; padding: 2px 5px; border-radius: 4px;
     background: rgba(249,205,5,0.15); color: #b8960a; letter-spacing: 0.3px;
   }
-  .remove-btn {
-    font-size: 10px; color: #999; padding: 4px 8px; border-radius: 6px;
-    background: #f7f8fb; border: 1px solid var(--card-border);
-    cursor: pointer;
+  .manager-team { font-size: 10px; color: #888; font-weight: 500; margin-top: 1px; }
+
+  .roster-badge {
+    font-size: 10px; font-weight: 700; padding: 3px 7px; border-radius: 6px;
+    font-variant-numeric: tabular-nums; flex-shrink: 0; display: flex; align-items: center; gap: 3px;
   }
+  .roster-complete { color: var(--mint); background: rgba(13,158,95,0.08); }
+  .roster-incomplete { color: #e09000; background: rgba(224,144,0,0.08); }
+  .roster-empty { color: var(--rose); background: rgba(214,48,96,0.08); }
+
+  .edit-btn {
+    font-size: 9px; font-weight: 600; color: var(--mi); padding: 4px 8px;
+    border-radius: 6px; background: rgba(0,75,160,0.06); border: 1px solid rgba(0,75,160,0.1);
+    cursor: pointer; font-family: inherit; flex-shrink: 0;
+  }
+  .remove-btn {
+    width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+    border-radius: 6px; background: rgba(214,48,96,0.06); border: 1px solid rgba(214,48,96,0.1);
+    cursor: pointer; flex-shrink: 0; font-family: inherit;
+  }
+  .remove-btn svg { width: 12px; height: 12px; stroke: var(--rose); }
+
+  .btn-add-manager {
+    width: 100%; padding: 10px; border: 2px dashed rgba(0,75,160,0.15); border-radius: 10px;
+    font-size: 12px; font-weight: 600; color: var(--mi); cursor: pointer;
+    background: rgba(0,75,160,0.02); font-family: inherit; margin-top: 6px;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+  }
+  .btn-add-manager:hover { background: rgba(0,75,160,0.05); }
 
   /* Upload area */
-  .upload-area {
-    border: 2px dashed rgba(0,0,0,0.1); border-radius: 16px;
-    padding: 24px; text-align: center; cursor: pointer;
-    transition: all 0.2s; background: #f7f8fb;
-  }
-  .upload-area:hover { border-color: rgba(0,75,160,0.25); background: rgba(0,75,160,0.03); }
-  .upload-icon { font-size: 28px; margin-bottom: 8px; }
-  .upload-text { font-size: 13px; color: #555; }
-  .upload-hint { font-size: 11px; color: #999; margin-top: 4px; }
-
-  /* Team assignment */
-  .team-assign {
+  .upload-row {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 12px; border-radius: 12px;
-    background: #f7f8fb; border: 1px solid var(--card-border);
+    gap: 8px; margin-bottom: 10px;
   }
-  .team-assign + .team-assign { margin-top: 4px; }
-  .team-assign-info { display: flex; align-items: center; gap: 8px; }
-  .team-assign-avatar {
-    width: 30px; height: 30px; border-radius: 50%; display: flex;
-    align-items: center; justify-content: center;
-    font-size: 10px; font-weight: 700; color: #fff;
-  }
-  .team-assign-name { font-size: 13px; font-weight: 600; color: #1a1a2e; }
-  .player-count {
-    font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
-    padding: 3px 8px; border-radius: 6px;
-  }
-  .count-ok { color: var(--mint); background: rgba(13,158,95,0.1); }
-  .count-low { color: var(--rose); background: rgba(214,48,96,0.1); }
-
-  /* Settings */
-  .setting-row {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 0; border-bottom: 1px solid rgba(0,0,0,0.06);
-  }
-  .setting-row:last-child { border-bottom: none; }
-  .setting-label { font-size: 13px; color: #555; }
-  .setting-value { font-size: 13px; font-weight: 600; color: #1a1a2e; }
-
-  .btn-action {
-    width: 100%; padding: 14px; border: none; border-radius: 16px;
-    color: #1a1a2e; font-size: 14px; font-weight: 700; cursor: pointer;
+  .upload-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 9px 14px; border-radius: 10px;
     background: linear-gradient(135deg, var(--csk), var(--srh));
-    box-shadow: 0 4px 20px rgba(249,205,5,0.15);
-    position: relative; overflow: hidden;
+    border: none; font-size: 11px; font-weight: 700; color: #1a1a2e;
+    cursor: pointer; font-family: inherit; position: relative; overflow: hidden;
   }
-  .btn-action::after {
+  .upload-btn::after {
     content: ''; position: absolute; top: 0; left: 0; right: 0; height: 50%;
     background: linear-gradient(rgba(255,255,255,0.3), transparent);
-    border-radius: 16px 16px 0 0; pointer-events: none;
+    border-radius: 10px 10px 0 0; pointer-events: none;
   }
-  .btn-danger {
-    width: 100%; padding: 12px; border: none; border-radius: 14px;
-    font-size: 13px; font-weight: 600; cursor: pointer;
-    background: rgba(214,48,96,0.08); color: var(--rose);
-    border: 1px solid rgba(214,48,96,0.12);
-  }
+  .upload-btn svg { width: 14px; height: 14px; }
+  .upload-hint { font-size: 10px; color: #999; font-weight: 500; }
 
+  /* Validation summary */
+  .validation-row {
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+  .valid-chip {
+    font-size: 9px; font-weight: 600; padding: 3px 8px; border-radius: 6px;
+    display: flex; align-items: center; gap: 3px;
+  }
+  .valid-ok { color: var(--mint); background: rgba(13,158,95,0.06); }
+  .valid-warn { color: #e09000; background: rgba(224,144,0,0.06); }
+  .valid-err { color: var(--rose); background: rgba(214,48,96,0.06); }
+
+  /* Roster rows */
+  .roster-row {
+    display: flex; align-items: center; padding: 8px 10px; border-radius: 10px;
+    gap: 8px; background: #f7f8fb; border: 1px solid var(--card-border);
+  }
+  .roster-row + .roster-row { margin-top: 3px; }
+  .roster-avatar {
+    width: 28px; height: 28px; border-radius: 50%; display: flex;
+    align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  .roster-info { flex: 1; min-width: 0; }
+  .roster-name { font-size: 11px; font-weight: 600; color: #1a1a2e; }
+  .roster-team { font-size: 9px; color: #888; font-weight: 500; }
+
+  /* Bottom Nav */
   .bottom-nav {
     position: absolute; bottom: 0; left: 0; right: 0;
-    display: flex; justify-content: space-around; padding: 6px 0 30px;
-    background: #fff;
+    display: flex; justify-content: space-around;
+    padding: 8px 8px 30px; background: #fff;
     border-top: 1px solid rgba(0,0,0,0.06);
   }
-  .nav-item { text-align: center; font-size: 11px; color: #8e8e93; display: flex; flex-direction: column; align-items: center; gap: 2px; font-weight: 500; }
-  .nav-item.active { color: var(--mi); }
-  .nav-item .nav-icon { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; }
-  .nav-active-pill { width: 36px; height: 3px; border-radius: 2px; background: var(--mi); margin-top: 1px; }
+  .nav-item {
+    text-align: center; font-size: 10px; color: #8e8e93;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 3px; font-weight: 500;
+  }
+  .nav-item.active { color: var(--mi); font-weight: 600; }
+  .bottom-nav a { text-decoration: none; }
+  .nav-icon {
+    width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .nav-item.active .nav-icon { background: rgba(0,75,160,0.08); border-radius: 7px; }
+
+  /* Squad Detail Bottom Sheet — inside phone-frame */
+  .squad-overlay {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(3px); z-index: 50;
+    opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+  }
+  .squad-overlay.open { opacity: 1; pointer-events: all; }
+
+  .squad-sheet {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: #fff; border-radius: 22px 22px 0 0; z-index: 51;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    max-height: 82%; overflow: hidden;
+    box-shadow: 0 -6px 30px rgba(0,0,0,0.15);
+  }
+  .squad-sheet.open { transform: translateY(0); }
+
+  .squad-handle { width: 36px; height: 4px; background: #ddd; border-radius: 2px; margin: 10px auto 0; }
+
+  .squad-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px 6px;
+  }
+  .squad-header-info {}
+  .squad-manager-name { font-size: 15px; font-weight: 800; color: #1a1a2e; }
+  .squad-team-name { font-size: 11px; color: #888; font-weight: 500; margin-top: 1px; }
+  .squad-close {
+    width: 28px; height: 28px; border-radius: 50%; background: #f2f3f8;
+    border: none; cursor: pointer; font-size: 14px; color: #999;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    font-family: inherit;
+  }
+
+  .squad-count {
+    font-size: 10px; font-weight: 600; color: #888; padding: 0 16px 8px;
+  }
+
+  .squad-scroll {
+    overflow-y: auto; max-height: 520px; padding: 0 12px 24px;
+    scrollbar-width: none;
+  }
+  .squad-scroll::-webkit-scrollbar { display: none; }
+
+  .squad-player {
+    display: flex; align-items: center; padding: 8px 10px; gap: 8px;
+    border-radius: 10px; background: #f7f8fb; border: 1px solid var(--card-border);
+  }
+  .squad-player + .squad-player { margin-top: 3px; }
+
+  .squad-role-icon {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 800; flex-shrink: 0;
+  }
+  .squad-role-icon.bat { background: rgba(249,205,5,0.15); color: #9a7d00; }
+  .squad-role-icon.bowl { background: rgba(0,75,160,0.12); color: var(--mi); }
+  .squad-role-icon.all { background: rgba(14,177,162,0.12); color: #0a7a65; }
+  .squad-role-icon.wk { background: rgba(234,26,133,0.1); color: #c0186e; }
+
+  .squad-player-info { flex: 1; min-width: 0; }
+  .squad-player-name { font-size: 12px; font-weight: 600; color: #1a1a2e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .squad-player-team { font-size: 9px; color: #888; font-weight: 500; margin-top: 1px; }
 </style>
 </head>
 <body>
-<div style="text-align: center; padding: 24px 16px 8px;">
-  <h2 style="font-size: 20px; font-weight: 700; color: #1a1a2e; letter-spacing: -0.5px;">Screen 4 of 6: League Admin</h2>
-  <p style="color: #555; font-size: 13px; margin-top: 4px;">Create league, manage teams, upload rosters</p>
-</div>
 
 <div class="phone-frame">
-  <div class="status-bar"><span>9:41</span><span style="color: rgba(255,255,255,0.6);">●●● WiFi 🔋</span></div>
+  <div class="status-bar">
+    <span>9:41</span>
+    <span style="font-size: 11px;">●●● WiFi 🔋</span>
+  </div>
   <div class="dynamic-island"></div>
 
   <div class="scroll-area">
-    <!-- Gradient Hero Header -->
-    <div class="hero-header">
-      <div class="hero-top">
-        <div class="hero-logo">FAL</div>
-        <div class="hero-page-title">League</div>
+    <!-- Compact Hero -->
+    <div class="hero">
+      <div class="hero-header">
+        <div class="logo">FAL</div>
+        <div class="page-title">League Admin</div>
       </div>
-      <div class="league-big-name">Weekend Warriors</div>
+      <div class="league-overview">
+        <div class="league-name">Weekend Warriors</div>
+        <div class="status-badge status-active">Active</div>
+      </div>
       <div class="league-meta">
-        <div class="meta-chip">IPL 2026</div>
-        <div class="meta-chip">6 Managers</div>
-        <div class="meta-chip">Squad: 15</div>
-        <div class="meta-chip">GW 7 Active</div>
+        <span>
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          6 / 15 Managers
+        </span>
+        <span>
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          FAL-WW-2026
+        </span>
       </div>
     </div>
 
     <div class="content">
       <!-- Invite Code -->
-      <div class="invite-card">
-        <div>
-          <div class="invite-label">Invite Code</div>
-          <div class="invite-code">WW-7K3X</div>
+      <div class="invite-row">
+        <div class="invite-left">
+          <div>
+            <div class="invite-label">Invite Code</div>
+            <div class="invite-code">FAL-WW-2026</div>
+          </div>
         </div>
-        <button class="copy-btn">Copy</button>
+        <button class="copy-btn" onclick="copyCode()">Copy</button>
       </div>
 
-      <!-- Managers -->
+      <!-- Manager Management -->
       <div class="card">
-        <div class="section-title">Managers</div>
-
-        <div class="manager-row">
-          <div class="manager-avatar" style="background: linear-gradient(135deg, var(--csk), var(--srh));">VS</div>
-          <div class="manager-info">
-            <div class="manager-name">Viiveek <span class="admin-badge">ADMIN</span></div>
-            <div class="manager-role">You</div>
-          </div>
-          <div class="manager-squad">15/15</div>
+        <div class="section-header">
+          <div class="section-title">Managers</div>
+          <div style="font-size: 10px; color: #999; font-weight: 600;">6 / 15</div>
         </div>
 
+        <!-- You (Admin) -->
+        <div class="manager-row you-row">
+          <div class="manager-avatar" style="background: linear-gradient(135deg, var(--csk), var(--srh));">VS</div>
+          <div class="manager-info">
+            <div class="manager-name-row">
+              <div class="manager-name">You</div>
+              <div class="admin-badge">ADMIN</div>
+            </div>
+            <div class="manager-team">Viiveek's XI</div>
+          </div>
+          <div class="roster-badge roster-complete">15/15 ✓</div>
+          <button class="edit-btn">Edit</button>
+        </div>
+
+        <!-- Rahul -->
         <div class="manager-row">
           <div class="manager-avatar" style="background: linear-gradient(135deg, var(--mi), var(--dc));">RA</div>
           <div class="manager-info">
             <div class="manager-name">Rahul</div>
-            <div class="manager-role">Joined Mar 2</div>
+            <div class="manager-team">Mumbai Mavericks</div>
           </div>
-          <div class="manager-squad">15/15</div>
-          <button class="remove-btn">✕</button>
+          <div class="roster-badge roster-complete">15/15 ✓</div>
+          <button class="edit-btn">Edit</button>
+          <button class="remove-btn"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
         </div>
 
+        <!-- Priya -->
         <div class="manager-row">
           <div class="manager-avatar" style="background: linear-gradient(135deg, var(--gt-teal), #088a7e);">PR</div>
           <div class="manager-info">
             <div class="manager-name">Priya</div>
-            <div class="manager-role">Joined Mar 3</div>
+            <div class="manager-team">Royal Strikers</div>
           </div>
-          <div class="manager-squad">15/15</div>
-          <button class="remove-btn">✕</button>
+          <div class="roster-badge roster-complete">15/15 ✓</div>
+          <button class="edit-btn">Edit</button>
+          <button class="remove-btn"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
         </div>
 
+        <!-- Shaheel -->
         <div class="manager-row">
           <div class="manager-avatar" style="background: linear-gradient(135deg, var(--kkr), #5a3a8a);">SH</div>
           <div class="manager-info">
             <div class="manager-name">Shaheel</div>
-            <div class="manager-role">Joined Mar 3</div>
+            <div class="manager-team">Knight Riders FC</div>
           </div>
-          <div class="manager-squad">14/15</div>
-          <button class="remove-btn">✕</button>
+          <div class="roster-badge roster-complete">15/15 ✓</div>
+          <button class="edit-btn">Edit</button>
+          <button class="remove-btn"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
         </div>
 
+        <!-- Arjun (incomplete) -->
         <div class="manager-row">
-          <div class="manager-avatar" style="background: linear-gradient(135deg, var(--rr), #c4157a);">AM</div>
+          <div class="manager-avatar" style="background: linear-gradient(135deg, var(--rr), #c4157a);">AR</div>
           <div class="manager-info">
-            <div class="manager-name">Amit</div>
-            <div class="manager-role">Joined Mar 4</div>
+            <div class="manager-name">Arjun</div>
+            <div class="manager-team">Super Kings XI</div>
           </div>
-          <div class="manager-squad">13/15</div>
-          <button class="remove-btn">✕</button>
+          <div class="roster-badge roster-incomplete">12/15 !</div>
+          <button class="edit-btn">Edit</button>
+          <button class="remove-btn"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
         </div>
 
+        <!-- Deepak (not uploaded) -->
         <div class="manager-row">
-          <div class="manager-avatar" style="background: linear-gradient(135deg, var(--lsg), #009acc);">NK</div>
+          <div class="manager-avatar" style="background: linear-gradient(135deg, var(--lsg), #009acc);">DE</div>
           <div class="manager-info">
-            <div class="manager-name">Nikhil</div>
-            <div class="manager-role">Joined Mar 5</div>
+            <div class="manager-name">Deepak</div>
+            <div class="manager-team">Titan Warriors</div>
           </div>
-          <div class="manager-squad">12/15</div>
-          <button class="remove-btn">✕</button>
+          <div class="roster-badge roster-empty">0/15 ✗</div>
+          <button class="edit-btn">Edit</button>
+          <button class="remove-btn"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
         </div>
+
+        <button class="btn-add-manager">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Manager
+        </button>
       </div>
 
-      <!-- Team Roster Upload -->
+      <!-- Roster Management -->
       <div class="card">
-        <div class="section-title">Roster Upload</div>
-        <div class="upload-area">
-          <div class="upload-icon">📄</div>
-          <div class="upload-text">Upload roster CSV</div>
-          <div class="upload-hint">or assign players manually below</div>
+        <div class="section-header">
+          <div class="section-title">Roster Management</div>
+        </div>
+
+        <div class="upload-row">
+          <button class="upload-btn">
+            <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Upload Roster CSV
+          </button>
+          <div class="upload-hint">Bulk assign players</div>
+        </div>
+
+        <div class="validation-row">
+          <div class="valid-chip valid-ok">4 complete</div>
+          <div class="valid-chip valid-warn">1 incomplete</div>
+          <div class="valid-chip valid-err">1 not uploaded</div>
+          <div class="valid-chip valid-ok">No duplicates</div>
         </div>
       </div>
 
-      <!-- Team Assignments -->
-      <div class="card">
-        <div class="section-title">Team Rosters</div>
-        <div class="team-assign">
-          <div class="team-assign-info">
-            <div class="team-assign-avatar" style="background: linear-gradient(135deg, var(--csk), var(--srh));">VS</div>
-            <div class="team-assign-name">Viiveek</div>
-          </div>
-          <div class="player-count count-ok">15 ✓</div>
-        </div>
-        <div class="team-assign">
-          <div class="team-assign-info">
-            <div class="team-assign-avatar" style="background: linear-gradient(135deg, var(--mi), var(--dc));">RA</div>
-            <div class="team-assign-name">Rahul</div>
-          </div>
-          <div class="player-count count-ok">15 ✓</div>
-        </div>
-        <div class="team-assign">
-          <div class="team-assign-info">
-            <div class="team-assign-avatar" style="background: linear-gradient(135deg, var(--gt-teal), #088a7e);">PR</div>
-            <div class="team-assign-name">Priya</div>
-          </div>
-          <div class="player-count count-ok">15 ✓</div>
-        </div>
-        <div class="team-assign">
-          <div class="team-assign-info">
-            <div class="team-assign-avatar" style="background: linear-gradient(135deg, var(--kkr), #5a3a8a);">SH</div>
-            <div class="team-assign-name">Shaheel</div>
-          </div>
-          <div class="player-count count-low">14 !</div>
-        </div>
-        <div class="team-assign">
-          <div class="team-assign-info">
-            <div class="team-assign-avatar" style="background: linear-gradient(135deg, var(--rr), #c4157a);">AM</div>
-            <div class="team-assign-name">Amit</div>
-          </div>
-          <div class="player-count count-low">13 !</div>
-        </div>
-        <div class="team-assign">
-          <div class="team-assign-info">
-            <div class="team-assign-avatar" style="background: linear-gradient(135deg, var(--lsg), #009acc);">NK</div>
-            <div class="team-assign-name">Nikhil</div>
-          </div>
-          <div class="player-count count-low">12 !</div>
+      <div style="height: 30px;"></div>
+    </div>
+  </div>
+
+  <!-- Squad Detail Bottom Sheet -->
+  <div class="squad-overlay" id="squadOverlay" onclick="closeSquad()"></div>
+  <div class="squad-sheet" id="squadSheet">
+    <div class="squad-handle"></div>
+    <div class="squad-header">
+      <div class="squad-header-info">
+        <div class="squad-manager-name" id="squadManagerName">Rahul</div>
+        <div class="squad-team-name" id="squadTeamName">Mumbai Mavericks</div>
+      </div>
+      <button class="squad-close" onclick="closeSquad()">✕</button>
+    </div>
+    <div class="squad-count">15 players</div>
+    <div class="squad-scroll">
+      <div class="squad-player">
+        <div class="squad-role-icon bat">BAT</div>
+        <div class="squad-player-info">
+          <div class="squad-player-name">Rohit Sharma</div>
+          <div class="squad-player-team">MI</div>
         </div>
       </div>
-
-      <!-- Settings -->
-      <div class="card">
-        <div class="section-title">League Settings</div>
-        <div class="setting-row">
-          <div class="setting-label">Squad Size</div>
-          <div class="setting-value">15</div>
-        </div>
-        <div class="setting-row">
-          <div class="setting-label">Max Managers</div>
-          <div class="setting-value">15</div>
-        </div>
-        <div class="setting-row">
-          <div class="setting-label">Season</div>
-          <div class="setting-value">IPL 2026</div>
-        </div>
-        <div class="setting-row">
-          <div class="setting-label">Gameweek</div>
-          <div class="setting-value">Mon – Sun</div>
+      <div class="squad-player">
+        <div class="squad-role-icon bat">BAT</div>
+        <div class="squad-player-info">
+          <div class="squad-player-name">Shubman Gill</div>
+          <div class="squad-player-team">GT</div>
         </div>
       </div>
-
-      <!-- Actions -->
-      <div style="display: flex; flex-direction: column; gap: 8px;">
-        <button class="btn-action">Start Season</button>
-        <button class="btn-danger">Delete League</button>
+      <div class="squad-player">
+        <div class="squad-role-icon bat">BAT</div>
+        <div class="squad-player-info">
+          <div class="squad-player-name">Virat Kohli</div>
+          <div class="squad-player-team">RCB</div>
+        </div>
       </div>
-
-      <div style="height: 40px;"></div>
+      <div class="squad-player">
+        <div class="squad-role-icon bat">BAT</div>
+        <div class="squad-player-info">
+          <div class="squad-player-name">Suryakumar Yadav</div>
+          <div class="squad-player-team">MI</div>
+        </div>
+      </div>
+      <div class="squad-player">
+        <div class="squad-role-icon wk">WK</div>
+        <div class="squad-player-info">
+          <div class="squad-player-name">Rishabh Pant</div>
+          <div class="squad-player-team">DC</div>
+        </div>
+      </div>
+      <div class="squad-player">
+        <div class="squad-role-icon wk">WK</div>
+        <div class="squad-player-info">
+          <div class="squad-player-name">KL Rahul</div>
+          <div class="squad-player-team">LSG</div>
+        </div>
+      </div>
+      <div class="squad-player">
+        <div class="squad-role-icon all">ALL</div>
+        <div class="squad-player-info">
+          <div class="squad-player-name">Hardik Pandya</div>
+          <div class="squad-player-team">MI</div>
+        </div>
+      </div>
+      <div class="squad-player">
+        <div class="squad-role-icon all">ALL</div>
+        <div class="squad-player-info">
+          <div class="squad-player-name">Ravindra Jadeja</div>
+          <div class="squad-player-team">CSK</div>
+        </div>
+      </div>
+      <div class="squad-player">
+        <div class="squad-role-icon all">ALL</div>
+        <div class="squad-player-info">
+          <div class="squad-player-name">Marcus Stoinis</div>
+          <div class="squad-player-team">LSG</div>
+        </div>
+      </div>
+      <div class="squad-player">
+        <div class="squad-role-icon bowl">BOWL</div>
+        <div class="squad-player-info">
+          <div class="squad-player-name">Jasprit Bumrah</div>
+          <div class="squad-player-team">MI</div>
+        </div>
+      </div>
+      <div class="squad-player">
+        <div class="squad-role-icon bowl">BOWL</div>
+        <div class="squad-player-info">
+          <div class="squad-player-name">Yuzvendra Chahal</div>
+          <div class="squad-player-team">RR</div>
+        </div>
+      </div>
+      <div class="squad-player">
+        <div class="squad-role-icon bowl">BOWL</div>
+        <div class="squad-player-info">
+          <div class="squad-player-name">Mohammed Siraj</div>
+          <div class="squad-player-team">RCB</div>
+        </div>
+      </div>
+      <div class="squad-player">
+        <div class="squad-role-icon bowl">BOWL</div>
+        <div class="squad-player-info">
+          <div class="squad-player-name">Rashid Khan</div>
+          <div class="squad-player-team">GT</div>
+        </div>
+      </div>
+      <div class="squad-player">
+        <div class="squad-role-icon bat">BAT</div>
+        <div class="squad-player-info">
+          <div class="squad-player-name">Devon Conway</div>
+          <div class="squad-player-team">CSK</div>
+        </div>
+      </div>
+      <div class="squad-player">
+        <div class="squad-role-icon bowl">BOWL</div>
+        <div class="squad-player-info">
+          <div class="squad-player-name">Trent Boult</div>
+          <div class="squad-player-team">RR</div>
+        </div>
+      </div>
     </div>
   </div>
 
   <div class="bottom-nav">
-    <div class="nav-item">
-      <div class="nav-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+    <a href="/" class="nav-item">
+      <div class="nav-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
       Home
-    </div>
-    <div class="nav-item">
-      <div class="nav-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div>
+    </a>
+    <a href="/lineup" class="nav-item">
+      <div class="nav-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div>
       Lineup
-    </div>
-    <div class="nav-item">
-      <div class="nav-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-      Board
-    </div>
-    <div class="nav-item">
-      <div class="nav-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+    </a>
+    <a href="/players" class="nav-item">
+      <div class="nav-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
       Players
-    </div>
-    <div class="nav-item active">
-      <div class="nav-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
-      <div class="nav-active-pill"></div>
+    </a>
+    <a href="/admin" class="nav-item active">
+      <div class="nav-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
       League
-    </div>
+    </a>
   </div>
 </div>
+
+<script>
+function copyCode() {
+  const btn = document.querySelector('.copy-btn');
+  navigator.clipboard?.writeText('FAL-WW-2026');
+  btn.textContent = 'Copied!';
+  setTimeout(() => btn.textContent = 'Copy', 1500);
+}
+
+function openSquad(managerName, teamName) {
+  document.getElementById('squadManagerName').textContent = managerName;
+  document.getElementById('squadTeamName').textContent = teamName;
+  document.getElementById('squadOverlay').classList.add('open');
+  document.getElementById('squadSheet').classList.add('open');
+}
+function closeSquad() {
+  document.getElementById('squadOverlay').classList.remove('open');
+  document.getElementById('squadSheet').classList.remove('open');
+}
+
+// Wire up all Edit buttons
+document.querySelectorAll('.edit-btn').forEach(btn => {
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    const row = this.closest('.manager-row');
+    const name = row.querySelector('.manager-name').textContent;
+    const team = row.querySelector('.manager-team').textContent;
+    openSquad(name === 'You' ? 'Viiveek' : name, team);
+  });
+});
+</script>
+
 </body>
 </html>

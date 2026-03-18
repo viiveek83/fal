@@ -172,7 +172,139 @@
     width: 36px; height: 3px; border-radius: 2px;
     background: var(--mi);
   }
+  .nav-item { text-decoration: none; }
+  .bottom-nav a { text-decoration: none; }
   .nav-icon { line-height: 1; }
+
+  /* My/All toggle */
+  .ownership-toggle {
+    display: flex; margin: 0 16px 8px; background: rgba(255,255,255,0.1);
+    border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); overflow: hidden;
+  }
+  .ownership-btn {
+    flex: 1; padding: 7px; text-align: center; font-size: 11px; font-weight: 600;
+    color: rgba(255,255,255,0.5); cursor: pointer; transition: all 0.2s;
+  }
+  .ownership-btn.active {
+    background: rgba(255,255,255,0.2); color: #fff;
+    border-radius: 8px; margin: 2px;
+  }
+
+  /* Price on player card */
+  .player-price {
+    font-size: 10px; font-weight: 700; color: var(--mint);
+    margin-top: 2px;
+  }
+  .player-price.base { color: #aaa; }
+
+  /* Player Detail Modal — INSIDE phone-frame */
+  .pm-overlay {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(3px); z-index: 50;
+    opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+  }
+  .pm-overlay.open { opacity: 1; pointer-events: all; }
+
+  .pm-sheet {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: #fff; border-radius: 22px 22px 0 0; z-index: 51;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    max-height: 82%; overflow: hidden;
+    box-shadow: 0 -6px 30px rgba(0,0,0,0.15);
+  }
+  .pm-sheet.open { transform: translateY(0); }
+
+  .pm-handle { width: 36px; height: 4px; background: #ddd; border-radius: 2px; margin: 10px auto 0; }
+
+  .pm-header {
+    display: flex; align-items: center; gap: 10px; padding: 10px 16px 8px;
+  }
+  .pm-role-icon {
+    width: 34px; height: 34px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800;
+  }
+  .pm-role-icon.bat { background: linear-gradient(135deg, #F9CD05, #e0b800); color: #1a1a1a; }
+  .pm-role-icon.bowl { background: linear-gradient(135deg, #004BA0, #0066cc); color: #fff; }
+  .pm-role-icon.all { background: linear-gradient(135deg, #0EB1A2, #089e90); color: #fff; }
+  .pm-role-icon.wk { background: linear-gradient(135deg, #EA1A85, #c4166e); color: #fff; }
+  .pm-info { flex: 1; }
+  .pm-name { font-size: 15px; font-weight: 800; color: #1a1a2e; }
+  .pm-team { font-size: 10px; color: #888; font-weight: 500; }
+  .pm-pts {
+    font-size: 24px; font-weight: 800; color: var(--mi);
+    font-variant-numeric: tabular-nums; letter-spacing: -1px;
+  }
+  .pm-close {
+    position: absolute; top: 12px; right: 14px;
+    width: 28px; height: 28px; border-radius: 50%; background: #f2f3f8;
+    border: none; cursor: pointer; font-size: 14px; color: #999;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .pm-tabs {
+    display: flex; padding: 0 16px; border-bottom: 1px solid #f0f0f4;
+  }
+  .pm-tab {
+    padding: 7px 12px; font-size: 10px; font-weight: 600; color: #aaa;
+    cursor: pointer; border-bottom: 2px solid transparent;
+  }
+  .pm-tab.active { color: var(--mi); border-bottom-color: var(--mi); }
+
+  .pm-scroll {
+    overflow-y: auto; max-height: 480px; padding: 4px 0 24px;
+    scrollbar-width: none;
+  }
+  .pm-scroll::-webkit-scrollbar { display: none; }
+
+  .pm-section { padding: 8px 16px; }
+  .pm-section + .pm-section { border-top: 1px solid #f5f5f8; }
+  .pm-section-title {
+    font-size: 9px; font-weight: 700; color: #aaa;
+    text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px;
+  }
+  .pm-stat-grid { display: flex; gap: 4px; }
+  .pm-stat-cell {
+    flex: 1; text-align: center; padding: 6px 3px;
+    background: #f7f8fb; border-radius: 8px;
+  }
+  .pm-stat-val { font-size: 14px; font-weight: 800; color: #222; font-variant-numeric: tabular-nums; }
+  .pm-stat-label { font-size: 8px; color: #aaa; font-weight: 500; margin-top: 1px; }
+
+  .pm-pt-list { display: flex; flex-direction: column; }
+  .pm-pt-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 11px; }
+  .pm-pt-event { color: #666; font-weight: 500; }
+  .pm-pt-val { color: #333; font-weight: 700; }
+  .pm-pt-val.accent { color: var(--mint); }
+  .pm-pt-total {
+    border-top: 2px solid #1a1a2e; margin-top: 4px; padding-top: 6px;
+  }
+  .pm-pt-total .pm-pt-event { font-weight: 800; color: #1a1a2e; }
+  .pm-pt-total .pm-pt-val { font-size: 14px; font-weight: 800; color: #1a1a2e; }
+
+  .pm-trend-bar { display: flex; align-items: flex-end; gap: 6px; height: 60px; padding: 0 8px; }
+  .pm-bar {
+    flex: 1; background: #e8eaf0; border-radius: 5px 5px 0 0;
+    position: relative; min-height: 6px;
+  }
+  .pm-bar span {
+    position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+    font-size: 8px; font-weight: 700; color: #999;
+  }
+  .pm-bar.hot { background: rgba(0,75,160,0.2); }
+  .pm-bar.current { background: var(--mi); }
+  .pm-bar.current span { color: var(--mi); font-size: 9px; }
+  .pm-trend-labels {
+    display: flex; justify-content: space-around; padding: 3px 8px 0;
+    font-size: 8px; color: #bbb; font-weight: 500;
+  }
+  .pm-trend-tag {
+    text-align: center; margin-top: 6px; font-size: 10px; font-weight: 700;
+    color: var(--mint); background: rgba(13,158,95,0.08);
+    padding: 3px 10px; border-radius: 6px; display: inline-block;
+  }
+  .pm-trend { text-align: center; }
 </style>
 </head>
 <body>
@@ -198,6 +330,13 @@
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       </div>
       <input class="search-input" placeholder="Search players..." />
+    </div>
+
+    <!-- My / All Players toggle -->
+    <div class="ownership-toggle">
+      <div class="ownership-btn active">All Players</div>
+      <div class="ownership-btn">My Team</div>
+      <div class="ownership-btn">Available</div>
     </div>
 
     <!-- Role filters on gradient -->
@@ -249,6 +388,7 @@
             <div class="pts-label">season pts</div>
           </div>
           <div class="owned-badge owned-you">YOUR TEAM</div>
+          <div class="player-price">$8.2M</div>
         </div>
 
         <div class="player-card">
@@ -271,6 +411,7 @@
             <div class="pts-label">season pts</div>
           </div>
           <div class="owned-badge owned-other">Rahul</div>
+          <div class="player-price">$9.5M</div>
         </div>
 
         <div class="player-card">
@@ -293,6 +434,7 @@
             <div class="pts-label">season pts</div>
           </div>
           <div class="owned-badge owned-you">YOUR TEAM</div>
+          <div class="player-price">$7.5M</div>
         </div>
 
         <div class="player-card">
@@ -315,6 +457,7 @@
             <div class="pts-label">season pts</div>
           </div>
           <div class="owned-badge owned-you">YOUR TEAM</div>
+          <div class="player-price">$6.8M</div>
         </div>
 
         <div class="player-card">
@@ -337,6 +480,7 @@
             <div class="pts-label">season pts</div>
           </div>
           <div class="owned-badge owned-other">Priya</div>
+          <div class="player-price">$5.2M</div>
         </div>
 
         <div class="player-card">
@@ -359,6 +503,7 @@
             <div class="pts-label">season pts</div>
           </div>
           <div class="owned-badge owned-other">Shaheel</div>
+          <div class="player-price">$4.5M</div>
         </div>
 
         <div class="player-card">
@@ -382,6 +527,76 @@
           </div>
           <div class="owned-badge owned-other">Amit</div>
         </div>
+
+        <!-- Unsold / Available Players -->
+        <div class="player-card">
+          <div class="team-accent" style="background: var(--mi);"></div>
+          <div class="avatar" style="background: linear-gradient(135deg, var(--mi), #0066cc);">SA</div>
+          <div class="info">
+            <div class="name">Suryakumar Yadav</div>
+            <div class="meta">
+              <span class="role-badge role-bat">BAT</span>
+              <span class="team-name" style="color: var(--mi);">MI</span>
+            </div>
+            <div class="mini-stats">
+              <div class="mini-stat">Runs: <span>275</span></div>
+              <div class="mini-stat">SR: <span>155</span></div>
+              <div class="mini-stat">Avg: <span>48</span>/gw</div>
+            </div>
+          </div>
+          <div class="stats">
+            <div class="total-pts">340</div>
+            <div class="pts-label">season pts</div>
+          </div>
+          <div class="owned-badge" style="background: rgba(224,144,0,0.1); color: #d48900;">AVAILABLE</div>
+          <div class="player-price base">Base $1M</div>
+        </div>
+
+        <div class="player-card">
+          <div class="team-accent" style="background: var(--mi);"></div>
+          <div class="avatar" style="background: linear-gradient(135deg, var(--mi), #0066cc);">DS</div>
+          <div class="info">
+            <div class="name">Dewald Brevis</div>
+            <div class="meta">
+              <span class="role-badge role-bat">BAT</span>
+              <span class="team-name" style="color: var(--mi);">MI</span>
+            </div>
+            <div class="mini-stats">
+              <div class="mini-stat">Runs: <span>160</span></div>
+              <div class="mini-stat">SR: <span>162</span></div>
+              <div class="mini-stat">Avg: <span>30</span>/gw</div>
+            </div>
+          </div>
+          <div class="stats">
+            <div class="total-pts">210</div>
+            <div class="pts-label">season pts</div>
+          </div>
+          <div class="owned-badge" style="background: rgba(224,144,0,0.1); color: #d48900;">AVAILABLE</div>
+          <div class="player-price base">Base $1M</div>
+        </div>
+
+        <div class="player-card">
+          <div class="team-accent" style="background: var(--mi);"></div>
+          <div class="avatar" style="background: linear-gradient(135deg, var(--mi), #0066cc);">KP</div>
+          <div class="info">
+            <div class="name">Kumar Kartikeya</div>
+            <div class="meta">
+              <span class="role-badge role-bowl">BOWL</span>
+              <span class="team-name" style="color: var(--mi);">MI</span>
+            </div>
+            <div class="mini-stats">
+              <div class="mini-stat">Wkts: <span>7</span></div>
+              <div class="mini-stat">Econ: <span>8.1</span></div>
+              <div class="mini-stat">Avg: <span>22</span>/gw</div>
+            </div>
+          </div>
+          <div class="stats">
+            <div class="total-pts">155</div>
+            <div class="pts-label">season pts</div>
+          </div>
+          <div class="owned-badge" style="background: rgba(224,144,0,0.1); color: #d48900;">AVAILABLE</div>
+          <div class="player-price base">Base $1M</div>
+        </div>
       </div>
 
       <div style="height: 40px;"></div>
@@ -390,28 +605,155 @@
 
   <!-- Bottom nav - white bg, SVG icons, Players active -->
   <div class="bottom-nav">
-    <div class="nav-item">
+    <a href="/" class="nav-item">
       <div class="nav-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
       Home
-    </div>
-    <div class="nav-item">
+    </a>
+    <a href="/lineup" class="nav-item">
       <div class="nav-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div>
       Lineup
-    </div>
-    <div class="nav-item">
+    </a>
+    <a class="nav-item">
       <div class="nav-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
       Board
-    </div>
-    <div class="nav-item active">
+    </a>
+    <a href="/players" class="nav-item active">
       <div class="nav-pill"></div>
       <div class="nav-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
       Players
-    </div>
-    <div class="nav-item">
+    </a>
+    <a href="/admin" class="nav-item">
       <div class="nav-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
       League
+    </a>
+  </div>
+
+  <!-- Player Detail Modal (inside phone-frame) -->
+  <div class="pm-overlay" id="pmOverlay" onclick="closePlayer()"></div>
+  <div class="pm-sheet" id="pmSheet">
+    <div class="pm-handle"></div>
+    <div class="pm-header">
+      <div class="pm-role-icon bowl">BO</div>
+      <div class="pm-info">
+        <div class="pm-name">J Bumrah</div>
+        <div class="pm-team">MI · Bowler · $8.2M</div>
+      </div>
+      <div class="pm-pts">504</div>
+      <button class="pm-close" onclick="closePlayer()">✕</button>
+    </div>
+
+    <div class="pm-tabs">
+      <div class="pm-tab active">GW7</div>
+      <div class="pm-tab">GW6</div>
+      <div class="pm-tab">GW5</div>
+      <div class="pm-tab">Season</div>
+    </div>
+
+    <div class="pm-scroll">
+      <div class="pm-section">
+        <div class="pm-section-title">Bowling</div>
+        <div class="pm-stat-grid">
+          <div class="pm-stat-cell">
+            <div class="pm-stat-val">3</div>
+            <div class="pm-stat-label">Wkts</div>
+          </div>
+          <div class="pm-stat-cell">
+            <div class="pm-stat-val">4.0</div>
+            <div class="pm-stat-label">Overs</div>
+          </div>
+          <div class="pm-stat-cell">
+            <div class="pm-stat-val">24</div>
+            <div class="pm-stat-label">Runs</div>
+          </div>
+          <div class="pm-stat-cell">
+            <div class="pm-stat-val">1</div>
+            <div class="pm-stat-label">Maiden</div>
+          </div>
+          <div class="pm-stat-cell">
+            <div class="pm-stat-val" style="color: var(--mint);">6.0</div>
+            <div class="pm-stat-label">Econ</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pm-section">
+        <div class="pm-section-title">Fielding</div>
+        <div class="pm-stat-grid">
+          <div class="pm-stat-cell">
+            <div class="pm-stat-val">1</div>
+            <div class="pm-stat-label">Catches</div>
+          </div>
+          <div class="pm-stat-cell">
+            <div class="pm-stat-val">0</div>
+            <div class="pm-stat-label">Runouts</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pm-section">
+        <div class="pm-section-title">Fantasy Points</div>
+        <div class="pm-pt-list">
+          <div class="pm-pt-row">
+            <span class="pm-pt-event">Wickets (3 × 25)</span>
+            <span class="pm-pt-val">+75</span>
+          </div>
+          <div class="pm-pt-row">
+            <span class="pm-pt-event">3-Wicket Bonus</span>
+            <span class="pm-pt-val accent">+8</span>
+          </div>
+          <div class="pm-pt-row">
+            <span class="pm-pt-event">Maiden Over</span>
+            <span class="pm-pt-val accent">+8</span>
+          </div>
+          <div class="pm-pt-row">
+            <span class="pm-pt-event">Catch (1 × 8)</span>
+            <span class="pm-pt-val">+8</span>
+          </div>
+          <div class="pm-pt-row">
+            <span class="pm-pt-event">Dot Balls (14 × 1)</span>
+            <span class="pm-pt-val">+14</span>
+          </div>
+          <div class="pm-pt-row pm-pt-total">
+            <span class="pm-pt-event">Total</span>
+            <span class="pm-pt-val">103</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pm-section">
+        <div class="pm-section-title">Recent Form</div>
+        <div class="pm-trend">
+          <div class="pm-trend-bar">
+            <div class="pm-bar" style="height: 55%;"><span>52</span></div>
+            <div class="pm-bar" style="height: 75%;"><span>68</span></div>
+            <div class="pm-bar" style="height: 40%;"><span>35</span></div>
+            <div class="pm-bar hot" style="height: 85%;"><span>78</span></div>
+            <div class="pm-bar current" style="height: 100%;"><span>103</span></div>
+          </div>
+          <div class="pm-trend-labels">
+            <span>GW3</span><span>GW4</span><span>GW5</span><span>GW6</span><span>GW7</span>
+          </div>
+          <div class="pm-trend-tag">▲ Trending Up</div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
+
+<script>
+function openPlayer() {
+  document.getElementById('pmOverlay').classList.add('open');
+  document.getElementById('pmSheet').classList.add('open');
+}
+function closePlayer() {
+  document.getElementById('pmOverlay').classList.remove('open');
+  document.getElementById('pmSheet').classList.remove('open');
+}
+// Tap any player card → open detail
+document.querySelectorAll('.player-card').forEach(card => {
+  card.style.cursor = 'pointer';
+  card.addEventListener('click', openPlayer);
+});
+</script>
 </body>
 </html>

@@ -257,53 +257,53 @@ Phase 1: Hybrid approach — admin triggers scoring on-demand after each match v
 Every screen has a subtle app bar: FAL logo (IPL gradient, 70% opacity) left, page title centered, league name right, with a faint IPL-colored gradient divider line.
 
 ### Bottom Navigation:
-5 tabs: Home, Lineup, Board, Players, League — with active tab indicator using CSK→SRH gradient bar.
+4 tabs: Home, Lineup, Players, League — active tab with MI blue indicator.
 
 ### Screen Designs:
 
-Interactive mockups are in `docs/superpowers/specs/mockups/` (HTML files).
+Interactive mockups are in `docs/superpowers/specs/mockups/` (HTML files). All screens are mobile-first (393px viewport) with Plus Jakarta Sans typography.
 
 ---
 
 #### 1. Dashboard
-Gameweek countdown, lineup status, mini leaderboard, GW recap with top scorers (IPL team color stripes), upcoming matches with team color gradients, chip tracker.
+Compact hero (~10% height) with league selector, GW score trio (tap points for detail), and deadline + Edit Lineup button. League standings promoted to top card with rank movement indicators (green ▲ / red ▼). Tap a manager to view their lineup. This Week's matches and chip tracker below. GW recap removed — replaced by tappable score → GW detail bottom sheet showing per-player breakdown with C/VC multipliers, chip effects, and bench subs.
 
 ![Dashboard](https://raw.githubusercontent.com/viiveek83/fal/feat/design-spec/docs/superpowers/specs/mockups/screenshots/01-dashboard.png)
 
 ---
 
 #### 2. Lineup Management
-Playing XI with IPL team color bars, Captain (CSK gold badge) and VC (KKR purple badge), bench section with priority ordering, chip selector, validation checklist, lock countdown.
+Cricket pitch-style layout with 2-4-5 batting order formation (openers, middle order, lower order/bowlers). Header reduced to ~10% (logo + title + deadline chip). Full Playing XI + bench visible without scrolling. Color-coded role icon circles (BAT gold, BOWL blue, ALL teal, WK pink) with player names in dark frosted glass pills. Captain (gold C badge) and Vice-Captain (silver VC badge) shown inline. Bench section below pitch with swap functionality — tap a bench player to substitute into XI. Save Lineup button with hero gradient.
 
 ![Lineup Management](https://raw.githubusercontent.com/viiveek83/fal/feat/design-spec/docs/superpowers/specs/mockups/screenshots/02-lineup.png)
 
 ---
 
-#### 3. Leaderboard
-Podium for top 3 (gold/blue/teal gradients), full rankings with avatars, position deltas, GW history bar chart.
+#### 3. Full Standings
+Dedicated standings table accessed via "Full Table →" from dashboard. GW selector tabs (scrollable), 10 manager rows with rank badges (gold/silver/bronze for top 3), GW points, total points, and rank movement indicators. User's row highlighted. Tap any manager → view their read-only lineup.
 
-![Leaderboard](https://raw.githubusercontent.com/viiveek83/fal/feat/design-spec/docs/superpowers/specs/mockups/screenshots/03-leaderboard.png)
+![Full Standings](https://raw.githubusercontent.com/viiveek83/fal/feat/design-spec/docs/superpowers/specs/mockups/screenshots/07-full-standings.png)
 
 ---
 
-#### 4. League Admin
-League info card, invite code with copy button, manager list with IPL-colored avatars, roster upload (CSV drag-drop), team roster status (complete/incomplete indicators), league settings.
+#### 4. View Lineup (Read-Only)
+Same pitch layout as Edit Lineup but read-only — no swap, no save button. Shows another manager's locked-in lineup with "Read Only" lock badge. Back arrow returns to standings. Accessed by tapping a manager in standings or dashboard.
+
+![View Lineup](https://raw.githubusercontent.com/viiveek83/fal/feat/design-spec/docs/superpowers/specs/mockups/screenshots/08-view-lineup.png)
+
+---
+
+#### 5. League Admin
+Reworked for Phase 1 simplicity. Compact hero with league name, manager count (6/15), active status badge, and invite code with copy button. Manager list with avatar initials, team names, roster status (15/15 ✓ complete, 12/15 ⚠ incomplete, 0/15 ✗ not uploaded), Edit and Remove actions. Admin badge on own row. Tap Edit → squad detail modal showing all 15 players. CSV upload button with validation summary (complete/incomplete/duplicate checks).
 
 ![League Admin](https://raw.githubusercontent.com/viiveek83/fal/feat/design-spec/docs/superpowers/specs/mockups/screenshots/04-league-admin.png)
 
 ---
 
-#### 5. Player Registry
-Search bar, role filter pills (BAT/BOWL/ALL/WK in role colors), IPL team filter chips, player cards with team accent bars, mini stats, season points, ownership badges.
+#### 6. Player Market
+Central marketplace view with My Team / All Players / Available filter toggle. Search bar + role filter pills (BAT/BOWL/ALL/WK) on gradient header. Team filter chips below. Player cards show: role badge, name, IPL team, mini stats, season points, owner abbreviation (YOUR TEAM / manager name / AVAILABLE), and pricing ($8.2M owned / Base $1M unsold). Tap any player → detail bottom sheet with batting/bowling/fielding stats, line-by-line fantasy points breakdown, GW tabs for historical performance, and trend chart with movement indicator.
 
-![Player Registry](https://raw.githubusercontent.com/viiveek83/fal/feat/design-spec/docs/superpowers/specs/mockups/screenshots/05-players.png)
-
----
-
-#### 6. Match Scores
-Match header with team colors, player scoring breakdowns (event-by-event with points), captain/VC multiplier display, bench substitution indicators, match point totals.
-
-![Match Scores](https://raw.githubusercontent.com/viiveek83/fal/feat/design-spec/docs/superpowers/specs/mockups/screenshots/06-match-scores.png)
+![Player Market](https://raw.githubusercontent.com/viiveek83/fal/feat/design-spec/docs/superpowers/specs/mockups/screenshots/05-players.png)
 
 ### Role Badge Colors:
 - BAT → CSK Yellow (#F9CD05)
