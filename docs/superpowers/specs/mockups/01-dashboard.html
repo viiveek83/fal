@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #111; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+
+  .phone-frame {
+    max-width: 393px; margin: 20px auto; background: #f2f3f8;
+    border-radius: 44px; border: 2.5px solid #d0d4e0; overflow: hidden;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.25);
+    position: relative; height: 852px;
+  }
+  .status-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 28px 6px; font-size: 12px; font-weight: 600; color: #fff;
+    background: transparent; position: relative; z-index: 2;
+  }
+  .dynamic-island {
+    width: 124px; height: 36px; background: #000; border-radius: 20px;
+    margin: 0 auto; position: relative; top: -2px; z-index: 2;
+  }
+  .scroll-area {
+    height: 720px; overflow-y: auto; padding-bottom: 90px; scrollbar-width: none;
+    margin-top: -56px;
+  }
+  .scroll-area::-webkit-scrollbar { display: none; }
+
+  :root {
+    --mi: #004BA0; --csk: #F9CD05; --rcb: #EC1C24; --kkr: #3A225D;
+    --dc: #004C93; --rr: #EA1A85; --srh: #FF822A; --gt-teal: #0EB1A2;
+    --lsg: #00AEEF; --pbks: #ED1B24;
+    --mint: #0d9e5f; --rose: #d63060;
+    --card-bg: #fff; --card-border: rgba(0,0,0,0.06);
+    --green-cta: #00ff87;
+  }
+
+  /* Hero — compact, ~30% screen */
+  .hero {
+    background: linear-gradient(160deg, #1a0a3e 0%, #2d1b69 25%, #004BA0 50%, #0EB1A2 80%, #00AEEF 100%);
+    padding: 64px 18px 14px; position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: ''; position: absolute; top: -30%; right: -20%;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(249,205,5,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 5px;
+  }
+  .hero .logo {
+    font-size: 17px; font-weight: 900; letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--csk), var(--srh));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero .league-name {
+    font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.55);
+    background: rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 8px;
+    backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .gw-label {
+    text-align: center; font-size: 10px; color: rgba(255,255,255,0.4);
+    font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2px;
+  }
+
+  /* Score Trio — compact */
+  .score-trio {
+    display: flex; align-items: flex-end; justify-content: center; margin-bottom: 8px;
+  }
+  .score-side { flex: 1; text-align: center; }
+  .score-side .val {
+    font-size: 20px; font-weight: 700; color: rgba(255,255,255,0.7);
+    font-variant-numeric: tabular-nums;
+  }
+  .score-side .label {
+    font-size: 9px; color: rgba(255,255,255,0.35); font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.8px; margin-top: 1px;
+  }
+  .score-center { flex: 1.3; text-align: center; position: relative; }
+  .score-center::before, .score-center::after {
+    content: ''; position: absolute; top: 10%; bottom: 20%;
+    width: 1px; background: rgba(255,255,255,0.1);
+  }
+  .score-center::before { left: 0; }
+  .score-center::after { right: 0; }
+  .score-center .val {
+    font-size: 32px; font-weight: 800; color: #fff;
+    letter-spacing: -1.5px; font-variant-numeric: tabular-nums; line-height: 1;
+    cursor: pointer;
+  }
+  .score-center .val:hover { text-decoration: underline; text-decoration-color: rgba(255,255,255,0.3); }
+  .score-center .label {
+    font-size: 10px; color: rgba(255,255,255,0.45); font-weight: 500; margin-top: 2px;
+  }
+  .score-center .tap-hint {
+    font-size: 8px; color: rgba(255,255,255,0.25); margin-top: 1px;
+  }
+
+  .hero-divider { height: 1px; background: rgba(255,255,255,0.08); margin: 6px 0; }
+
+  /* Deadline + actions row */
+  .hero-bottom {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  .deadline-compact {
+    flex: 1;
+  }
+  .deadline-compact .gw-next {
+    font-size: 10px; color: rgba(255,255,255,0.35); font-weight: 500;
+  }
+  .deadline-compact .deadline-text {
+    font-size: 12px; color: #fff; font-weight: 700;
+  }
+  .btn-edit-lineup {
+    padding: 9px 16px; border: none; border-radius: 12px;
+    background: linear-gradient(160deg, #1a0a3e 0%, #2d1b69 25%, #004BA0 50%, #0EB1A2 80%, #00AEEF 100%);
+    color: #fff; font-size: 13px; font-weight: 700; cursor: pointer;
+    font-family: inherit; position: relative; overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  .btn-edit-lineup::after {
+    content: ''; position: absolute; inset: 0;
+    background: rgba(255,255,255,0.15); pointer-events: none; z-index: 0;
+  }
+
+  /* Content */
+  .content { padding: 14px 14px 0; display: flex; flex-direction: column; gap: 10px; }
+  .card {
+    background: var(--card-bg); border: 1px solid var(--card-border);
+    border-radius: 16px; padding: 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  }
+  .section-header {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+  }
+  .section-title {
+    font-size: 13px; font-weight: 700; color: #1a1a2e; letter-spacing: -0.2px;
+  }
+  .section-link {
+    font-size: 11px; font-weight: 600; color: var(--mi); cursor: pointer;
+  }
+
+  /* Standings — promoted to top of content */
+  .standings-row {
+    display: flex; align-items: center; padding: 9px 10px;
+    border-radius: 10px; gap: 8px; font-size: 12.5px;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .standings-row:hover { background: rgba(0,75,160,0.03); }
+  .standings-row + .standings-row { margin-top: 2px; }
+  .standings-row.first { background: rgba(249,205,5,0.05); }
+  .standings-row.you {
+    background: rgba(0,75,160,0.04);
+    border: 1.5px solid rgba(0,75,160,0.1);
+  }
+  .rank {
+    width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+    border-radius: 7px; font-size: 10px; font-weight: 700;
+    background: #f2f3f8; color: #999;
+  }
+  .rank.gold { background: rgba(249,205,5,0.12); color: #b58800; }
+  .rank.silver { background: rgba(192,199,208,0.15); color: #777; }
+  .rank.bronze { background: rgba(205,127,50,0.1); color: #a0724a; }
+  .rank.you-rank { background: rgba(0,75,160,0.1); color: var(--mi); }
+  .standings-name { flex: 1; font-weight: 500; color: #555; }
+  .standings-name.you-name { color: #111; font-weight: 700; }
+  .standings-gw {
+    font-size: 11px; color: #999; font-weight: 500; font-variant-numeric: tabular-nums;
+    width: 36px; text-align: right;
+  }
+  .standings-pts { font-weight: 700; font-variant-numeric: tabular-nums; color: #333; width: 42px; text-align: right; }
+  .standings-pts.you-pts { color: var(--mi); }
+  .standings-delta {
+    font-size: 9px; font-weight: 700; width: 20px; text-align: center;
+  }
+  .delta-up { color: var(--mint); }
+  .delta-down { color: var(--rose); }
+  .delta-same { color: #ccc; }
+  .standings-header {
+    display: flex; padding: 0 10px 4px; font-size: 9px; font-weight: 600;
+    color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; gap: 8px;
+  }
+  .standings-header .sh-rank { width: 22px; }
+  .standings-header .sh-name { flex: 1; }
+  .standings-header .sh-delta { width: 20px; text-align: center; }
+  .standings-header .sh-gw { width: 36px; text-align: right; }
+  .standings-header .sh-total { width: 42px; text-align: right; }
+  .view-lineup-hint {
+    font-size: 9px; color: #bbb; text-align: center; margin-top: 6px;
+    font-weight: 500;
+  }
+
+  /* Matches */
+  .match-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 12px; background: #f7f8fb;
+    border-radius: 12px; border: 1px solid rgba(0,0,0,0.04);
+    position: relative; overflow: hidden;
+  }
+  .match-row + .match-row { margin-top: 4px; }
+  .match-row .team-gradient {
+    position: absolute; top: 0; left: 0; bottom: 0; width: 3px; border-radius: 3px 0 0 3px;
+  }
+  .match-info { padding-left: 6px; }
+  .match-teams-row {
+    display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600;
+  }
+  .team-dot {
+    width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+    box-shadow: 0 0 4px currentColor;
+  }
+  .vs-text { font-size: 9px; color: #aaa; font-weight: 500; }
+  .match-time { font-size: 10px; color: #999; margin-top: 2px; }
+  .match-day {
+    font-size: 9px; font-weight: 600; padding: 3px 8px;
+    border-radius: 6px; background: #eef0f5; color: #777;
+  }
+
+  /* Chips */
+  .chips-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+  .chip {
+    display: flex; align-items: center; gap: 7px;
+    padding: 9px 10px; background: #f7f8fb;
+    border: 1px solid rgba(0,0,0,0.04); border-radius: 12px;
+  }
+  .chip.available { border-color: rgba(13,158,95,0.12); }
+  .chip-icon {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; font-size: 13px;
+  }
+  .chip-icon.tc { background: rgba(236,28,36,0.08); }
+  .chip-icon.bb { background: rgba(13,158,95,0.08); }
+  .chip-icon.pb { background: rgba(0,75,160,0.08); }
+  .chip-icon.pba { background: rgba(249,205,5,0.1); }
+  .chip-icon.used { opacity: 0.3; }
+  .chip-info { flex: 1; }
+  .chip-name { font-weight: 600; font-size: 10.5px; color: #333; }
+  .chip-name.spent { color: #bbb; }
+  .chip-status { font-size: 8.5px; margin-top: 1px; font-weight: 600; }
+  .chip-status.avail { color: var(--mint); }
+  .chip-status.used-text { color: #ccc; }
+
+  /* Bottom Nav */
+  .bottom-nav {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    display: flex; justify-content: space-around;
+    padding: 8px 8px 30px; background: #fff;
+    border-top: 1px solid rgba(0,0,0,0.06);
+  }
+  .nav-item {
+    text-align: center; font-size: 10px; color: #8e8e93;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 3px; font-weight: 500;
+  }
+  .nav-item.active { color: var(--mi); font-weight: 600; }
+  .bottom-nav a { text-decoration: none; }
+  .nav-icon {
+    width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .nav-item.active .nav-icon { background: rgba(0,75,160,0.08); border-radius: 7px; }
+
+  /* ─── GW Detail Bottom Sheet ─── */
+  .sheet-overlay {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(3px); z-index: 50;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .sheet-overlay.open { opacity: 1; pointer-events: all; }
+
+  .sheet {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: #fff; border-radius: 24px 24px 0 0; z-index: 51;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    max-height: 88%; overflow: hidden;
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.15);
+  }
+  .sheet.open { transform: translateY(0); }
+
+  .sheet-handle {
+    width: 36px; height: 4px; background: #ddd; border-radius: 2px;
+    margin: 10px auto 0;
+  }
+  .sheet-header {
+    padding: 12px 18px 10px; position: relative;
+  }
+  .sheet-header .sheet-title {
+    font-size: 11px; font-weight: 600; color: #999; text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+  .sheet-header .sheet-total {
+    font-size: 34px; font-weight: 800; color: #1a1a2e; letter-spacing: -1.5px;
+    line-height: 1.1;
+  }
+  .sheet-header .sheet-total span {
+    font-size: 14px; font-weight: 500; color: #999; letter-spacing: 0;
+  }
+  .sheet-header .sheet-rank {
+    font-size: 12px; font-weight: 600; color: var(--mint);
+    margin-top: 2px;
+  }
+  .sheet-close {
+    position: absolute; top: 14px; right: 16px;
+    width: 30px; height: 30px; border-radius: 50%;
+    background: #f2f3f8; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; color: #999;
+  }
+
+  .sheet-chip-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 8px;
+    background: rgba(13,158,95,0.08); border: 1px solid rgba(13,158,95,0.12);
+    font-size: 10px; font-weight: 700; color: var(--mint);
+    margin-top: 6px;
+  }
+
+  .sheet-divider {
+    height: 1px; background: #f0f0f4; margin: 0 18px;
+  }
+
+  .sheet-scroll {
+    overflow-y: auto; max-height: calc(88vh - 130px); padding: 8px 0 30px;
+    scrollbar-width: none;
+  }
+  .sheet-scroll::-webkit-scrollbar { display: none; }
+
+  /* Match section within sheet */
+  .sheet-match-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 18px 6px; font-size: 11px; font-weight: 700;
+    color: #999; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .sheet-match-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+  }
+
+  /* Player row in sheet */
+  .sheet-player {
+    display: flex; align-items: center; padding: 8px 18px; gap: 8px;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .sheet-player:hover { background: #fafbfd; }
+  .sheet-player.benched { opacity: 0.5; }
+  .sheet-player.sub-in {
+    border-left: 2px solid var(--mint); margin-left: 16px; padding-left: 14px;
+  }
+
+  .sp-role-icon {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 800; color: #fff; flex-shrink: 0;
+  }
+  .sp-role-icon.bat { background: linear-gradient(135deg, #F9CD05, #e0b800); color: #1a1a1a; }
+  .sp-role-icon.bowl { background: linear-gradient(135deg, #004BA0, #0066cc); }
+  .sp-role-icon.all { background: linear-gradient(135deg, #0EB1A2, #089e90); }
+  .sp-role-icon.wk { background: linear-gradient(135deg, #EA1A85, #c4166e); }
+
+  .sp-info { flex: 1; min-width: 0; }
+  .sp-name {
+    font-size: 12px; font-weight: 600; color: #222;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .sp-tag {
+    font-size: 8px; font-weight: 700; padding: 1px 4px; border-radius: 3px;
+    line-height: 1.4;
+  }
+  .sp-tag.cap { background: #F9CD05; color: #1a1a1a; }
+  .sp-tag.vc { background: #C0C7D0; color: #1a1a1a; }
+  .sp-tag.sub { background: rgba(13,158,95,0.15); color: var(--mint); }
+  .sp-team {
+    font-size: 9.5px; color: #999; font-weight: 500; margin-top: 1px;
+  }
+
+  .sp-breakdown {
+    display: flex; gap: 3px; flex-shrink: 0;
+  }
+  .sp-stat {
+    font-size: 9px; color: #888; padding: 2px 5px; border-radius: 4px;
+    background: #f5f6fa; font-weight: 500; white-space: nowrap;
+  }
+
+  .sp-pts {
+    font-size: 14px; font-weight: 800; color: #1a1a2e;
+    width: 36px; text-align: right; flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .sp-pts.negative { color: var(--rose); }
+  .sp-pts.multiplied { color: var(--mi); }
+
+  .sp-multiplier {
+    font-size: 8px; color: var(--mi); font-weight: 700;
+    background: rgba(0,75,160,0.06); padding: 1px 4px; border-radius: 3px;
+    margin-left: 2px;
+  }
+
+  /* Bench section in sheet */
+  .sheet-bench-label {
+    padding: 8px 18px 4px; font-size: 10px; font-weight: 700;
+    color: #bbb; text-transform: uppercase; letter-spacing: 0.5px;
+    border-top: 1px dashed #eee; margin-top: 4px;
+  }
+
+  .sheet-summary {
+    margin: 10px 18px; padding: 10px 14px; border-radius: 12px;
+    background: #f7f8fb; border: 1px solid #eef0f5;
+    display: flex; justify-content: space-between;
+  }
+  .sheet-sum-item { text-align: center; }
+  .sheet-sum-item .ssv {
+    font-size: 14px; font-weight: 700; color: #333;
+  }
+  .sheet-sum-item .ssl {
+    font-size: 9px; color: #aaa; font-weight: 500; margin-top: 1px;
+  }
+</style>
+</head>
+<body>
+
+<div class="phone-frame">
+  <div class="status-bar">
+    <span>9:41</span>
+    <span style="font-size: 11px;">●●● WiFi 🔋</span>
+  </div>
+  <div class="dynamic-island"></div>
+
+  <div class="scroll-area">
+    <!-- Compact Hero ~28% screen -->
+    <div class="hero">
+      <div class="hero-header">
+        <div class="logo">FAL</div>
+        <div class="league-name">Weekend Warriors</div>
+      </div>
+
+      <div class="gw-label">Gameweek 7</div>
+
+      <div class="score-trio">
+        <div class="score-side">
+          <div class="val">612</div>
+          <div class="label">Average</div>
+        </div>
+        <div class="score-center">
+          <div class="val" title="Tap to view GW detail">788</div>
+          <div class="label">Your Points</div>
+          <div class="tap-hint">tap for detail</div>
+        </div>
+        <div class="score-side">
+          <div class="val">943</div>
+          <div class="label">Highest</div>
+        </div>
+      </div>
+
+      <div class="hero-divider"></div>
+
+      <div class="hero-bottom">
+        <div class="deadline-compact">
+          <div class="gw-next">GW8 Deadline</div>
+          <div class="deadline-text">Tue 17 Mar, 19:30</div>
+        </div>
+        <a href="/lineup" class="btn-edit-lineup" style="text-decoration:none;">Edit Lineup</a>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- League Standings — moved to top per feedback -->
+      <div class="card">
+        <div class="section-header">
+          <div class="section-title">League Standings</div>
+          <a href="/standings" class="section-link" style="text-decoration:none;">Full Table →</a>
+        </div>
+        <div class="standings-header">
+          <div class="sh-rank">#</div>
+          <div class="sh-name">Manager</div>
+          <div class="sh-delta"></div>
+          <div class="sh-gw">GW</div>
+          <div class="sh-total">Total</div>
+        </div>
+        <a href="/view-lineup" class="standings-row first" style="text-decoration:none;">
+          <div class="rank gold">1</div>
+          <div class="standings-name" style="color: #222; font-weight: 600;">Rahul</div>
+          <div class="standings-delta delta-up">▲2</div>
+          <div class="standings-gw">102</div>
+          <div class="standings-pts" style="color: #b58800;">3,240</div>
+        </a>
+        <div class="standings-row you">
+          <div class="rank you-rank">2</div>
+          <div class="standings-name you-name">You</div>
+          <div class="standings-delta delta-down">▼1</div>
+          <div class="standings-gw">88</div>
+          <div class="standings-pts you-pts">3,195</div>
+        </div>
+        <a href="/view-lineup" class="standings-row" style="text-decoration:none;">
+          <div class="rank silver">3</div>
+          <div class="standings-name">Priya</div>
+          <div class="standings-delta delta-same">—</div>
+          <div class="standings-gw">76</div>
+          <div class="standings-pts">3,110</div>
+        </a>
+        <a href="/view-lineup" class="standings-row" style="text-decoration:none;">
+          <div class="rank bronze">4</div>
+          <div class="standings-name">Shaheel</div>
+          <div class="standings-delta delta-up">▲1</div>
+          <div class="standings-gw">95</div>
+          <div class="standings-pts">2,980</div>
+        </a>
+        <a href="/view-lineup" class="standings-row" style="text-decoration:none;">
+          <div class="rank">5</div>
+          <div class="standings-name">Arjun</div>
+          <div class="standings-delta delta-down">▼2</div>
+          <div class="standings-gw">64</div>
+          <div class="standings-pts">2,870</div>
+        </a>
+        <a href="/view-lineup" class="standings-row" style="text-decoration:none;">
+          <div class="rank">6</div>
+          <div class="standings-name">Deepak</div>
+          <div class="standings-delta delta-same">—</div>
+          <div class="standings-gw">71</div>
+          <div class="standings-pts">2,750</div>
+        </a>
+        <div class="view-lineup-hint">Tap a manager to view their lineup</div>
+      </div>
+
+      <!-- This Week's Matches -->
+      <div class="card">
+        <div class="section-title">This Week</div>
+        <div class="match-row">
+          <div class="team-gradient" style="background: linear-gradient(to bottom, var(--mi), var(--rcb));"></div>
+          <div class="match-info">
+            <div class="match-teams-row">
+              <div class="team-dot" style="color: var(--mi); background: var(--mi);"></div>
+              <span style="color: var(--mi);">MI</span>
+              <span class="vs-text">vs</span>
+              <span style="color: var(--rcb);">RCB</span>
+              <div class="team-dot" style="color: var(--rcb); background: var(--rcb);"></div>
+            </div>
+            <div class="match-time">Tue, Mar 17 · 7:30 PM</div>
+          </div>
+          <div class="match-day">TUE</div>
+        </div>
+        <div class="match-row">
+          <div class="team-gradient" style="background: linear-gradient(to bottom, var(--csk), var(--kkr));"></div>
+          <div class="match-info">
+            <div class="match-teams-row">
+              <div class="team-dot" style="color: var(--csk); background: var(--csk);"></div>
+              <span style="color: #b58800;">CSK</span>
+              <span class="vs-text">vs</span>
+              <span style="color: var(--kkr);">KKR</span>
+              <div class="team-dot" style="color: var(--kkr); background: var(--kkr);"></div>
+            </div>
+            <div class="match-time">Thu, Mar 19 · 7:30 PM</div>
+          </div>
+          <div class="match-day">THU</div>
+        </div>
+        <div class="match-row">
+          <div class="team-gradient" style="background: linear-gradient(to bottom, var(--rr), var(--dc));"></div>
+          <div class="match-info">
+            <div class="match-teams-row">
+              <div class="team-dot" style="color: var(--rr); background: var(--rr);"></div>
+              <span style="color: var(--rr);">RR</span>
+              <span class="vs-text">vs</span>
+              <span style="color: var(--dc);">DC</span>
+              <div class="team-dot" style="color: var(--dc); background: var(--dc);"></div>
+            </div>
+            <div class="match-time">Sat, Mar 21 · 3:30 PM</div>
+          </div>
+          <div class="match-day">SAT</div>
+        </div>
+      </div>
+
+      <!-- Chips -->
+      <div class="card">
+        <div class="section-title">Chips</div>
+        <div class="chips-grid">
+          <div class="chip available">
+            <div class="chip-icon tc">⚡</div>
+            <div class="chip-info">
+              <div class="chip-name">Triple Captain</div>
+              <div class="chip-status avail">Available</div>
+            </div>
+          </div>
+          <div class="chip available">
+            <div class="chip-icon bb">↑</div>
+            <div class="chip-info">
+              <div class="chip-name">Bench Boost</div>
+              <div class="chip-status avail">Available</div>
+            </div>
+          </div>
+          <div class="chip">
+            <div class="chip-icon pb used">🎯</div>
+            <div class="chip-info">
+              <div class="chip-name spent">Bowling Boost</div>
+              <div class="chip-status used-text">Used GW3</div>
+            </div>
+          </div>
+          <div class="chip available">
+            <div class="chip-icon pba">🏏</div>
+            <div class="chip-info">
+              <div class="chip-name">Powerplay</div>
+              <div class="chip-status avail">Available</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="height: 30px;"></div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <a href="/" class="nav-item active">
+      <div class="nav-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+      Home
+    </a>
+    <a href="/lineup" class="nav-item">
+      <div class="nav-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div>
+      Lineup
+    </a>
+    <a href="/players" class="nav-item">
+      <div class="nav-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      Players
+    </a>
+    <a href="/admin" class="nav-item">
+      <div class="nav-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+      League
+    </a>
+  </div>
+
+  <!-- GW Detail Bottom Sheet -->
+  <div class="sheet-overlay" id="sheetOverlay" onclick="closeSheet()"></div>
+  <div class="sheet" id="gwSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">Gameweek 7 Breakdown</div>
+    <div class="sheet-total">788 <span>pts</span></div>
+    <div class="sheet-rank">2nd in league · Top 15%</div>
+    <div class="sheet-chip-badge">🎯 Bowling Boost Active — 2× bowling pts</div>
+    <button class="sheet-close" onclick="closeSheet()">✕</button>
+  </div>
+  <div class="sheet-divider"></div>
+
+  <div class="sheet-scroll">
+    <!-- Match 1 -->
+    <div class="sheet-match-header">
+      <div class="sheet-match-dot" style="background: var(--mi);"></div>
+      MI vs RCB · Mar 15
+      <div class="sheet-match-dot" style="background: var(--rcb);"></div>
+    </div>
+
+    <div class="sheet-player">
+      <div class="sp-role-icon bat">B</div>
+      <div class="sp-info">
+        <div class="sp-name">V Kohli <span class="sp-tag cap">C</span></div>
+        <div class="sp-team">RCB · BAT</div>
+      </div>
+      <div class="sp-breakdown">
+        <div class="sp-stat">83(51)</div>
+        <div class="sp-stat">2c</div>
+      </div>
+      <div class="sp-pts multiplied">166 <span class="sp-multiplier">2×</span></div>
+    </div>
+
+    <div class="sheet-player">
+      <div class="sp-role-icon bowl">B</div>
+      <div class="sp-info">
+        <div class="sp-name">J Bumrah</div>
+        <div class="sp-team">MI · BOWL</div>
+      </div>
+      <div class="sp-breakdown">
+        <div class="sp-stat">3/24</div>
+        <div class="sp-stat">1m</div>
+      </div>
+      <div class="sp-pts">103</div>
+    </div>
+
+    <div class="sheet-player">
+      <div class="sp-role-icon all">A</div>
+      <div class="sp-info">
+        <div class="sp-name">H Pandya <span class="sp-tag vc">VC</span></div>
+        <div class="sp-team">MI · ALL</div>
+      </div>
+      <div class="sp-breakdown">
+        <div class="sp-stat">42(28)</div>
+        <div class="sp-stat">1/30</div>
+      </div>
+      <div class="sp-pts multiplied">90 <span class="sp-multiplier">1.5×</span></div>
+    </div>
+
+    <div class="sheet-player">
+      <div class="sp-role-icon all">A</div>
+      <div class="sp-info">
+        <div class="sp-name">A Russell</div>
+        <div class="sp-team">KKR · ALL</div>
+      </div>
+      <div class="sp-breakdown">
+        <div class="sp-stat">55(22)</div>
+        <div class="sp-stat">2/18</div>
+      </div>
+      <div class="sp-pts">87</div>
+    </div>
+
+    <div class="sheet-player">
+      <div class="sp-role-icon bat">B</div>
+      <div class="sp-info">
+        <div class="sp-name">R Gaikwad</div>
+        <div class="sp-team">CSK · BAT</div>
+      </div>
+      <div class="sp-breakdown">
+        <div class="sp-stat">67(48)</div>
+      </div>
+      <div class="sp-pts">72</div>
+    </div>
+
+    <div class="sheet-player">
+      <div class="sp-role-icon bowl">B</div>
+      <div class="sp-info">
+        <div class="sp-name">K Yadav</div>
+        <div class="sp-team">CSK · BOWL</div>
+      </div>
+      <div class="sp-breakdown">
+        <div class="sp-stat">2/22</div>
+      </div>
+      <div class="sp-pts">60</div>
+    </div>
+
+    <div class="sheet-player">
+      <div class="sp-role-icon wk">W</div>
+      <div class="sp-info">
+        <div class="sp-name">R Pant</div>
+        <div class="sp-team">DC · WK</div>
+      </div>
+      <div class="sp-breakdown">
+        <div class="sp-stat">38(30)</div>
+        <div class="sp-stat">1st</div>
+      </div>
+      <div class="sp-pts">54</div>
+    </div>
+
+    <div class="sheet-player">
+      <div class="sp-role-icon bat">B</div>
+      <div class="sp-info">
+        <div class="sp-name">S Gill</div>
+        <div class="sp-team">GT · BAT</div>
+      </div>
+      <div class="sp-breakdown">
+        <div class="sp-stat">45(36)</div>
+      </div>
+      <div class="sp-pts">48</div>
+    </div>
+
+    <div class="sheet-player">
+      <div class="sp-role-icon bowl">B</div>
+      <div class="sp-info">
+        <div class="sp-name">M Shami</div>
+        <div class="sp-team">GT · BOWL</div>
+      </div>
+      <div class="sp-breakdown">
+        <div class="sp-stat">1/32</div>
+      </div>
+      <div class="sp-pts">38</div>
+    </div>
+
+    <div class="sheet-player">
+      <div class="sp-role-icon bowl">B</div>
+      <div class="sp-info">
+        <div class="sp-name">T Boult</div>
+        <div class="sp-team">RR · BOWL</div>
+      </div>
+      <div class="sp-breakdown">
+        <div class="sp-stat">2/28</div>
+      </div>
+      <div class="sp-pts">45</div>
+    </div>
+
+    <div class="sheet-player">
+      <div class="sp-role-icon all">A</div>
+      <div class="sp-info">
+        <div class="sp-name">R Jadeja</div>
+        <div class="sp-team">CSK · ALL</div>
+      </div>
+      <div class="sp-breakdown">
+        <div class="sp-stat">12(10)</div>
+        <div class="sp-stat">1/20</div>
+      </div>
+      <div class="sp-pts">25</div>
+    </div>
+
+    <!-- Bench -->
+    <div class="sheet-bench-label">Bench</div>
+
+    <div class="sheet-player benched">
+      <div class="sp-role-icon bat">B</div>
+      <div class="sp-info">
+        <div class="sp-name">K Williamson</div>
+        <div class="sp-team">GT · BAT</div>
+      </div>
+      <div class="sp-breakdown">
+        <div class="sp-stat">DNP</div>
+      </div>
+      <div class="sp-pts" style="color: #ccc;">0</div>
+    </div>
+
+    <div class="sheet-player benched">
+      <div class="sp-role-icon bowl">B</div>
+      <div class="sp-info">
+        <div class="sp-name">A Patel</div>
+        <div class="sp-team">MI · BOWL</div>
+      </div>
+      <div class="sp-breakdown">
+        <div class="sp-stat">0/18</div>
+      </div>
+      <div class="sp-pts" style="color: #ccc;">12</div>
+    </div>
+
+    <!-- Summary -->
+    <div class="sheet-summary">
+      <div class="sheet-sum-item">
+        <div class="ssv">612</div>
+        <div class="ssl">Base Pts</div>
+      </div>
+      <div class="sheet-sum-item">
+        <div class="ssv" style="color: var(--mi);">+83</div>
+        <div class="ssl">C/VC Bonus</div>
+      </div>
+      <div class="sheet-sum-item">
+        <div class="ssv" style="color: var(--mint);">+93</div>
+        <div class="ssl">Chip Bonus</div>
+      </div>
+      <div class="sheet-sum-item">
+        <div class="ssv" style="font-size: 16px;">788</div>
+        <div class="ssl">Total</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+function openSheet() {
+  document.getElementById('sheetOverlay').classList.add('open');
+  document.getElementById('gwSheet').classList.add('open');
+}
+function closeSheet() {
+  document.getElementById('sheetOverlay').classList.remove('open');
+  document.getElementById('gwSheet').classList.remove('open');
+}
+// Wire up points tap → GW sheet
+document.querySelector('.score-center .val').addEventListener('click', openSheet);
+</script>
+
+</body>
+</html>

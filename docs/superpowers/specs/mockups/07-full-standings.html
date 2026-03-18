@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #111; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+
+  .phone-frame {
+    max-width: 393px; margin: 20px auto; background: #f2f3f8;
+    border-radius: 44px; border: 2.5px solid #d0d4e0; overflow: hidden;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.25);
+    position: relative; height: 852px;
+  }
+  .status-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 28px 6px; font-size: 12px; font-weight: 600; color: #1a1a2e;
+    background: transparent; position: relative; z-index: 2;
+  }
+  .dynamic-island {
+    width: 124px; height: 36px; background: #000; border-radius: 20px;
+    margin: 0 auto; position: relative; top: -2px; z-index: 2;
+  }
+  .scroll-area {
+    height: 720px; overflow-y: auto; padding-bottom: 90px; scrollbar-width: none;
+    margin-top: -10px;
+  }
+  .scroll-area::-webkit-scrollbar { display: none; }
+
+  :root {
+    --mi: #004BA0; --csk: #F9CD05; --rcb: #EC1C24; --kkr: #3A225D;
+    --dc: #004C93; --rr: #EA1A85; --srh: #FF822A; --gt-teal: #0EB1A2;
+    --lsg: #00AEEF; --pbks: #ED1B24;
+    --mint: #0d9e5f; --rose: #d63060;
+    --card-bg: #fff; --card-border: rgba(0,0,0,0.06);
+    --green-cta: #00ff87;
+  }
+
+  /* Page Header */
+  .page-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 18px 8px;
+  }
+  .back-btn {
+    width: 32px; height: 32px; border-radius: 10px;
+    background: var(--card-bg); border: 1px solid var(--card-border);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 16px; color: #333;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    text-decoration: none;
+  }
+  .page-title {
+    font-size: 17px; font-weight: 800; color: #1a1a2e; letter-spacing: -0.3px;
+  }
+  .league-badge {
+    margin-left: auto;
+    font-size: 11px; font-weight: 600; color: rgba(0,0,0,0.4);
+    background: rgba(0,0,0,0.04); padding: 4px 10px; border-radius: 8px;
+  }
+
+  /* GW Tabs */
+  .gw-tabs-wrapper {
+    padding: 6px 14px 10px; overflow-x: auto; scrollbar-width: none;
+  }
+  .gw-tabs-wrapper::-webkit-scrollbar { display: none; }
+  .gw-tabs {
+    display: flex; gap: 6px; width: max-content;
+  }
+  .gw-tab {
+    padding: 6px 14px; border-radius: 10px;
+    font-size: 12px; font-weight: 600; color: #888;
+    background: var(--card-bg); border: 1px solid var(--card-border);
+    cursor: pointer; white-space: nowrap;
+    transition: all 0.15s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  }
+  .gw-tab:hover { color: #555; border-color: rgba(0,0,0,0.1); }
+  .gw-tab.active {
+    background: var(--mi); color: #fff; border-color: var(--mi);
+    box-shadow: 0 2px 8px rgba(0,75,160,0.2);
+  }
+
+  /* Content */
+  .content { padding: 0 14px; }
+  .card {
+    background: var(--card-bg); border: 1px solid var(--card-border);
+    border-radius: 16px; padding: 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  }
+
+  /* Table Header */
+  .standings-header {
+    display: flex; padding: 0 10px 8px; font-size: 9px; font-weight: 600;
+    color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; gap: 8px;
+    border-bottom: 1px solid #f0f0f4; margin-bottom: 4px;
+  }
+  .standings-header .sh-rank { width: 22px; }
+  .standings-header .sh-name { flex: 1; }
+  .standings-header .sh-delta { width: 24px; text-align: center; }
+  .standings-header .sh-gw { width: 36px; text-align: right; }
+  .standings-header .sh-total { width: 46px; text-align: right; }
+
+  /* Table Rows */
+  .standings-row {
+    display: flex; align-items: center; padding: 10px 10px;
+    border-radius: 10px; gap: 8px; font-size: 12.5px;
+    cursor: pointer; transition: background 0.15s;
+    position: relative;
+  }
+  .standings-row:hover { background: rgba(0,75,160,0.03); }
+  .standings-row + .standings-row { margin-top: 1px; }
+  .standings-row.you {
+    background: rgba(0,75,160,0.04);
+    border: 1.5px solid rgba(0,75,160,0.1);
+  }
+
+  .rank {
+    width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+    border-radius: 7px; font-size: 10px; font-weight: 700;
+    background: #f2f3f8; color: #999;
+  }
+  .rank.gold { background: rgba(249,205,5,0.12); color: #b58800; }
+  .rank.silver { background: rgba(192,199,208,0.15); color: #777; }
+  .rank.bronze { background: rgba(205,127,50,0.1); color: #a0724a; }
+  .rank.you-rank { background: rgba(0,75,160,0.1); color: var(--mi); }
+
+  .standings-name { flex: 1; font-weight: 500; color: #555; }
+  .standings-name.you-name { color: #111; font-weight: 700; }
+
+  .standings-delta {
+    font-size: 10px; font-weight: 700; width: 24px; text-align: center;
+  }
+  .delta-up { color: var(--mint); }
+  .delta-down { color: var(--rose); }
+  .delta-same { color: #ccc; }
+
+  .standings-gw {
+    font-size: 11px; color: #999; font-weight: 500; font-variant-numeric: tabular-nums;
+    width: 36px; text-align: right;
+  }
+  .standings-pts {
+    font-weight: 700; font-variant-numeric: tabular-nums; color: #333;
+    width: 46px; text-align: right;
+  }
+  .standings-pts.you-pts { color: var(--mi); }
+  .standings-pts.gold-pts { color: #b58800; }
+
+  /* Tooltip */
+  .row-tooltip {
+    position: absolute; top: 50%; right: 10px;
+    transform: translateY(-50%);
+    background: #1a1a2e; color: #fff;
+    font-size: 10px; font-weight: 600;
+    padding: 5px 10px; border-radius: 8px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s; white-space: nowrap;
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }
+  .row-tooltip::before {
+    content: ''; position: absolute; left: -5px; top: 50%;
+    transform: translateY(-50%);
+    border: 5px solid transparent;
+    border-right-color: #1a1a2e; border-left: none;
+  }
+  .standings-row:hover .row-tooltip { opacity: 1; }
+
+  /* Bottom Nav */
+  .bottom-nav {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    display: flex; justify-content: space-around;
+    padding: 8px 8px 30px; background: #fff;
+    border-top: 1px solid rgba(0,0,0,0.06);
+  }
+  .nav-item {
+    text-align: center; font-size: 10px; color: #8e8e93;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 3px; font-weight: 500;
+  }
+  .nav-item.active { color: var(--mi); font-weight: 600; }
+  .bottom-nav a { text-decoration: none; }
+  .nav-icon {
+    width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .nav-item.active .nav-icon { background: rgba(0,75,160,0.08); border-radius: 7px; }
+</style>
+</head>
+<body>
+
+<div class="phone-frame">
+  <div class="status-bar">
+    <span>9:41</span>
+    <span style="font-size: 11px;">●●● WiFi &#x1F50B;</span>
+  </div>
+  <div class="dynamic-island"></div>
+
+  <div class="scroll-area">
+    <!-- Page Header -->
+    <div class="page-header">
+      <a href="/" class="back-btn">&#8592;</a>
+      <div class="page-title">League Standings</div>
+      <div class="league-badge">Weekend Warriors</div>
+    </div>
+
+    <!-- GW Selector Tabs -->
+    <div class="gw-tabs-wrapper">
+      <div class="gw-tabs">
+        <div class="gw-tab active" data-gw="7">GW7</div>
+        <div class="gw-tab" data-gw="6">GW6</div>
+        <div class="gw-tab" data-gw="5">GW5</div>
+        <div class="gw-tab" data-gw="4">GW4</div>
+        <div class="gw-tab" data-gw="3">GW3</div>
+        <div class="gw-tab" data-gw="2">GW2</div>
+        <div class="gw-tab" data-gw="1">GW1</div>
+      </div>
+    </div>
+
+    <!-- Standings Table -->
+    <div class="content">
+      <div class="card">
+        <div class="standings-header">
+          <div class="sh-rank">#</div>
+          <div class="sh-name">Manager</div>
+          <div class="sh-delta"></div>
+          <div class="sh-gw">GW</div>
+          <div class="sh-total">Total</div>
+        </div>
+
+        <!-- 1. Rahul — Gold -->
+        <a href="/view-lineup" class="standings-row" style="text-decoration:none;">
+          <div class="rank gold">1</div>
+          <div class="standings-name" style="color: #222; font-weight: 600;">Rahul</div>
+          <div class="standings-delta delta-up">&#9650;2</div>
+          <div class="standings-gw">102</div>
+          <div class="standings-pts gold-pts">3,240</div>
+          <div class="row-tooltip">View lineup &#8594;</div>
+        </a>
+
+        <!-- 2. You — Highlighted -->
+        <div class="standings-row you">
+          <div class="rank you-rank">2</div>
+          <div class="standings-name you-name">You</div>
+          <div class="standings-delta delta-down">&#9660;1</div>
+          <div class="standings-gw">88</div>
+          <div class="standings-pts you-pts">3,195</div>
+        </div>
+
+        <!-- 3. Priya — Silver -->
+        <a href="/view-lineup" class="standings-row" style="text-decoration:none;">
+          <div class="rank silver">3</div>
+          <div class="standings-name">Priya</div>
+          <div class="standings-delta delta-same">&mdash;</div>
+          <div class="standings-gw">76</div>
+          <div class="standings-pts">3,110</div>
+          <div class="row-tooltip">View lineup &#8594;</div>
+        </a>
+
+        <!-- 4. Shaheel — Bronze -->
+        <a href="/view-lineup" class="standings-row" style="text-decoration:none;">
+          <div class="rank bronze">4</div>
+          <div class="standings-name">Shaheel</div>
+          <div class="standings-delta delta-up">&#9650;1</div>
+          <div class="standings-gw">95</div>
+          <div class="standings-pts">2,980</div>
+          <div class="row-tooltip">View lineup &#8594;</div>
+        </a>
+
+        <!-- 5. Arjun -->
+        <a href="/view-lineup" class="standings-row" style="text-decoration:none;">
+          <div class="rank">5</div>
+          <div class="standings-name">Arjun</div>
+          <div class="standings-delta delta-down">&#9660;2</div>
+          <div class="standings-gw">64</div>
+          <div class="standings-pts">2,870</div>
+          <div class="row-tooltip">View lineup &#8594;</div>
+        </a>
+
+        <!-- 6. Deepak -->
+        <a href="/view-lineup" class="standings-row" style="text-decoration:none;">
+          <div class="rank">6</div>
+          <div class="standings-name">Deepak</div>
+          <div class="standings-delta delta-same">&mdash;</div>
+          <div class="standings-gw">71</div>
+          <div class="standings-pts">2,750</div>
+          <div class="row-tooltip">View lineup &#8594;</div>
+        </a>
+
+        <!-- 7. Sneha -->
+        <a href="/view-lineup" class="standings-row" style="text-decoration:none;">
+          <div class="rank">7</div>
+          <div class="standings-name">Sneha</div>
+          <div class="standings-delta delta-up">&#9650;1</div>
+          <div class="standings-gw">82</div>
+          <div class="standings-pts">2,680</div>
+          <div class="row-tooltip">View lineup &#8594;</div>
+        </a>
+
+        <!-- 8. Vikram -->
+        <a href="/view-lineup" class="standings-row" style="text-decoration:none;">
+          <div class="rank">8</div>
+          <div class="standings-name">Vikram</div>
+          <div class="standings-delta delta-down">&#9660;1</div>
+          <div class="standings-gw">58</div>
+          <div class="standings-pts">2,610</div>
+          <div class="row-tooltip">View lineup &#8594;</div>
+        </a>
+
+        <!-- 9. Karthik -->
+        <a href="/view-lineup" class="standings-row" style="text-decoration:none;">
+          <div class="rank">9</div>
+          <div class="standings-name">Karthik</div>
+          <div class="standings-delta delta-up">&#9650;2</div>
+          <div class="standings-gw">91</div>
+          <div class="standings-pts">2,540</div>
+          <div class="row-tooltip">View lineup &#8594;</div>
+        </a>
+
+        <!-- 10. Meera -->
+        <a href="/view-lineup" class="standings-row" style="text-decoration:none;">
+          <div class="rank">10</div>
+          <div class="standings-name">Meera</div>
+          <div class="standings-delta delta-down">&#9660;3</div>
+          <div class="standings-gw">47</div>
+          <div class="standings-pts">2,490</div>
+          <div class="row-tooltip">View lineup &#8594;</div>
+        </a>
+
+      </div>
+    </div>
+
+    <div style="height: 30px;"></div>
+  </div>
+
+  <div class="bottom-nav">
+    <a href="/" class="nav-item active">
+      <div class="nav-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+      Home
+    </a>
+    <a href="/lineup" class="nav-item">
+      <div class="nav-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div>
+      Lineup
+    </a>
+    <a href="/players" class="nav-item">
+      <div class="nav-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      Players
+    </a>
+    <a href="/admin" class="nav-item">
+      <div class="nav-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+      League
+    </a>
+  </div>
+</div>
+
+<script>
+// GW tab switching
+document.querySelectorAll('.gw-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelector('.gw-tab.active').classList.remove('active');
+    tab.classList.add('active');
+  });
+});
+
+// Tooltips shown on hover via CSS for linked rows
+</script>
+
+</body>
+</html>

@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #f2f3f8; color: #1a1a2e; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+
+  .phone-frame {
+    max-width: 393px; margin: 20px auto; background: #f2f3f8;
+    border-radius: 44px; border: 2.5px solid #d0d4e0; overflow: hidden;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.12);
+    position: relative;
+  }
+  .status-bar { display: flex; justify-content: space-between; align-items: center; padding: 14px 28px 6px; font-size: 12px; font-weight: 600; color: #fff; }
+  .dynamic-island { width: 124px; height: 36px; background: #000; border-radius: 20px; margin: 0 auto; position: relative; top: -2px; }
+  .scroll-area { height: 720px; overflow-y: auto; padding-bottom: 90px; scrollbar-width: none; }
+  .scroll-area::-webkit-scrollbar { display: none; }
+
+  :root {
+    --mi: #004BA0; --csk: #F9CD05; --rcb: #EC1C24; --kkr: #3A225D;
+    --dc: #004C93; --rr: #EA1A85; --srh: #FF822A; --gt-teal: #0EB1A2;
+    --lsg: #00AEEF; --pbks: #ED1B24;
+    --mint: #0d9e5f; --rose: #d63060;
+    --card-bg: #fff; --card-border: rgba(0,0,0,0.06);
+  }
+
+  /* Gradient hero header */
+  .hero-header {
+    background: linear-gradient(160deg, #1a0a3e 0%, #2d1b69 25%, #004BA0 50%, #0EB1A2 80%, #00AEEF 100%);
+    padding: 0 0 16px;
+    position: relative;
+  }
+
+  .app-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 20px 12px;
+  }
+  .app-bar .logo {
+    font-size: 15px; font-weight: 900; letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--csk), var(--srh));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .app-bar .page-title {
+    font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -0.3px;
+    position: absolute; left: 50%; transform: translateX(-50%);
+  }
+  .app-bar .league-name { font-size: 11px; color: rgba(255,255,255,0.5); font-weight: 500; }
+
+  /* Search bar - frosted glass on gradient */
+  .search-bar {
+    margin: 0 16px 10px; position: relative;
+  }
+  .search-input {
+    width: 100%; padding: 11px 14px 11px 38px; border-radius: 14px;
+    background: rgba(255,255,255,0.15); backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff; font-size: 14px; outline: none;
+    font-family: inherit;
+  }
+  .search-input::placeholder { color: rgba(255,255,255,0.5); }
+  .search-input:focus { border-color: rgba(255,255,255,0.4); }
+  .search-icon {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    color: rgba(255,255,255,0.5);
+  }
+
+  /* Role filter pills on gradient */
+  .filter-bar {
+    display: flex; gap: 6px; margin: 0 16px; overflow-x: auto;
+    scrollbar-width: none; padding-bottom: 2px;
+  }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .filter-pill {
+    padding: 6px 14px; border-radius: 10px; font-size: 11px; font-weight: 600;
+    white-space: nowrap; cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.6);
+    transition: all 0.2s;
+  }
+  .filter-pill.active { border-color: rgba(255,255,255,0.4); color: #fff; background: rgba(255,255,255,0.2); }
+
+  /* Team filter chips - on light background below hero */
+  .team-filter-bar {
+    display: flex; gap: 4px; margin: 0; padding: 12px 16px 4px;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .team-filter-bar::-webkit-scrollbar { display: none; }
+  .team-chip {
+    padding: 5px 10px; border-radius: 8px; font-size: 10px; font-weight: 700;
+    white-space: nowrap; cursor: pointer;
+    border: 1px solid rgba(0,0,0,0.06); background: #fff;
+    color: #999; letter-spacing: 0.3px; transition: all 0.2s;
+  }
+  .team-chip.active-mi { border-color: rgba(0,75,160,0.3); color: var(--mi); background: rgba(0,75,160,0.08); }
+  .team-chip.active-csk { border-color: rgba(249,205,5,0.3); color: #b89a00; background: rgba(249,205,5,0.1); }
+
+  .content { padding: 0 14px; display: flex; flex-direction: column; gap: 10px; }
+
+  /* Player card - white bg, light mode */
+  .player-card {
+    display: flex; align-items: center; padding: 12px;
+    border-radius: 16px; gap: 10px; position: relative;
+    background: var(--card-bg); border: 1px solid var(--card-border);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    overflow: hidden;
+  }
+  .player-card + .player-card { margin-top: 4px; }
+  .player-card .team-accent {
+    position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  }
+  .player-card .avatar {
+    width: 40px; height: 40px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 800; color: #fff; flex-shrink: 0;
+  }
+  .player-card .info { flex: 1; min-width: 0; padding-left: 2px; }
+  .player-card .name {
+    font-size: 14px; font-weight: 600; color: #1a1a2e; letter-spacing: -0.2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .player-card .meta {
+    display: flex; align-items: center; gap: 6px; margin-top: 3px;
+  }
+  .player-card .role-badge {
+    font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .role-bat { background: rgba(249,205,5,0.12); color: #9a7d00; }
+  .role-bowl { background: rgba(0,75,160,0.1); color: var(--mi); }
+  .role-ar { background: rgba(14,177,162,0.1); color: #0a7a65; }
+  .role-wk { background: rgba(234,26,133,0.08); color: #c0186e; }
+  .player-card .team-name { font-size: 10px; font-weight: 600; }
+  .player-card .stats { text-align: right; flex-shrink: 0; }
+  .player-card .total-pts {
+    font-size: 16px; font-weight: 800; color: #1a1a2e; font-variant-numeric: tabular-nums;
+  }
+  .player-card .pts-label { font-size: 9px; color: #999; margin-top: 1px; }
+  .player-card .owned-badge {
+    position: absolute; top: 8px; right: 8px;
+    font-size: 8px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+    letter-spacing: 0.3px;
+  }
+  .owned-you { background: rgba(13,158,95,0.1); color: var(--mint); }
+  .owned-other { background: #f7f8fb; color: #999; }
+
+  /* Stats row in player card */
+  .mini-stats {
+    display: flex; gap: 8px; margin-top: 3px;
+  }
+  .mini-stat {
+    font-size: 9px; color: #999;
+  }
+  .mini-stat span { color: #555; font-weight: 600; }
+
+  /* Bottom nav - white bg, SVG icons */
+  .bottom-nav {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    display: flex; justify-content: space-around; padding: 8px 0 30px;
+    background: #fff;
+    border-top: 1px solid rgba(0,0,0,0.06);
+  }
+  .nav-item {
+    text-align: center; font-size: 11px; color: #8e8e93;
+    display: flex; flex-direction: column; align-items: center; gap: 2px; font-weight: 500;
+    position: relative;
+  }
+  .nav-item.active { color: var(--mi); }
+  .nav-item.active .nav-pill {
+    position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+    width: 36px; height: 3px; border-radius: 2px;
+    background: var(--mi);
+  }
+  .nav-item { text-decoration: none; }
+  .bottom-nav a { text-decoration: none; }
+  .nav-icon { line-height: 1; }
+
+  /* My/All toggle */
+  .ownership-toggle {
+    display: flex; margin: 0 16px 8px; background: rgba(255,255,255,0.1);
+    border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); overflow: hidden;
+  }
+  .ownership-btn {
+    flex: 1; padding: 7px; text-align: center; font-size: 11px; font-weight: 600;
+    color: rgba(255,255,255,0.5); cursor: pointer; transition: all 0.2s;
+  }
+  .ownership-btn.active {
+    background: rgba(255,255,255,0.2); color: #fff;
+    border-radius: 8px; margin: 2px;
+  }
+
+  /* Price on player card */
+  .player-price {
+    font-size: 10px; font-weight: 700; color: var(--mint);
+    margin-top: 2px;
+  }
+  .player-price.base { color: #aaa; }
+
+  /* Player Detail Modal — INSIDE phone-frame */
+  .pm-overlay {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(3px); z-index: 50;
+    opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+  }
+  .pm-overlay.open { opacity: 1; pointer-events: all; }
+
+  .pm-sheet {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: #fff; border-radius: 22px 22px 0 0; z-index: 51;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    max-height: 82%; overflow: hidden;
+    box-shadow: 0 -6px 30px rgba(0,0,0,0.15);
+  }
+  .pm-sheet.open { transform: translateY(0); }
+
+  .pm-handle { width: 36px; height: 4px; background: #ddd; border-radius: 2px; margin: 10px auto 0; }
+
+  .pm-header {
+    display: flex; align-items: center; gap: 10px; padding: 10px 16px 8px;
+  }
+  .pm-role-icon {
+    width: 34px; height: 34px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800;
+  }
+  .pm-role-icon.bat { background: linear-gradient(135deg, #F9CD05, #e0b800); color: #1a1a1a; }
+  .pm-role-icon.bowl { background: linear-gradient(135deg, #004BA0, #0066cc); color: #fff; }
+  .pm-role-icon.all { background: linear-gradient(135deg, #0EB1A2, #089e90); color: #fff; }
+  .pm-role-icon.wk { background: linear-gradient(135deg, #EA1A85, #c4166e); color: #fff; }
+  .pm-info { flex: 1; }
+  .pm-name { font-size: 15px; font-weight: 800; color: #1a1a2e; }
+  .pm-team { font-size: 10px; color: #888; font-weight: 500; }
+  .pm-pts {
+    font-size: 24px; font-weight: 800; color: var(--mi);
+    font-variant-numeric: tabular-nums; letter-spacing: -1px;
+  }
+  .pm-close {
+    position: absolute; top: 12px; right: 14px;
+    width: 28px; height: 28px; border-radius: 50%; background: #f2f3f8;
+    border: none; cursor: pointer; font-size: 14px; color: #999;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .pm-tabs {
+    display: flex; padding: 0 16px; border-bottom: 1px solid #f0f0f4;
+  }
+  .pm-tab {
+    padding: 7px 12px; font-size: 10px; font-weight: 600; color: #aaa;
+    cursor: pointer; border-bottom: 2px solid transparent;
+  }
+  .pm-tab.active { color: var(--mi); border-bottom-color: var(--mi); }
+
+  .pm-scroll {
+    overflow-y: auto; max-height: 480px; padding: 4px 0 24px;
+    scrollbar-width: none;
+  }
+  .pm-scroll::-webkit-scrollbar { display: none; }
+
+  .pm-section { padding: 8px 16px; }
+  .pm-section + .pm-section { border-top: 1px solid #f5f5f8; }
+  .pm-section-title {
+    font-size: 9px; font-weight: 700; color: #aaa;
+    text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px;
+  }
+  .pm-stat-grid { display: flex; gap: 4px; }
+  .pm-stat-cell {
+    flex: 1; text-align: center; padding: 6px 3px;
+    background: #f7f8fb; border-radius: 8px;
+  }
+  .pm-stat-val { font-size: 14px; font-weight: 800; color: #222; font-variant-numeric: tabular-nums; }
+  .pm-stat-label { font-size: 8px; color: #aaa; font-weight: 500; margin-top: 1px; }
+
+  .pm-pt-list { display: flex; flex-direction: column; }
+  .pm-pt-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 11px; }
+  .pm-pt-event { color: #666; font-weight: 500; }
+  .pm-pt-val { color: #333; font-weight: 700; }
+  .pm-pt-val.accent { color: var(--mint); }
+  .pm-pt-total {
+    border-top: 2px solid #1a1a2e; margin-top: 4px; padding-top: 6px;
+  }
+  .pm-pt-total .pm-pt-event { font-weight: 800; color: #1a1a2e; }
+  .pm-pt-total .pm-pt-val { font-size: 14px; font-weight: 800; color: #1a1a2e; }
+
+  .pm-trend-bar { display: flex; align-items: flex-end; gap: 6px; height: 60px; padding: 0 8px; }
+  .pm-bar {
+    flex: 1; background: #e8eaf0; border-radius: 5px 5px 0 0;
+    position: relative; min-height: 6px;
+  }
+  .pm-bar span {
+    position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+    font-size: 8px; font-weight: 700; color: #999;
+  }
+  .pm-bar.hot { background: rgba(0,75,160,0.2); }
+  .pm-bar.current { background: var(--mi); }
+  .pm-bar.current span { color: var(--mi); font-size: 9px; }
+  .pm-trend-labels {
+    display: flex; justify-content: space-around; padding: 3px 8px 0;
+    font-size: 8px; color: #bbb; font-weight: 500;
+  }
+  .pm-trend-tag {
+    text-align: center; margin-top: 6px; font-size: 10px; font-weight: 700;
+    color: var(--mint); background: rgba(13,158,95,0.08);
+    padding: 3px 10px; border-radius: 6px; display: inline-block;
+  }
+  .pm-trend { text-align: center; }
+</style>
+</head>
+<body>
+<div style="text-align: center; padding: 24px 16px 8px;">
+  <h2 style="font-size: 20px; font-weight: 700; color: #1a1a2e; letter-spacing: -0.5px;">Screen 5 of 6: Player Registry</h2>
+  <p style="color: #555; font-size: 13px; margin-top: 4px;">Browse IPL players, filter by team & role</p>
+</div>
+
+<div class="phone-frame">
+  <div class="hero-header">
+    <div class="status-bar"><span>9:41</span><span style="color: rgba(255,255,255,0.5);">●●● WiFi 🔋</span></div>
+    <div class="dynamic-island"></div>
+
+    <div class="app-bar">
+      <div class="logo">FAL</div>
+      <div class="page-title">Players</div>
+      <div class="league-name">Weekend Warriors</div>
+    </div>
+
+    <!-- Search - frosted glass on gradient -->
+    <div class="search-bar">
+      <div class="search-icon">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </div>
+      <input class="search-input" placeholder="Search players..." />
+    </div>
+
+    <!-- My / All Players toggle -->
+    <div class="ownership-toggle">
+      <div class="ownership-btn active">All Players</div>
+      <div class="ownership-btn">My Team</div>
+      <div class="ownership-btn">Available</div>
+    </div>
+
+    <!-- Role filters on gradient -->
+    <div class="filter-bar">
+      <div class="filter-pill active">All</div>
+      <div class="filter-pill">BAT</div>
+      <div class="filter-pill">BOWL</div>
+      <div class="filter-pill">ALL</div>
+      <div class="filter-pill">WK</div>
+    </div>
+  </div>
+
+  <div class="scroll-area">
+    <!-- Team filters on light background -->
+    <div class="team-filter-bar">
+      <div class="team-chip" style="color: #555;">ALL</div>
+      <div class="team-chip active-mi">MI</div>
+      <div class="team-chip" style="color: #b89a00;">CSK</div>
+      <div class="team-chip" style="color: var(--rcb);">RCB</div>
+      <div class="team-chip" style="color: var(--kkr);">KKR</div>
+      <div class="team-chip" style="color: var(--dc);">DC</div>
+      <div class="team-chip" style="color: var(--rr);">RR</div>
+      <div class="team-chip" style="color: var(--srh);">SRH</div>
+      <div class="team-chip" style="color: var(--gt-teal);">GT</div>
+      <div class="team-chip" style="color: var(--lsg);">LSG</div>
+      <div class="team-chip" style="color: var(--pbks);">PBKS</div>
+    </div>
+
+    <div class="content" style="margin-top: 8px;">
+      <!-- Player list -->
+      <div>
+        <div class="player-card">
+          <div class="team-accent" style="background: var(--mi);"></div>
+          <div class="avatar" style="background: linear-gradient(135deg, var(--mi), #0066cc);">JB</div>
+          <div class="info">
+            <div class="name">Jasprit Bumrah</div>
+            <div class="meta">
+              <span class="role-badge role-bowl">BOWL</span>
+              <span class="team-name" style="color: var(--mi);">MI</span>
+            </div>
+            <div class="mini-stats">
+              <div class="mini-stat">Wkts: <span>18</span></div>
+              <div class="mini-stat">Econ: <span>6.8</span></div>
+              <div class="mini-stat">Avg: <span>72</span>/gw</div>
+            </div>
+          </div>
+          <div class="stats">
+            <div class="total-pts">504</div>
+            <div class="pts-label">season pts</div>
+          </div>
+          <div class="owned-badge owned-you">YOUR TEAM</div>
+          <div class="player-price">$8.2M</div>
+        </div>
+
+        <div class="player-card">
+          <div class="team-accent" style="background: var(--mi);"></div>
+          <div class="avatar" style="background: linear-gradient(135deg, var(--mi), #0066cc);">RO</div>
+          <div class="info">
+            <div class="name">Rohit Sharma</div>
+            <div class="meta">
+              <span class="role-badge role-bat">BAT</span>
+              <span class="team-name" style="color: var(--mi);">MI</span>
+            </div>
+            <div class="mini-stats">
+              <div class="mini-stat">Runs: <span>342</span></div>
+              <div class="mini-stat">SR: <span>148</span></div>
+              <div class="mini-stat">Avg: <span>58</span>/gw</div>
+            </div>
+          </div>
+          <div class="stats">
+            <div class="total-pts">462</div>
+            <div class="pts-label">season pts</div>
+          </div>
+          <div class="owned-badge owned-other">Rahul</div>
+          <div class="player-price">$9.5M</div>
+        </div>
+
+        <div class="player-card">
+          <div class="team-accent" style="background: var(--mi);"></div>
+          <div class="avatar" style="background: linear-gradient(135deg, var(--mi), #0066cc);">HP</div>
+          <div class="info">
+            <div class="name">Hardik Pandya</div>
+            <div class="meta">
+              <span class="role-badge role-ar">ALL</span>
+              <span class="team-name" style="color: var(--mi);">MI</span>
+            </div>
+            <div class="mini-stats">
+              <div class="mini-stat">Runs: <span>280</span></div>
+              <div class="mini-stat">Wkts: <span>8</span></div>
+              <div class="mini-stat">Avg: <span>65</span>/gw</div>
+            </div>
+          </div>
+          <div class="stats">
+            <div class="total-pts">455</div>
+            <div class="pts-label">season pts</div>
+          </div>
+          <div class="owned-badge owned-you">YOUR TEAM</div>
+          <div class="player-price">$7.5M</div>
+        </div>
+
+        <div class="player-card">
+          <div class="team-accent" style="background: var(--mi);"></div>
+          <div class="avatar" style="background: linear-gradient(135deg, var(--mi), #0066cc);">SG</div>
+          <div class="info">
+            <div class="name">Shubman Gill</div>
+            <div class="meta">
+              <span class="role-badge role-bat">BAT</span>
+              <span class="team-name" style="color: var(--mi);">MI</span>
+            </div>
+            <div class="mini-stats">
+              <div class="mini-stat">Runs: <span>310</span></div>
+              <div class="mini-stat">SR: <span>139</span></div>
+              <div class="mini-stat">Avg: <span>54</span>/gw</div>
+            </div>
+          </div>
+          <div class="stats">
+            <div class="total-pts">378</div>
+            <div class="pts-label">season pts</div>
+          </div>
+          <div class="owned-badge owned-you">YOUR TEAM</div>
+          <div class="player-price">$6.8M</div>
+        </div>
+
+        <div class="player-card">
+          <div class="team-accent" style="background: var(--mi);"></div>
+          <div class="avatar" style="background: linear-gradient(135deg, var(--mi), #0066cc);">IS</div>
+          <div class="info">
+            <div class="name">Ishan Kishan</div>
+            <div class="meta">
+              <span class="role-badge role-wk">WK</span>
+              <span class="team-name" style="color: var(--mi);">MI</span>
+            </div>
+            <div class="mini-stats">
+              <div class="mini-stat">Runs: <span>245</span></div>
+              <div class="mini-stat">SR: <span>142</span></div>
+              <div class="mini-stat">Avg: <span>42</span>/gw</div>
+            </div>
+          </div>
+          <div class="stats">
+            <div class="total-pts">295</div>
+            <div class="pts-label">season pts</div>
+          </div>
+          <div class="owned-badge owned-other">Priya</div>
+          <div class="player-price">$5.2M</div>
+        </div>
+
+        <div class="player-card">
+          <div class="team-accent" style="background: var(--mi);"></div>
+          <div class="avatar" style="background: linear-gradient(135deg, var(--mi), #0066cc);">TA</div>
+          <div class="info">
+            <div class="name">Tim David</div>
+            <div class="meta">
+              <span class="role-badge role-bat">BAT</span>
+              <span class="team-name" style="color: var(--mi);">MI</span>
+            </div>
+            <div class="mini-stats">
+              <div class="mini-stat">Runs: <span>198</span></div>
+              <div class="mini-stat">SR: <span>165</span></div>
+              <div class="mini-stat">Avg: <span>38</span>/gw</div>
+            </div>
+          </div>
+          <div class="stats">
+            <div class="total-pts">266</div>
+            <div class="pts-label">season pts</div>
+          </div>
+          <div class="owned-badge owned-other">Shaheel</div>
+          <div class="player-price">$4.5M</div>
+        </div>
+
+        <div class="player-card">
+          <div class="team-accent" style="background: var(--mi);"></div>
+          <div class="avatar" style="background: linear-gradient(135deg, var(--mi), #0066cc);">JA</div>
+          <div class="info">
+            <div class="name">Jofra Archer</div>
+            <div class="meta">
+              <span class="role-badge role-bowl">BOWL</span>
+              <span class="team-name" style="color: var(--mi);">MI</span>
+            </div>
+            <div class="mini-stats">
+              <div class="mini-stat">Wkts: <span>12</span></div>
+              <div class="mini-stat">Econ: <span>7.4</span></div>
+              <div class="mini-stat">Avg: <span>45</span>/gw</div>
+            </div>
+          </div>
+          <div class="stats">
+            <div class="total-pts">248</div>
+            <div class="pts-label">season pts</div>
+          </div>
+          <div class="owned-badge owned-other">Amit</div>
+        </div>
+
+        <!-- Unsold / Available Players -->
+        <div class="player-card">
+          <div class="team-accent" style="background: var(--mi);"></div>
+          <div class="avatar" style="background: linear-gradient(135deg, var(--mi), #0066cc);">SA</div>
+          <div class="info">
+            <div class="name">Suryakumar Yadav</div>
+            <div class="meta">
+              <span class="role-badge role-bat">BAT</span>
+              <span class="team-name" style="color: var(--mi);">MI</span>
+            </div>
+            <div class="mini-stats">
+              <div class="mini-stat">Runs: <span>275</span></div>
+              <div class="mini-stat">SR: <span>155</span></div>
+              <div class="mini-stat">Avg: <span>48</span>/gw</div>
+            </div>
+          </div>
+          <div class="stats">
+            <div class="total-pts">340</div>
+            <div class="pts-label">season pts</div>
+          </div>
+          <div class="owned-badge" style="background: rgba(224,144,0,0.1); color: #d48900;">AVAILABLE</div>
+          <div class="player-price base">Base $1M</div>
+        </div>
+
+        <div class="player-card">
+          <div class="team-accent" style="background: var(--mi);"></div>
+          <div class="avatar" style="background: linear-gradient(135deg, var(--mi), #0066cc);">DS</div>
+          <div class="info">
+            <div class="name">Dewald Brevis</div>
+            <div class="meta">
+              <span class="role-badge role-bat">BAT</span>
+              <span class="team-name" style="color: var(--mi);">MI</span>
+            </div>
+            <div class="mini-stats">
+              <div class="mini-stat">Runs: <span>160</span></div>
+              <div class="mini-stat">SR: <span>162</span></div>
+              <div class="mini-stat">Avg: <span>30</span>/gw</div>
+            </div>
+          </div>
+          <div class="stats">
+            <div class="total-pts">210</div>
+            <div class="pts-label">season pts</div>
+          </div>
+          <div class="owned-badge" style="background: rgba(224,144,0,0.1); color: #d48900;">AVAILABLE</div>
+          <div class="player-price base">Base $1M</div>
+        </div>
+
+        <div class="player-card">
+          <div class="team-accent" style="background: var(--mi);"></div>
+          <div class="avatar" style="background: linear-gradient(135deg, var(--mi), #0066cc);">KP</div>
+          <div class="info">
+            <div class="name">Kumar Kartikeya</div>
+            <div class="meta">
+              <span class="role-badge role-bowl">BOWL</span>
+              <span class="team-name" style="color: var(--mi);">MI</span>
+            </div>
+            <div class="mini-stats">
+              <div class="mini-stat">Wkts: <span>7</span></div>
+              <div class="mini-stat">Econ: <span>8.1</span></div>
+              <div class="mini-stat">Avg: <span>22</span>/gw</div>
+            </div>
+          </div>
+          <div class="stats">
+            <div class="total-pts">155</div>
+            <div class="pts-label">season pts</div>
+          </div>
+          <div class="owned-badge" style="background: rgba(224,144,0,0.1); color: #d48900;">AVAILABLE</div>
+          <div class="player-price base">Base $1M</div>
+        </div>
+      </div>
+
+      <div style="height: 40px;"></div>
+    </div>
+  </div>
+
+  <!-- Bottom nav - white bg, SVG icons, Players active -->
+  <div class="bottom-nav">
+    <a href="/" class="nav-item">
+      <div class="nav-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+      Home
+    </a>
+    <a href="/lineup" class="nav-item">
+      <div class="nav-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div>
+      Lineup
+    </a>
+    <a class="nav-item">
+      <div class="nav-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+      Board
+    </a>
+    <a href="/players" class="nav-item active">
+      <div class="nav-pill"></div>
+      <div class="nav-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      Players
+    </a>
+    <a href="/admin" class="nav-item">
+      <div class="nav-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+      League
+    </a>
+  </div>
+
+  <!-- Player Detail Modal (inside phone-frame) -->
+  <div class="pm-overlay" id="pmOverlay" onclick="closePlayer()"></div>
+  <div class="pm-sheet" id="pmSheet">
+    <div class="pm-handle"></div>
+    <div class="pm-header">
+      <div class="pm-role-icon bowl">BO</div>
+      <div class="pm-info">
+        <div class="pm-name">J Bumrah</div>
+        <div class="pm-team">MI · Bowler · $8.2M</div>
+      </div>
+      <div class="pm-pts">504</div>
+      <button class="pm-close" onclick="closePlayer()">✕</button>
+    </div>
+
+    <div class="pm-tabs">
+      <div class="pm-tab active">GW7</div>
+      <div class="pm-tab">GW6</div>
+      <div class="pm-tab">GW5</div>
+      <div class="pm-tab">Season</div>
+    </div>
+
+    <div class="pm-scroll">
+      <div class="pm-section">
+        <div class="pm-section-title">Bowling</div>
+        <div class="pm-stat-grid">
+          <div class="pm-stat-cell">
+            <div class="pm-stat-val">3</div>
+            <div class="pm-stat-label">Wkts</div>
+          </div>
+          <div class="pm-stat-cell">
+            <div class="pm-stat-val">4.0</div>
+            <div class="pm-stat-label">Overs</div>
+          </div>
+          <div class="pm-stat-cell">
+            <div class="pm-stat-val">24</div>
+            <div class="pm-stat-label">Runs</div>
+          </div>
+          <div class="pm-stat-cell">
+            <div class="pm-stat-val">1</div>
+            <div class="pm-stat-label">Maiden</div>
+          </div>
+          <div class="pm-stat-cell">
+            <div class="pm-stat-val" style="color: var(--mint);">6.0</div>
+            <div class="pm-stat-label">Econ</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pm-section">
+        <div class="pm-section-title">Fielding</div>
+        <div class="pm-stat-grid">
+          <div class="pm-stat-cell">
+            <div class="pm-stat-val">1</div>
+            <div class="pm-stat-label">Catches</div>
+          </div>
+          <div class="pm-stat-cell">
+            <div class="pm-stat-val">0</div>
+            <div class="pm-stat-label">Runouts</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pm-section">
+        <div class="pm-section-title">Fantasy Points</div>
+        <div class="pm-pt-list">
+          <div class="pm-pt-row">
+            <span class="pm-pt-event">Wickets (3 × 25)</span>
+            <span class="pm-pt-val">+75</span>
+          </div>
+          <div class="pm-pt-row">
+            <span class="pm-pt-event">3-Wicket Bonus</span>
+            <span class="pm-pt-val accent">+8</span>
+          </div>
+          <div class="pm-pt-row">
+            <span class="pm-pt-event">Maiden Over</span>
+            <span class="pm-pt-val accent">+8</span>
+          </div>
+          <div class="pm-pt-row">
+            <span class="pm-pt-event">Catch (1 × 8)</span>
+            <span class="pm-pt-val">+8</span>
+          </div>
+          <div class="pm-pt-row">
+            <span class="pm-pt-event">Dot Balls (14 × 1)</span>
+            <span class="pm-pt-val">+14</span>
+          </div>
+          <div class="pm-pt-row pm-pt-total">
+            <span class="pm-pt-event">Total</span>
+            <span class="pm-pt-val">103</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pm-section">
+        <div class="pm-section-title">Recent Form</div>
+        <div class="pm-trend">
+          <div class="pm-trend-bar">
+            <div class="pm-bar" style="height: 55%;"><span>52</span></div>
+            <div class="pm-bar" style="height: 75%;"><span>68</span></div>
+            <div class="pm-bar" style="height: 40%;"><span>35</span></div>
+            <div class="pm-bar hot" style="height: 85%;"><span>78</span></div>
+            <div class="pm-bar current" style="height: 100%;"><span>103</span></div>
+          </div>
+          <div class="pm-trend-labels">
+            <span>GW3</span><span>GW4</span><span>GW5</span><span>GW6</span><span>GW7</span>
+          </div>
+          <div class="pm-trend-tag">▲ Trending Up</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openPlayer() {
+  document.getElementById('pmOverlay').classList.add('open');
+  document.getElementById('pmSheet').classList.add('open');
+}
+function closePlayer() {
+  document.getElementById('pmOverlay').classList.remove('open');
+  document.getElementById('pmSheet').classList.remove('open');
+}
+// Tap any player card → open detail
+document.querySelectorAll('.player-card').forEach(card => {
+  card.style.cursor = 'pointer';
+  card.addEventListener('click', openPlayer);
+});
+</script>
+</body>
+</html>
