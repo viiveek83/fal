@@ -96,45 +96,79 @@ Each gameweek, managers submit:
 
 ## 6. Scoring System
 
-### Base Scoring Rules:
+### Base Scoring Rules (aligned with Dream11 T20):
 
 **Batting:**
-| Event | Points |
-|---|---|
-| Run | +1 |
-| Four | +1 |
-| Six | +2 |
-| 30 Runs | +4 |
-| 50 Runs | +8 |
-| 100 Runs | +16 |
-| Duck | -2 (only if faced at least 1 ball) |
+| Event | Points | Conditions |
+|---|---|---|
+| Run | +1 | |
+| Boundary Bonus (four) | +4 | |
+| Six Bonus | +6 | |
+| 25 Run Bonus | +4 | |
+| Half-Century (50) Bonus | +8 | |
+| 75 Run Bonus | +12 | |
+| Century Bonus | +16 | Only century points awarded — no 25/50/75 bonus stacking |
+| Duck | -2 | Batter, WK, All-Rounder only (bowlers exempt) |
 
 **Bowling:**
-| Event | Points |
-|---|---|
-| Wicket | +25 |
-| Dot Ball | +1 |
-| Maiden Over | +8 |
-| 3 Wickets | +8 |
-| 5 Wickets | +16 |
+| Event | Points | Conditions |
+|---|---|---|
+| Dot Ball | +1 | |
+| Wicket (excl. run out) | +30 | |
+| LBW / Bowled Bonus | +8 | On top of wicket points |
+| 3 Wicket Bonus | +4 | |
+| 4 Wicket Bonus | +8 | |
+| 5 Wicket Bonus | +12 | |
+| Maiden Over | +12 | |
 
 **Fielding:**
 | Event | Points | Notes |
 |---|---|---|
 | Catch | +8 | Awarded to the catching fielder |
-| 3 Catch Bonus | +4 | 3+ catches in a single match |
+| 3 Catch Bonus | +4 | One-time bonus (6 catches still = +4, not +8) |
 | Stumping | +12 | Awarded to the wicketkeeper |
 | Run Out (direct hit) | +12 | Only 1 fielder touched the ball after delivery |
-| Run Out (assisted — each) | +6 | 2 fielders involved: 6 pts to each of the last 2 fielders who touched the ball |
+| Run Out (not direct hit — each) | +6 | Last 2 fielders who touched ball get 6 pts each |
 
-**Run Out Attribution Rule:** Points are awarded to the **last two fielders** who touched the ball before the stumps were broken. If only one fielder touched the ball (direct hit), that fielder gets 12 pts. If two fielders were involved (e.g., fielder throws → keeper collects and breaks stumps), each gets 6 pts.
+**Run Out Attribution Rule:** A direct hit is inflicted by the fielder who is the only one to touch the ball after the batter faces the delivery. In all other cases, points are awarded to the **last 2 fielders** who touch the ball (6 pts each).
+
+**Economy Rate (min 2 overs bowled):**
+| Economy Rate | Points |
+|---|---|
+| Below 5 | +6 |
+| 5 – 5.99 | +4 |
+| 6 – 7 | +2 |
+| 7.01 – 9.99 | 0 (neutral) |
+| 10 – 11 | -2 |
+| 11.01 – 12 | -4 |
+| Above 12 | -6 |
+
+**Strike Rate (min 10 balls faced, bowlers exempt):**
+| Strike Rate | Points |
+|---|---|
+| Above 170 | +6 |
+| 150.01 – 170 | +4 |
+| 130 – 150 | +2 |
+| 70.01 – 129.99 | 0 (neutral) |
+| 60 – 70 | -2 |
+| 50 – 59.99 | -4 |
+| Below 50 | -6 |
+
+**Other:**
+| Event | Points |
+|---|---|
+| In announced lineup (Starting XI) | +4 |
+| Concussion / Impact Player sub | +4 |
 
 ### Multipliers:
 - Captain: 2x
 - Vice Captain: 1.5x
 
-### Milestone Bonuses Stack:
-A player scoring 50 runs gets: +50 (runs) + +4 (30 bonus) + +8 (50 bonus) = 62 from runs alone (plus fours/sixes).
+### Milestone Bonus Rules:
+- Century bonus **replaces** all lower milestones (a player scoring 100 gets +16 for century only, NOT +4 for 25 + +8 for 50 + +12 for 75 + +16 for 100)
+- Below century, milestones stack normally: a player scoring 75 gets +4 (25 bonus) + +8 (50 bonus) + +12 (75 bonus) = +24 in milestone bonuses
+- Overthrow runs credit to batter on strike, but no boundary bonus on overthrow boundaries
+- Super Over does not count for fantasy points
 
 ## 7. Strategy Chips
 
@@ -142,13 +176,23 @@ A player scoring 50 runs gets: +50 (runs) + +4 (30 bonus) + +8 (50 bonus) = 62 f
 
 | Chip | Effect |
 |---|---|
-| **Triple Captain** | Captain earns 3× points |
+| **Triple Captain** | Designate a 3rd player (not Captain or VC) as Triple Captain — earns 3× points for that gameweek |
 | **Bench Boost** | Bench player points also count |
-| **Powerplay** | Batting points doubled |
-| **Bowling Boost** | Bowling points doubled |
+| **Bat Boost** | All players with BAT role get their total points doubled (2x) for the gameweek |
+| **Bowl Boost** | All players with BOWL role get their total points doubled (2x) for the gameweek |
 
-### Chip + Captain Stacking:
-Multipliers stack **multiplicatively**. Example: Captain who is a bowler + Bowling Boost active = 2x (captain) × 2x (chip) = **4x total**. Triple Captain on a batting captain who hits a 50 = base pts × 3x = **3x total** (note: only one chip per gameweek, so Triple Captain cannot combine with Powerplay or Bowling Boost).
+### Chip + Multiplier Stacking:
+Multipliers stack **multiplicatively** with category chips. Examples:
+- Captain (2x) who is a BAT + Bat Boost active = 2x × 2x = **4x total points**
+- Captain (2x) who is a BOWL + Bowl Boost active = 2x × 2x = **4x total points**
+- Triple Captain (3x) who is a BAT + Bat Boost active = 3x × 2x = **6x total points**
+- Only one chip per gameweek, so Triple Captain cannot combine with Bat Boost or Bowl Boost
+
+### Triple Captain Rules:
+- The Triple Captain must be a **different player** from both Captain and Vice Captain
+- Triple Captain earns **3x points** for that gameweek only
+- In a TC gameweek, three players have multipliers: Captain (2x) + VC (1.5x) + Triple Captain (3x)
+- The Triple Captain selection is part of the lineup submission and locked at gameweek lock
 
 ## 8. Bench Substitution
 
@@ -162,7 +206,8 @@ Multipliers stack **multiplicatively**. Example: Captain who is a bowler + Bowli
 - Multiple XI players absent → each gets a separate bench sub (in bench priority order, no double-dipping)
 - Captain didn't play → bench sub replaces them but does NOT inherit captain multiplier. Vice captain gets promoted to captain (2x). No new VC assigned.
 - Vice captain didn't play → bench sub replaces them, no multiplier inheritance
-- Both captain and VC didn't play → no multipliers applied to anyone
+- Both captain and VC didn't play → no multipliers applied to anyone (except Triple Captain if active and that player played)
+- Triple Captain didn't play (chip active) → bench sub replaces them but does NOT inherit 3x multiplier. Chip is still consumed.
 - Bench Boost chip active → bench players score regardless, but auto-sub still fills XI gaps
 
 ## 9. Gameweek Logic
@@ -207,13 +252,17 @@ Cricket Data API → Match Import Service → Raw Match Data Storage → Stat Pa
 
 ### Required Stats from API:
 - Runs scored, Fours hit, Sixes hit, Balls faced
-- Wickets taken, Maiden overs
+- Wickets taken, Maiden overs, Dismissal type (for LBW/Bowled +8 bonus)
+- Overs bowled, Runs conceded (for economy rate calculation, min 2 overs)
+- Balls faced, Runs scored (for strike rate calculation, min 10 balls)
+- Player role (BAT/BOWL/ALL/WK) — bowlers exempt from SR penalties and duck
 - Catches taken per fielder (for catch count + 3-catch bonus)
 - Stumpings per wicketkeeper
 - Run out attribution: number of fielders involved (1 = direct hit, 2 = assisted) and fielder IDs
-- Did player bat? (for duck rule)
-- Did player play? (for bench substitution)
-- **Dot balls:** Not available in either API's bowling summary — requires ball-by-ball data computation (SportMonks) or dropping dot ball scoring (see Issue #2)
+- Did player bat? (for duck rule — BAT, WK, ALL only)
+- Did player play? (for bench substitution and Starting XI +4 bonus)
+- Whether player entered as Impact Player / concussion sub (+4 bonus)
+- **Dot balls:** Not available in either API's bowling summary — requires ball-by-ball data computation (SportMonks). Dream11 confirms +1 per dot ball.
 - **Fielding attribution:** Requires ball-by-ball parsing or `batting.runoutby` nested include from SportMonks. Must validate during 14-day trial whether runout data distinguishes direct hit (1 fielder) vs assisted (2 fielders). See [Technical Architecture](2026-03-15-fal-technical-architecture.md) Section 4 for fielding data gaps.
 
 ### Ingestion Trigger:
@@ -225,7 +274,7 @@ Phase 1: Hybrid approach — admin triggers scoring on-demand after each match v
 |---|---|
 | Player did not play | Bench substitution triggered |
 | No bench player played either | Position scores 0 |
-| Duck rule | -2 only if batsman faced at least 1 ball and scored 0 runs |
+| Duck rule | -2 only if faced at least 1 ball, scored 0 runs, and player role is BAT/WK/ALL (bowlers exempt) |
 | Match abandoned | Players get 0 points unless partial stats exist in API |
 | Multiple matches in a week | Points accumulate across all matches |
 | API stat corrections | System supports re-importing a match and recalculating all affected scores & leaderboards |
@@ -322,38 +371,46 @@ Central marketplace view with My Team / All Players / Available filter toggle. S
 
 ### Industry Comparison (FAL vs Dream11 vs IPL Official)
 
+FAL now uses Dream11's T20 scoring system as the baseline.
+
 | Category | FAL | Dream11 T20 | IPL Official |
 |---|---|---|---|
 | Run | +1 | +1 | +1 |
-| Four bonus | +1 | +1 | +1 |
-| Six bonus | +2 | +2 | +2 |
-| 30-run bonus | +4 | — | unconfirmed |
+| Boundary bonus (four) | +4 | +4 | +1 |
+| Six bonus | +6 | +6 | +2 |
+| 25-run bonus | +4 | +4 | — |
 | 50-run bonus | +8 | +8 | unconfirmed |
-| 100-run bonus | +16 | +16 | unconfirmed |
-| Wicket | +25 | +25 | +25 |
-| **Dot ball** | **+1** | **—** | **—** |
-| Maiden over | +8 | +8 | +8 |
-| 3-wicket bonus | +8 | — (4W: +8) | unconfirmed |
-| 5-wicket bonus | +16 | +16 | unconfirmed |
-| **SR bonus/penalty** | **—** | **-2 to -6** (SR < 70, min 10 balls) | **+2** (SR ≥ 120, min 10 balls) |
-| **ER bonus/penalty** | **—** | **+6 to -6** (tiered, min 2 overs) | **+2 to +4 bonus** (ER < 8, min 2 overs) |
-| Duck | -2 (all players) | -2 (excludes bowlers) | -10 (excludes bowlers) |
+| 75-run bonus | +12 | +12 | — |
+| 100-run bonus | +16 (no stacking) | +16 (no stacking) | unconfirmed |
+| Wicket (excl. run out) | +30 | +30 | +25 |
+| LBW / Bowled bonus | +8 | +8 | — |
+| Dot ball | +1 | +1 | — |
+| Maiden over | +12 | +12 | +8 |
+| 3-wicket bonus | +4 | +4 | unconfirmed |
+| 4-wicket bonus | +8 | +8 | unconfirmed |
+| 5-wicket bonus | +12 | +12 | unconfirmed |
+| SR bonus/penalty | +6 to -6 (min 10 balls, bowlers exempt) | +6 to -6 (min 10 balls, bowlers exempt) | +2 (SR ≥ 120, min 10 balls) |
+| ER bonus/penalty | +6 to -6 (min 2 overs) | +6 to -6 (min 2 overs) | +2 to +4 bonus (ER < 8, min 2 overs) |
+| Duck | -2 (bowlers exempt) | -2 (bowlers exempt) | -10 (bowlers exempt) |
 | Catch | +8 | +8 | +10 |
-| 3 Catch Bonus | +4 | — | — |
+| 3 Catch Bonus | +4 | +4 | — |
 | Runout (direct hit) | +12 | +12 | +12 |
-| Runout (assisted, each) | +6 | +8 thrower / +4 catcher | — |
+| Runout (not direct hit, each) | +6 | +6 | — |
 | Stumping | +12 | +12 | +20 |
-| Starting XI bonus | — | +4 | unconfirmed |
+| Starting XI bonus | +4 | +4 | unconfirmed |
+| Impact Player sub | +4 | +4 | — |
+| Captain | 2x | 2x | — |
+| Vice Captain | 1.5x | 1.5x | — |
 
 ### Scoring Balance
 
 | # | Issue | Detail | Benchmark | Status |
 |---|-------|--------|-----------|--------|
-| 1 | **Bowling points overpowered** | 25 pts per wicket is industry standard, but Dream11 balances this with ER penalties (up to -6 for ER > 11). FAL has no such counterweight, making bowling disproportionately rewarding. | Dream11: ER penalties balance wicket value | Open |
-| 2 | **Dot ball scoring — unique to FAL** | Neither Dream11 nor IPL Official award dot ball points. FAL's +1 per dot inflates bowling by ~8-15 pts per match (a typical 4-over T20 spell has 10-14 dots). This is the single biggest scoring deviation from industry. Consider removing entirely or reducing to maiden-only rewards. | Dream11: no dot ball pts. IPL Official: no dot ball pts | Open |
-| 3 | **No strike rate / economy rate modifiers** | Both Dream11 and IPL Official use SR/ER modifiers. Dream11: SR < 70 gets -2 to -6 penalty (min 10 balls); ER < 4 gets +6, ER > 11 gets -6 (min 2 overs). IPL Official: SR ≥ 120 gets +2; ER < 6 gets +4. FAL missing both is a significant gap. | Dream11: SR penalties + ER bonus/penalty. IPL: SR bonus + ER bonus | Open |
-| 4 | **No penalty for expensive bowling** | Dream11 penalizes ER 9-10: -2, 10-11: -4, 11+: -6 (min 2 overs bowled). FAL has zero downside for conceding 12+ RPO. Recommend adopting similar tiered ER penalties. | Dream11: -2 to -6 tiered penalties | Open |
-| 5 | **Duck rule should exclude bowlers** | Both Dream11 and IPL Official exempt bowlers from duck penalties. FAL penalizes all players equally. A #11 tailender getting -2 for a duck is unfair. Recommend: exclude players with "BOWL" role from duck penalty. | Dream11: excludes bowlers. IPL: excludes bowlers | Open |
+| 1 | ~~Bowling points overpowered~~ | Now balanced with ER penalties (+6 to -6 tiered) matching Dream11. | Dream11-aligned | **Resolved** |
+| 2 | **Dot ball scoring — retained from Dream11** | Dream11 awards +1 per dot ball. FAL keeps this. Requires ball-by-ball data from SportMonks. | Dream11: +1 per dot ball | **Resolved** |
+| 3 | ~~No strike rate / economy rate modifiers~~ | Now included: SR +6 to -6 (min 10 balls, bowlers exempt) and ER +6 to -6 (min 2 overs). | Dream11-aligned | **Resolved** |
+| 4 | ~~No penalty for expensive bowling~~ | Now included: ER 10-11: -2, 11.01-12: -4, 12+: -6 (min 2 overs). | Dream11-aligned | **Resolved** |
+| 5 | ~~Duck rule should exclude bowlers~~ | Now excludes bowlers. Duck -2 applies to BAT, WK, ALL only. | Dream11-aligned | **Resolved** |
 
 ### Game Mechanics
 
