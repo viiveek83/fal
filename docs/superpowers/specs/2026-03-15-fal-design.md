@@ -16,7 +16,7 @@ FAL is a fantasy cricket platform for IPL where teams are built via auction (man
 - Weekly lineup management (Playing XI, Captain, VC, bench order)
 - Post-match scoring automation via cricket data APIs
 - Bench auto-substitution
-- 4 strategy chips (Triple Captain, Bench Boost, Bat Boost, Bowl Boost)
+- 2 strategy chips (Power Play Bat, Bowling Boost)
 - Leaderboard tracking
 - API-sourced IPL player registry (SportMonks Cricket API, €29/mo)
 
@@ -172,27 +172,23 @@ Each gameweek, managers submit:
 
 ## 7. Strategy Chips
 
-4 chips, each usable once per season. One chip per gameweek. Selected before lineup lock.
+2 chips, each usable once per season. One chip per gameweek. Selected before lineup lock.
 
 | Chip | Effect |
 |---|---|
-| **Triple Captain** | Designate a 3rd player (not Captain or VC) as Triple Captain — earns 3× points for that gameweek |
-| **Bench Boost** | Bench player points also count |
 | **Power Play Bat** | All players with BAT role get their total points doubled (2x) for the gameweek |
 | **Bowling Boost** | All players with BOWL role get their total points doubled (2x) for the gameweek |
 
 ### Chip + Multiplier Stacking:
-Multipliers stack **multiplicatively** with category chips. Examples:
+Multipliers stack **multiplicatively** with chips. Examples:
 - Captain (2x) who is a BAT + Power Play Bat active = 2x × 2x = **4x total points**
 - Captain (2x) who is a BOWL + Bowling Boost active = 2x × 2x = **4x total points**
-- Triple Captain (3x) who is a BAT + Power Play Bat active = **not possible** (only 1 chip per GW)
-- Only one chip per gameweek, so Triple Captain cannot combine with Power Play Bat or Bowling Boost
+- Only one chip per gameweek
 
-### Triple Captain Rules:
-- The Triple Captain must be a **different player** from both Captain and Vice Captain
-- Triple Captain earns **3x points** for that gameweek only
-- In a TC gameweek, three players have multipliers: Captain (2x) + VC (1.5x) + Triple Captain (3x)
-- The Triple Captain selection is part of the lineup submission and locked at gameweek lock
+### Chip Rules:
+- Chip selection is locked at gameweek lock time
+- Used chips are permanently unavailable for the rest of the season
+- Confirmation modal required before activation (warns it cannot be undone once GW starts)
 
 ## 8. Bench Substitution
 
@@ -205,10 +201,8 @@ Multipliers stack **multiplicatively** with category chips. Examples:
 ### Edge Cases:
 - Multiple XI players absent → each gets a separate bench sub (in bench priority order, no double-dipping)
 - Captain didn't play → bench sub replaces them but does NOT inherit captain multiplier. Vice captain gets promoted to captain (2x). No new VC assigned.
-- Vice captain didn't play → bench sub replaces them, no multiplier inheritance
-- Both captain and VC didn't play → no multipliers applied to anyone (except Triple Captain if active and that player played)
-- Triple Captain didn't play (chip active) → bench sub replaces them but does NOT inherit 3x multiplier. Chip is still consumed.
-- Bench Boost chip active → bench players score regardless, but auto-sub still fills XI gaps
+- Vice captain didn't play → bench sub replaces them, no multiplier inheritance. VC only gets 2x if Captain is absent.
+- Both captain and VC didn't play → no multipliers applied to anyone.
 
 ## 9. Gameweek Logic
 

@@ -341,7 +341,7 @@ vercel env pull          # Sync Vercel env vars to local
 - **Gameweek** — `number` (1-10), `lockTime` (DateTime), `status` (`upcoming`/`active`/`completed`), `aggregationStatus` (`pending`/`aggregating`/`done`).
 - **Match** — `apiMatchId`, `gameweekId`, `localTeamId`, `visitorTeamId`, `startingAt`, `apiStatus` (`NS`/`Finished`/`Cancelled`), `scoringStatus` (`scheduled`/`completed`/`scoring`/`scored`/`error`), `note` (result text), `winnerTeamId`, `scoringAttempts` (Int, default 0).
 - **Lineup** — `teamId`, `gameweekId`.
-- **LineupSlot** — `lineupId`, `playerId`, `slotType` (XI/BENCH), `benchPriority` (1-4, null for XI), `role` (CAPTAIN/VC/TRIPLE_CAPTAIN/null).
+- **LineupSlot** — `lineupId`, `playerId`, `slotType` (XI/BENCH), `benchPriority` (1-4, null for XI), `role` (CAPTAIN/VC/null).
 - **PlayerPerformance** — Per-player per-match:
   - Batting: `runs`, `balls`, `fours`, `sixes`, `strikeRate`, `wicketId`
   - Bowling: `overs`, `maidens`, `runsConceded`, `wickets`, `economyRate`, `dotBalls`
@@ -349,7 +349,7 @@ vercel env pull          # Sync Vercel env vars to local
   - Computed: `fantasyPoints` (base points, before multipliers)
   - Meta: `inStartingXI` (boolean), `isImpactPlayer` (boolean)
 - **PlayerScore** — Per-player per-GW aggregate (after C/VC multipliers + chip effects).
-- **ChipUsage** — `teamId`, `chipType` (`TRIPLE_CAPTAIN`/`BENCH_BOOST`/`POWER_PLAY_BAT`/`BOWLING_BOOST`), `gameweekId`, `status` (`pending`/`used`).
+- **ChipUsage** — `teamId`, `chipType` (`POWER_PLAY_BAT`/`BOWLING_BOOST`), `gameweekId`, `status` (`pending`/`used`). Only 2 chips per season — one of each.
 - **GameweekScore** — Per-team per-GW total after all adjustments. Stores `teamId`, `gameweekId`, `totalPoints` (Int — final GW score after subs + multipliers + chips), `chipUsed` (enum or null). Used for GW history, leaderboard tiebreaker, and `Team.bestGwScore` updates.
 
 ### Relationships
@@ -404,7 +404,6 @@ All routes require Auth.js session unless noted. **Platform admin** = `User.role
   - **Validation rules** (in `lib/lineup/validation.ts`):
     - Exactly 11 players in XI, remaining on bench
     - Exactly 1 Captain, 1 VC (different players)
-    - If Triple Captain chip active: TC must differ from both C and VC
     - All players must be on this team's squad (`TeamPlayer`)
     - No duplicate players across XI + bench
 - `POST /api/teams/[teamId]/lineups/[gameweekId]/chip` — Activate chip, 409 if used **(owner)**
@@ -521,22 +520,16 @@ All routes require Auth.js session unless noted. **Platform admin** = `User.role
       - Captain did NOT play → VC promoted to 2x. Bench sub who
         replaced Captain does NOT inherit multiplier.
       - Both Captain AND VC did NOT play → no multipliers for anyone.
-      - Triple Captain chip active AND TC played → TC gets 3x.
-        If TC did NOT play → chip consumed, no 3x inherited.
       - Apply multipliers to gwBasePoints:
         · Captain (if played): gwBasePoints[C] *= 2
         · VC (only if Captain absent): gwBasePoints[VC] *= 2
-        · TC (if played): gwBasePoints[TC] *= 3
 
-   e. CHIP EFFECTS (multiplicative with captain multipliers):
-      - Bench Boost: add bench players' gwBasePoints to team total
-        (bench players already have their points; just include them)
-      - Bat Boost: for each player with role === BAT in the scoring XI,
-        multiply their current points (including any C/VC multiplier) by 2x
-      - Bowl Boost: same but role === BOWL
-      - Triple Captain: already applied in step d
+   e. CHIP EFFECTS (multiplicative with captain multiplier):
+      - Power Play Bat: for each player with role === BAT in the scoring XI,
+        double their current points (including any C/VC multiplier)
+      - Bowling Boost: same but role === BOWL
       - Formula: finalPts = gwBasePoints × captainMultiplier × chipMultiplier
-        e.g., Captain (2x) who is BAT with Bat Boost = basePoints × 2 × 2 = 4x
+        e.g., Captain (2x) who is BAT with Power Play Bat = basePoints × 2 × 2 = 4x
 
    f. SUM team GW total, write PlayerScore rows per player,
       update Team.totalPoints += gwTotal,
@@ -671,43 +664,26 @@ function applyBenchSubs(lineup: LineupSlot[], performances: Map<number, PlayerPe
 ### Captain/VC/TC Promotion Logic (`lib/scoring/multipliers.ts`)
 
 ```typescript
-function resolveMultipliers(lineup: LineupSlot[], playedPlayerIds: Set<number>, subs: Sub[]) {
+function resolveMultipliers(lineup: LineupSlot[], playedPlayerIds: Set<number>) {
   const captain = lineup.find(s => s.role === 'CAPTAIN');
   const vc = lineup.find(s => s.role === 'VC');
-  const tc = lineup.find(s => s.role === 'TRIPLE_CAPTAIN'); // null if no TC chip
-
-  // After bench subs, determine the "scoring XI" (original XI with subs applied)
-  const scoringXI: Set<number> = new Set(
-    lineup.filter(s => s.slotType === 'XI').map(s => s.playerId)
-  );
-  for (const sub of subs) {
-    scoringXI.delete(sub.out);
-    scoringXI.add(sub.in);
-  }
 
   const multipliers: Map<number, number> = new Map(); // playerId → multiplier
 
-  // Captain logic
+  // Captain: always 2x if played
   if (captain && playedPlayerIds.has(captain.playerId)) {
     multipliers.set(captain.playerId, 2);
   } else if (vc && playedPlayerIds.has(vc.playerId)) {
-    // VC promoted to Captain (2x). VC slot gets NO multiplier.
+    // Captain absent → VC promoted to 2x
+    // Bench sub who replaced Captain does NOT inherit multiplier
     multipliers.set(vc.playerId, 2);
-    // Note: the bench sub who replaced Captain does NOT inherit 2x
   }
-  // If both C and VC didn't play → no C/VC multipliers for anyone
+  // Both absent → no multipliers for anyone
 
-  // VC multiplier: VC earns 1x (no multiplier) when Captain plays.
-  // VC only gets 2x if promoted to Captain (handled above).
-  // This is NOT the Dream11 model (1.5x always) — FAL uses the PRD model.
+  // VC gets NO multiplier when Captain plays (1x = standard).
+  // This is the FAL/PRD model, NOT Dream11 (which gives VC 1.5x always).
 
-  // Triple Captain (only if chip active AND TC played)
-  if (tc && playedPlayerIds.has(tc.playerId)) {
-    multipliers.set(tc.playerId, 3);
-    // If TC didn't play → chip consumed, no 3x applied, bench sub gets no 3x
-  }
-
-  return multipliers; // only played players get multipliers
+  return multipliers;
 }
 ```
 
@@ -715,9 +691,8 @@ function resolveMultipliers(lineup: LineupSlot[], playedPlayerIds: Set<number>, 
 
 ```typescript
 function applyChipEffects(
-  chip: ChipType | null,
+  chip: 'POWER_PLAY_BAT' | 'BOWLING_BOOST' | null,
   scoringXI: Set<number>,
-  bench: number[],
   gwPoints: Map<number, number>,      // playerId → points after C/VC multipliers
   playerRoles: Map<number, string>    // playerId → BAT/BOWL/ALL/WK
 ): number {
@@ -728,17 +703,10 @@ function applyChipEffects(
     teamTotal += gwPoints.get(pid) ?? 0;
   }
 
-  // Apply chip
+  // Apply chip (only 2 chips in FAL — per PRD)
   switch (chip) {
-    case 'BENCH_BOOST':
-      // Bench players' points count too (they already have base points)
-      for (const pid of bench) {
-        teamTotal += gwPoints.get(pid) ?? 0;
-      }
-      break;
-
     case 'POWER_PLAY_BAT':
-      // All BAT role players in scoring XI get 2x (on top of any C/VC multiplier)
+      // All BAT role players in scoring XI get 2x (on top of any C multiplier)
       for (const pid of scoringXI) {
         if (playerRoles.get(pid) === 'BAT') {
           teamTotal += gwPoints.get(pid) ?? 0; // add another 1x = total 2x
@@ -754,10 +722,6 @@ function applyChipEffects(
         }
       }
       break;
-
-    case 'TRIPLE_CAPTAIN':
-      // Already handled in resolveMultipliers — TC gets 3x there
-      break;
   }
 
   return teamTotal;
@@ -767,9 +731,8 @@ function applyChipEffects(
 ### Stacking Examples (from PRD)
 - Captain (2x) BAT player, Power Play Bat active: base × 2 (captain) × 2 (chip) = **4x total**
 - Captain (2x) BOWL player, Bowling Boost active: base × 2 (captain) × 2 (chip) = **4x total**
-- Triple Captain (3x) + Power Play Bat: **impossible** — only 1 chip per GW
 - VC when Captain plays, Power Play Bat active: base × 1 (no VC bonus) × 2 (chip) = **2x total**
-- VC when Captain absent, Power Play Bat: **impossible** — only 1 chip per GW (VC promotion is not a chip)
+- VC when Captain absent + chip active: VC gets 2x (promoted). Chip applies to role. If VC is BAT + Power Play Bat = 2x × 2x = **4x total**
 
 ### State Machine
 ```
