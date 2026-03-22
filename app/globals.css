@@ -1,37 +1,97 @@
 @import "tailwindcss";
 
-/* Phone frame on desktop — dark background with centered 393px app */
-html, body {
-  background: #111 !important;
+/* ─── CSS Variables ─── */
+:root {
+  --app-bg: #f2f3f8;
+  --app-max-width: 480px;
+  --outer-bg: #1a1d2e;
+  --font-body: var(--font-jakarta), 'Plus Jakarta Sans', system-ui, sans-serif;
+
+  /* IPL Colors */
+  --mi: #004BA0;
+  --csk: #F9CD05;
+  --rcb: #EC1C24;
+  --kkr: #3A225D;
+  --dc: #004C93;
+  --rr: #EA1A85;
+  --srh: #FF822A;
+  --gt: #0EB1A2;
+  --lsg: #00AEEF;
+  --pbks: #ED1B24;
+  --mint: #0d9e5f;
+  --rose: #d63060;
+}
+
+/* ─── Base ─── */
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  margin: 0;
+  padding: 0;
+  background: var(--app-bg);
+  color: #1a1a2e;
   min-height: 100vh;
 }
 
-/* The app container mimics a phone frame */
+/* ─── App Frame ─── */
 .app-frame {
-  max-width: 393px;
-  margin: 0 auto;
+  width: 100%;
   min-height: 100vh;
-  background: #f2f3f8;
+  background: var(--app-bg);
   position: relative;
-  overflow-x: hidden;
-  box-shadow: 0 0 60px rgba(0,0,0,0.3);
 }
 
-/* On actual mobile (<=393px), go full width */
-@media (max-width: 393px) {
+/* ─── Tablet+ ─── */
+@media (min-width: 481px) {
+  body {
+    background: #e8eaef;
+  }
+
   .app-frame {
-    max-width: 100%;
-    box-shadow: none;
-  }
-  html, body {
-    background: #f2f3f8 !important;
+    max-width: var(--app-max-width);
+    margin: 0 auto;
+    box-shadow: 0 0 40px rgba(0,0,0,0.08);
   }
 }
 
-/* Hide scrollbar in app frame */
+/* ─── Desktop ─── */
+@media (min-width: 769px) {
+  body {
+    background: var(--outer-bg);
+    /* Subtle gradient for depth */
+    background: linear-gradient(180deg, #1a1d2e 0%, #151827 100%);
+  }
+
+  .app-frame {
+    max-width: var(--app-max-width);
+    margin: 20px auto;
+    border-radius: 24px;
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.05),
+      0 20px 60px rgba(0,0,0,0.3),
+      0 0 120px rgba(0,75,160,0.05);
+    overflow: hidden;
+    min-height: calc(100vh - 40px);
+  }
+}
+
+/* ─── Scrollbar ─── */
+.app-frame {
+  scrollbar-width: none;
+}
 .app-frame::-webkit-scrollbar {
   display: none;
 }
-.app-frame {
-  scrollbar-width: none;
+
+/* ─── Bottom nav fix for desktop frame ─── */
+@media (min-width: 481px) {
+  .bottom-nav-fixed {
+    max-width: var(--app-max-width) !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
 }

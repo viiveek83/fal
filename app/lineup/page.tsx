@@ -690,7 +690,7 @@ export default function LineupPage() {
           />
           <div style={{
             position: 'fixed', left: '50%', transform: 'translateX(-50%)',
-            bottom: 0, width: '100%', maxWidth: 393,
+            bottom: 0, width: '100%', maxWidth: 480,
             background: '#fff', borderRadius: '24px 24px 0 0',
             padding: '0 0 40px', zIndex: 210,
           }}>
@@ -745,9 +745,9 @@ export default function LineupPage() {
       )}
 
       {/* ── Bottom Navigation ── */}
-      <nav style={{
+      <nav className="bottom-nav-fixed" style={{
         position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-        width: '100%', maxWidth: 393, background: '#fff',
+        width: '100%', maxWidth: 480, background: '#fff',
         borderTop: '1px solid rgba(0,0,0,0.08)',
         display: 'flex', justifyContent: 'space-around', alignItems: 'center',
         padding: '8px 0 env(safe-area-inset-bottom, 8px)',

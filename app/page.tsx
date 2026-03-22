@@ -386,9 +386,9 @@ export default function DashboardPage() {
       </div>
 
       {/* ══════════════════════════ BOTTOM NAV ══════════════════════════ */}
-      <nav style={{
+      <nav className="bottom-nav-fixed" style={{
         position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-        width: '100%', maxWidth: 393,
+        width: '100%', maxWidth: 480,
         display: 'flex', justifyContent: 'space-around',
         padding: '8px 8px env(safe-area-inset-bottom, 30px)',
         background: '#fff',

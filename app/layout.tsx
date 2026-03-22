@@ -20,7 +20,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={jakarta.variable}>
-      <body style={{ fontFamily: 'var(--font-jakarta), sans-serif', margin: 0, padding: 0 }}>
+      <body>
         <Providers>{children}</Providers>
       </body>
     </html>

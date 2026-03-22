@@ -354,13 +354,13 @@ export default function PlayersPage() {
       </div>
 
       {/* ── Bottom Navigation ── */}
-      <nav style={{
+      <nav className="bottom-nav-fixed" style={{
         position: 'fixed',
         bottom: 0,
         left: '50%',
         transform: 'translateX(-50%)',
         width: '100%',
-        maxWidth: 393,
+        maxWidth: 480,
         background: '#fff',
         borderTop: '1px solid rgba(0,0,0,0.06)',
         display: 'flex',

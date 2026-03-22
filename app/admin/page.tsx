@@ -379,7 +379,7 @@ export default function AdminPage() {
       left: '50%',
       transform: 'translateX(-50%)',
       width: '100%',
-      maxWidth: 393,
+      maxWidth: 480,
       background: '#fff',
       borderTop: '1px solid rgba(0,0,0,0.08)',
       display: 'flex',
@@ -773,7 +773,7 @@ export default function AdminPage() {
             left: '50%',
             transform: `translateX(-50%) translateY(${sheetOpen ? '0' : '100%'})`,
             width: '100%',
-            maxWidth: 393,
+            maxWidth: 480,
             maxHeight: '80vh',
             background: '#fff',
             borderRadius: '20px 20px 0 0',
@@ -865,7 +865,7 @@ export default function AdminPage() {
       )}
 
       {/* ── Bottom Navigation ── */}
-      <nav style={styles.bottomNav}>
+      <nav className="bottom-nav-fixed" style={styles.bottomNav}>
         <a href="/" style={{ ...styles.navItem(false), textDecoration: 'none' }}>
           <IconHome />
           <span>Home</span>
