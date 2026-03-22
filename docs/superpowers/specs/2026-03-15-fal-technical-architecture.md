@@ -150,101 +150,155 @@ No cricket API provides scorecard-level data (batting, bowling, fielding stats) 
 | **Ball-by-ball** | Yes (`?include=balls`) — production ready | "Testing" — not production ready | Yes (detailed: fielder, thrower, ball speed) | Yes |
 | **Built-in fantasy pts** | No (calculate ourselves) | Yes (`v1/match_points`) | Yes (fantasy API) | Yes (Elite plan only, $450/mo) |
 | **Rate limit** | 3,000 calls/hr per entity | 500 req/day (free) | Unknown | 500K–2M calls/mo |
-| **Fielding data** | Partial (needs ball-by-ball computation) | Yes (dedicated catching array) | Yes (per-ball fielder data) | Yes |
+| **Fielding data** | Yes — batting include has `catch_stump_player_id`, `runout_by_id` (validated Mar 2026) | Yes (dedicated catching array) | Yes (per-ball fielder data) | Yes |
 | **Dot balls** | Compute from ball-by-ball | Not available | Compute from ball-by-ball | Unknown |
 
-### Batting Scorecard Fields
+### Batting Scorecard Fields (validated against IPL 2025 data, Mar 2026)
 
-| FAL Stat Needed | CricketData Field | SportMonks Field |
-|---|---|---|
-| Runs scored | `r` | `score` |
-| Balls faced | `b` | `ball` |
-| Fours hit | `4s` | `four_x` |
-| Sixes hit | `6s` | `six_x` |
-| Strike rate | `sr` | `rate` |
-| Dismissal type | `dismissal` | `dismissal` |
-| Did player bat? | Present in batting array = yes | Present in batting array = yes |
+| FAL Stat Needed | CricketData Field | SportMonks Field | Verified |
+|---|---|---|---|
+| Runs scored | `r` | `score` | Yes |
+| Balls faced | `b` | `ball` | Yes |
+| Fours hit | `4s` | `four_x` | Yes |
+| Sixes hit | `6s` | `six_x` | Yes |
+| Strike rate | `sr` | `rate` | Yes |
+| Dismissal type | `dismissal` | `wicket_id` (maps to score type ID — see table below) | **Changed** |
+| Fielder (catch/stumping) | — | `catch_stump_player_id` | **New** |
+| Fielder (runout thrower) | — | `runout_by_id` | **New** |
+| Bowler who took wicket | — | `bowling_player_id` | **New** |
+| Did player bat? | Present in batting array = yes | Present in batting array = yes | Yes |
 
-### Bowling Scorecard Fields
+**Dismissal type mapping** (`wicket_id` → score name, from `/scores` endpoint):
 
-| FAL Stat Needed | CricketData Field | SportMonks Field |
-|---|---|---|
-| Overs bowled | `o` | `overs` |
-| Maidens | `m` | `medians` |
-| Runs conceded | `r` | `runs` |
-| Wickets taken | `w` | `wickets` |
-| Economy rate | `eco` | `rate` |
-| No balls | `nb` | — |
-| Wides | `wd` | — |
-| **Dot balls** | **Not available** | **Not available** |
+| wicket_id | Name | IPL 2025 Count | Fielding Data Available |
+|---|---|---|---|
+| 54 | Catch Out | 601 | `catch_stump_player_id` = catcher |
+| 55 | Catch Out (Sub) | 12 | `catch_stump_player_id` = substitute fielder |
+| 56 | Stump Out | 18 | `catch_stump_player_id` = wicketkeeper |
+| 63 | Run Out | 37 | `runout_by_id` = thrower, `catch_stump_player_id` = collector |
+| 64 | Run Out (Sub) | 1 | Same as above, substitute fielder involved |
+| 79 | Clean Bowled | 133 | No fielder |
+| 83 | LBW OUT | 52 | No fielder |
+| 84 | Not Out | 257 | N/A |
+| 87 | Hit Wicket | 3 | No fielder |
+| 138 | Retired Out | 2 | No fielder |
 
-### Fielding Scorecard Fields
+> Additional run-out score types exist for combinations with extras: `65` (Run Out + 1 Run), `67` (Run Out + 2 Runs), `22` (1 Wide + Run Out), etc. All have `is_wicket: true` and follow the same `runout_by_id` / `catch_stump_player_id` pattern.
 
-| FAL Stat Needed | CricketData Field | SportMonks Field |
-|---|---|---|
-| Catches (per fielder) | `catch` (in catching array) | — (not in standard batting/bowling includes) |
-| Stumpings | `stumped` | — |
-| Runouts | `runout` | — |
-| **Runout attribution (direct vs assisted)** | **Not documented** | **Not documented** |
+### Bowling Scorecard Fields (validated against IPL 2025 data, Mar 2026)
 
-### Fielding Data Extraction Strategy (SportMonks)
+| FAL Stat Needed | CricketData Field | SportMonks Field | Verified |
+|---|---|---|---|
+| Overs bowled | `o` | `overs` | Yes |
+| Maidens | `m` | `medians` (SportMonks typo, confirmed field name) | Yes |
+| Runs conceded | `r` | `runs` | Yes |
+| Wickets taken | `w` | `wickets` | Yes |
+| Economy rate | `eco` | `rate` | Yes |
+| No balls | `nb` | `noball` | **Available (was listed as —)** |
+| Wides | `wd` | `wide` | **Available (was listed as —)** |
+| **Dot balls** | **Not available** | **Not in bowling summary — compute from ball-by-ball** | See below |
 
-Fielding stats are **not in the standard batting/bowling scoreboard includes**. SportMonks provides three paths to extract them:
+### Fielding Scorecard Fields (validated against IPL 2025 data, Mar 2026)
 
-**Path 1 — `batting.runoutby` nested include (preferred for runouts)**
-SportMonks docs confirm `batting.runoutby` as a valid nested include on batting scoreboards. This returns the fielder(s) responsible for a run out dismissal. **Must validate during 14-day trial:** does it return 1 fielder (direct hit) or 2 fielders (thrower + collector)?
+**Fielding data IS available directly in the batting include** — no ball-by-ball parsing required. This is a major simplification from the original design.
 
-**Path 2 — Ball-by-ball `wicket` object (primary source for all fielding)**
-Each ball in the `?include=balls` response has a `wicket` field. When a wicket falls, this object should contain:
-- Dismissal type (`caught`, `run out`, `stumped`, `bowled`, `lbw`)
-- Fielder ID(s) involved in the dismissal
-- **Must validate:** exact field names and whether multiple fielders are returned for assisted runouts
+| FAL Stat Needed | SportMonks Field | Source | Verified |
+|---|---|---|---|
+| Catches (per fielder) | `catch_stump_player_id` on batting rows where `wicket_id` = 54 or 55 | `?include=batting` | Yes (601 catches in IPL 2025) |
+| Stumpings | `catch_stump_player_id` on batting rows where `wicket_id` = 56 | `?include=batting` | Yes (18 stumpings in IPL 2025) |
+| Runout (thrower) | `runout_by_id` on batting rows where `wicket_id` = 63/64/65/67/68 | `?include=batting` | Yes (21 runouts in IPL 2025) |
+| Runout (collector) | `catch_stump_player_id` on same runout rows | `?include=batting` | Yes |
+| **Runout attribution** | **Always returns 2 player IDs: `runout_by_id` (thrower) + `catch_stump_player_id` (collector)** | `?include=batting` | **Yes — confirmed across all 21 IPL 2025 runouts** |
 
-**Path 3 — Ball-by-ball commentary text (fallback/cross-reference)**
-The `commentary` field on each ball uses standard cricket notation:
-- `"c Jadeja b Bumrah"` → catch by Jadeja (player ID from batting lineup mapping)
-- `"run out (Jadeja)"` → direct hit by Jadeja → 12 pts
-- `"run out (Jadeja/Dhoni†)"` → assisted: Jadeja threw, Dhoni collected → 6 pts each
-- `"st †Dhoni b Jadeja"` → stumping by Dhoni → 12 pts
+### Fielding Data Extraction Strategy (SportMonks) — SIMPLIFIED
 
-Parsing approach: regex extract fielder names from commentary → map to player IDs via the `lineup` include.
+> **Original design assumed fielding data required ball-by-ball parsing. This was wrong.** The batting include provides all fielding attribution directly via `catch_stump_player_id` and `runout_by_id` fields. Validated against all 71 completed IPL 2025 matches.
 
-**Fielding computation from ball-by-ball (per match):**
+**Fielding extraction from batting scorecard (per match):**
 ```typescript
-// Aggregate from all balls where wicket/fielding event occurred
+// All fielding data comes from the batting include — no ball-by-ball needed
 interface FieldingStats {
   playerId: number;
-  catches: number;       // from "c PlayerName b Bowler" or wicket.type === 'caught'
-  stumpings: number;     // from "st †PlayerName b Bowler" or wicket.type === 'stumped'
-  runoutsDirect: number; // 1 fielder in runout attribution → 12 pts
-  runoutsAssisted: number; // 2 fielders in runout → 6 pts each
+  catches: number;       // count batting rows where wicket_id IN (54, 55) AND catch_stump_player_id = this player
+  stumpings: number;     // count batting rows where wicket_id = 56 AND catch_stump_player_id = this player
+  runoutsAsFielder: number; // count rows where runout_by_id = this player OR catch_stump_player_id = this player (on runout wickets)
 }
+
+// Runout attribution:
+// Every runout has TWO player IDs: runout_by_id (thrower) and catch_stump_player_id (collector)
+// When runout_by_id !== catch_stump_player_id → assisted runout (6 pts each)
+// When runout_by_id === catch_stump_player_id → direct hit (12 pts to that player)
+// In IPL 2025, all 21 runouts had different IDs (all were assisted)
 
 // Fantasy points calculation:
 // catches * 8 + (catches >= 3 ? 4 : 0) + stumpings * 12
 // + runoutsDirect * 12 + runoutsAssisted * 6
 ```
 
-**Pre-season validation checklist (during SportMonks 14-day trial):**
-- [ ] Fetch a completed IPL match with `?include=batting,bowling,balls,batting.runoutby`
-- [ ] Check if `batting.runoutby` returns fielder object(s) — how many for assisted runouts?
-- [ ] Check ball-by-ball `wicket` object structure on a dismissal ball
-- [ ] Check `commentary` text format for catches, stumpings, runouts
-- [ ] Confirm player ID mapping between `lineup` include and fielder IDs in wicket/runout data
-- [ ] If runout attribution is unavailable: fall back to flat 8 pts per runout (see fallback below)
+**Pre-season validation checklist — COMPLETED (Mar 2026):**
+- [x] Fetch a completed IPL match with `?include=batting,bowling,balls` — confirmed working
+- [x] Batting include has `catch_stump_player_id` for catches and stumpings — confirmed
+- [x] Batting include has `runout_by_id` for runout thrower attribution — confirmed
+- [x] Runouts always return 2 player IDs (thrower + collector) — confirmed across 21 IPL 2025 runouts
+- [x] `wicket_id` maps to dismissal type via `/scores` endpoint — full mapping documented above
+- [x] Ball-by-ball data has `score.runs`, `score.noball`, `score.ball` for dot ball computation — confirmed
+- [x] Dot balls computable as: `score.runs == 0 && score.ball == true && score.noball == 0 && score.bye == 0 && score.leg_bye == 0`
 
-**Fallback if direct/assisted distinction unavailable:**
-Award a flat +8 pts per run out to the attributed fielder (compromise between 12 and 6). Update design spec accordingly.
+**Ball-by-ball is ONLY needed for dot ball computation.** If dot balls are dropped (Design Spec Issue #2), the `?include=batting,bowling,lineup` call alone provides everything — no `balls` include needed.
 
-### Critical Finding: Dot Ball Gap
+### Dot Ball Computation (validated Mar 2026)
 
-**Neither API provides a dot ball count in the bowling scorecard.** Options:
+**Neither API provides a dot ball count in the bowling scorecard.** However, ball-by-ball data makes this straightforward.
 
-1. **Compute from ball-by-ball data** — SportMonks provides this via `?include=balls` (each ball has `score`, `wicket`, `six`, `four`). Count balls where `score=0` and not a wide/no-ball. CricketData's ball-by-ball is still in testing.
-2. **Compute from summary stats** — `dots = balls_bowled - (runs from bat / SR * balls)` — unreliable due to extras.
-3. **Drop dot ball scoring** — This aligns with industry (neither Dream11 nor IPL Official awards dot ball points). See Design Spec Issue #2.
+**Validated approach:** Each ball in the `?include=balls` response has a `score` object with:
+```json
+{
+  "name": "No Run",    // human-readable
+  "runs": 0,           // runs scored by batsman
+  "four": false,       // was it a boundary four
+  "six": false,        // was it a boundary six
+  "bye": 0,            // bye runs
+  "leg_bye": 0,        // leg bye runs
+  "noball": 0,         // no-ball extras
+  "noball_runs": 0,    // runs off no-ball
+  "is_wicket": false,  // dismissal on this ball
+  "ball": true,        // counts as a legal delivery
+  "out": false         // batsman out
+}
+```
 
-**Recommendation:** Use SportMonks with ball-by-ball if dot balls are kept. If dot balls are dropped (per Issue #2), either API works without ball-by-ball data.
+**Dot ball formula:** `score.runs == 0 && score.ball == true && score.noball == 0 && score.bye == 0 && score.leg_bye == 0`
+
+**IPL 2025 validation:** Match 65240 (KKR vs RCB) — 218 legal balls, 73 dot balls computed. Score type names seen: `No Run`, `1 Run`, `2 Runs`, `FOUR`, `SIX`, `1 Wide`, `1 Leg Bye`, `Catch Out`, `Clean Bowled`.
+
+**Options remain:**
+1. **Keep dot ball scoring** — use `?include=balls` (adds ~200 ball objects per match, ~50KB)
+2. **Drop dot ball scoring** — aligns with Dream11/IPL Official. Eliminates need for ball-by-ball entirely, reducing API call to `?include=batting,bowling,lineup` only
+
+**Recommendation:** If dot balls are dropped (per Design Spec Issue #2), the entire scoring pipeline simplifies significantly — no ball-by-ball parsing needed at all.
+
+### Ball-by-Ball Data Structure (validated Mar 2026)
+
+Each ball in the `?include=balls` response contains:
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | number | Unique ball ID |
+| `ball` | number | Over.ball format (e.g., `0.1` = first ball of first over) |
+| `scoreboard` | string | `S1` (first innings) or `S2` (second innings) |
+| `batsman_id` | number | Striker's player ID |
+| `bowler_id` | number | Bowler's player ID |
+| `batsmanout_id` | number/null | Player ID of batsman dismissed (null if no wicket) |
+| `catchstump_id` | number/null | Fielder who caught/stumped/collected at stumps |
+| `runout_by_id` | number/null | Fielder who threw for runout |
+| `score` | object | Nested score object (see below) |
+| `batsman` | object | Full player object for striker |
+| `bowler` | object | Full player object for bowler |
+| `team` | object | Batting team object |
+
+**Ball `score` object fields:** `name` (string), `runs` (int), `four` (bool), `six` (bool), `bye` (int), `leg_bye` (int), `noball` (int), `noball_runs` (int), `is_wicket` (bool), `ball` (bool = legal delivery), `out` (bool)
+
+> Note: There is no `commentary` text field on balls, contrary to original design assumption. Fielding attribution comes from the structured `catchstump_id` and `runout_by_id` fields instead.
 
 ### Recommendation: SportMonks (€29/mo Major Plan)
 
@@ -255,7 +309,7 @@ Award a flat +8 pts per run out to the attributed fielder (compromise between 12
 | **Ball-by-ball production ready** | Yes | CricketData: "Testing" status |
 | **IPL 2026 confirmed** | Yes (blog post + demo) | Roanuz: Yes |
 | **Rate limit headroom** | 3,000/hr (FAL needs ~5/day) | More than enough on any plan |
-| **Fielding data gap** | Catches/stumpings/runouts need ball-by-ball computation | CricketData has dedicated catching array |
+| **Fielding data** | Catches/stumpings/runouts available directly in batting include (validated) | CricketData has dedicated catching array |
 
 **Why SportMonks wins:**
 1. **Cheapest option** at €29/mo — EntitySport is 8x more ($250/mo), Roanuz is comparable but less documented
@@ -266,30 +320,32 @@ Award a flat +8 pts per run out to the attributed fielder (compromise between 12
 
 **Trade-offs accepted:**
 - No built-in fantasy points (we calculate our own — this is actually better since FAL has custom scoring rules)
-- Fielding stats (catches, stumpings, runouts) not in standard batting/bowling includes — must extract from ball-by-ball data or scorecard text. This is solvable but adds parsing complexity.
+- ~~Fielding stats not in standard includes~~ **RESOLVED:** Fielding data (catches, stumpings, runouts with full attribution) IS available directly in the batting include via `catch_stump_player_id` and `runout_by_id` fields. No ball-by-ball parsing needed for fielding.
 - Off-season cost: €29/mo even when IPL isn't running. Cancel and resubscribe seasonally to save ~€200/year.
 
 **Fallback:** Admin manual stat entry via CSV upload if API is unavailable for a match. Design spec already supports this.
 
 ## 5. Data Ingestion Pipeline
 
-### Requests Per Match (SportMonks)
+### Requests Per Match (SportMonks) — validated Mar 2026
 
-| Step | Endpoint | Requests |
-|---|---|---|
-| Poll for completed matches | `GET /fixtures?filter[status]=Finished&filter[season_id]=X` | 1 (shared) |
-| Fetch full scorecard + ball-by-ball | `GET /fixtures/{id}?include=batting,bowling,lineup,runs,balls` | 1 per match |
+| Step | Endpoint | Requests | Notes |
+|---|---|---|---|
+| Poll for completed matches | `GET /seasons/{seasonId}?include=fixtures` then filter by `status === 'Finished'` in code | 1 (shared) | `GET /fixtures?filter[...]` times out in practice — use season include instead |
+| Fetch full scorecard (without dot balls) | `GET /fixtures/{id}?include=batting,bowling,lineup` | 1 per match | Sufficient for all scoring including fielding |
+| Fetch full scorecard + ball-by-ball (with dot balls) | `GET /fixtures/{id}?include=batting,bowling,lineup,balls` | 1 per match | Only needed if dot ball scoring is kept |
 
-**Double-header day total:** 1 poll + 2 combined scorecard requests = **3 requests** (well within 3,000/hr rate limit).
+**Double-header day total:** 1 poll + 2 scorecard requests = **3 requests** (well within 3,000/hr rate limit).
 
 ### Season Initialization (one-time)
 
 At the start of the IPL season, admin triggers a one-time fixture import:
 ```
-1. GET /fixtures?filter[season_id]=X → fetch all ~74 IPL matches
-2. Create Match rows with date, homeTeam, awayTeam, apiMatchId
+1. GET /seasons/{seasonId}?include=fixtures → fetch all ~74 IPL matches
+   (IPL 2026 season_id = 1795, league_id = 1)
+2. Create Match rows with date, localteam_id, visitorteam_id, apiMatchId
 3. Auto-generate Gameweek rows (Mon-Sun windows covering the season)
-4. Assign each Match to its Gameweek based on match date
+4. Assign each Match to its Gameweek based on starting_at date
 ```
 This pre-populates the Match table so cron jobs can check locally whether matches are scheduled today — **zero API calls on non-match days.**
 
@@ -316,10 +372,13 @@ Both triggers invoke the same pipeline:
    WHERE scoringStatus = 'completed' RETURNING id
    → No rows returned → exit (another process claimed them, or nothing to score)
 2. For each claimed match:
-   a. GET /fixtures/{id}?include=batting,bowling,lineup,runs,balls
-   b. Parse response → compute dot balls, fielding stats from ball-by-ball in memory
-   c. Upsert PlayerPerformance rows (keyed on playerId + matchId)
-   d. Set Match.scoringStatus = 'scored'
+   a. GET /fixtures/{id}?include=batting,bowling,lineup[,balls]
+      (balls include only needed if dot ball scoring is enabled)
+   b. Parse batting include → extract batting stats + fielding attribution
+      (catches from catch_stump_player_id, runouts from runout_by_id)
+   c. Parse bowling include → extract bowling stats (+ dot balls from balls if enabled)
+   d. Upsert PlayerPerformance rows (keyed on playerId + matchId)
+   e. Set Match.scoringStatus = 'scored'
 3. If gameweek has ended (all matches in GW are 'scored'):
    a. Aggregate player points across matches in the gameweek
    b. Apply bench auto-substitutions
@@ -393,7 +452,7 @@ All routes require authentication via Auth.js session unless noted. Routes marke
 - `GET /api/scoring/status` — List matches with their `scoringStatus` (scheduled/completed/scoring/scored) **(admin)**
 
 ### Season Admin:
-- `POST /api/admin/season/init` — Import IPL fixture list from SportMonks, create Match + Gameweek rows **(admin, one-time per season)**
+- `POST /api/admin/season/init` — Import IPL fixture list from SportMonks (`GET /seasons/1795?include=fixtures`), create Match + Gameweek rows **(admin, one-time per season)**
 
 ### Leaderboard:
 - `GET /api/leaderboard/[leagueId]` — Current league standings (total points, rank, GW points) **(member)**
