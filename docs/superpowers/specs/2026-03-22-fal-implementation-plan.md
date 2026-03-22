@@ -166,21 +166,28 @@ fal/
 │   │   ├── players/        # Player search
 │   │   └── gameweeks/      # GW info
 │   ├── (auth)/             # Route group — login, register
-│   ├── dashboard/
-│   │   ├── page.tsx
-│   │   └── loading.tsx     # Skeleton UI
-│   ├── lineup/
-│   │   ├── page.tsx
-│   │   └── loading.tsx
-│   ├── players/
-│   │   ├── page.tsx
-│   │   └── loading.tsx
-│   ├── league/
-│   │   ├── page.tsx
-│   │   └── loading.tsx
-│   ├── scores/
-│   │   └── [matchId]/
-│   │       └── page.tsx    # Match score breakdown page
+│   ├── (app)/              # Route group — main app pages (shared layout with nav)
+│   │   ├── page.tsx        # Dashboard (route: /)
+│   │   ├── loading.tsx
+│   │   ├── lineup/
+│   │   │   ├── page.tsx    # Lineup Builder (route: /lineup)
+│   │   │   └── loading.tsx
+│   │   ├── leaderboard/
+│   │   │   └── page.tsx    # GW leaderboard (route: /leaderboard)
+│   │   ├── standings/
+│   │   │   └── page.tsx    # Full season standings (route: /standings)
+│   │   ├── view-lineup/
+│   │   │   └── [teamId]/
+│   │   │       └── page.tsx # Read-only lineup view (route: /view-lineup/[teamId])
+│   │   ├── players/
+│   │   │   ├── page.tsx    # Player browser (route: /players)
+│   │   │   └── loading.tsx
+│   │   ├── scores/
+│   │   │   └── [matchId]/
+│   │   │       └── page.tsx # Match score breakdown (route: /scores/[matchId])
+│   │   └── admin/
+│   │       ├── page.tsx    # League admin (route: /admin)
+│   │       └── loading.tsx
 │   ├── layout.tsx          # Root layout (nav, providers)
 │   ├── error.tsx           # Global error boundary
 │   ├── loading.tsx         # Global loading skeleton
@@ -358,6 +365,7 @@ User 1→N Team, League 1→N Team, Team 1→N TeamPlayer, Player 1→N TeamPlay
 Team 1→N Lineup, Lineup 1→N LineupSlot
 Gameweek 1→N Match, Match 1→N PlayerPerformance, PlayerPerformance N→1 Player
 Team 1→N ChipUsage
+Team 1→N GameweekScore, GameweekScore N→1 Gameweek
 ```
 
 ### Uniqueness Constraints
@@ -365,6 +373,7 @@ Team 1→N ChipUsage
 - `Lineup`: unique(`teamId`, `gameweekId`)
 - `ChipUsage`: unique(`teamId`, `chipType`)
 - `LineupSlot`: unique(`lineupId`, `playerId`)
+- `GameweekScore`: unique(`teamId`, `gameweekId`)
 
 ### Required Indexes
 - `Match(scoringStatus)` — optimistic lock claim
@@ -389,7 +398,7 @@ All routes require Auth.js session unless noted. **Platform admin** = `User.role
 - `GET /api/leagues` — List user's leagues
 - `GET /api/leagues/[id]` — League detail **(member)**
 - `GET /api/leagues/[id]/teams` — Teams in league **(member)**
-- `POST /api/leagues/[id]/join` — Join via invite code
+- `POST /api/leagues/[id]/join` — Join via invite code. Returns 409 if league has reached `maxManagers`.
 - `PUT /api/leagues/[id]/settings` — Update settings **(league admin)**
 - `DELETE /api/leagues/[id]/managers/[userId]` — Remove manager **(league admin)**
 
@@ -399,15 +408,15 @@ All routes require Auth.js session unless noted. **Platform admin** = `User.role
 - `POST /api/leagues/[id]/roster` — CSV roster upload **(league admin)**
 
 ### Lineups
-- `GET /api/teams/[teamId]/lineups/[gameweekId]` — Get lineup. If no lineup exists for this GW, auto-copies previous GW lineup (carry-forward). Returns 404 only if no previous lineup exists either. **(owner)**
+- `GET /api/teams/[teamId]/lineups/[gameweekId]` — Get lineup. If no lineup exists for this GW, auto-copies previous GW lineup (carry-forward). Returns 404 only if no previous lineup exists either. **(owner or league member — league members get read-only access after GW lock, for viewing other managers' lineups)**
 - `PUT /api/teams/[teamId]/lineups/[gameweekId]` — Submit/update lineup, 423 if locked **(owner)**
   - **Validation rules** (in `lib/lineup/validation.ts`):
     - Exactly 11 players in XI, remaining on bench
     - Exactly 1 Captain, 1 VC (different players)
     - All players must be on this team's squad (`TeamPlayer`)
     - No duplicate players across XI + bench
-- `POST /api/teams/[teamId]/lineups/[gameweekId]/chip` — Activate chip, 409 if used **(owner)**
-- `DELETE /api/teams/[teamId]/lineups/[gameweekId]/chip` — Deactivate chip before lock **(owner)**
+- `POST /api/teams/[teamId]/lineups/[gameweekId]/chip` — Activate chip. Returns 409 if already used this season, 423 if GW locked. **(owner)**
+- `DELETE /api/teams/[teamId]/lineups/[gameweekId]/chip` — Deactivate chip. Returns 423 if GW locked. **(owner)**
 
 ### Scoring
 - `GET /api/leagues/[leagueId]/scores/[gameweekId]` — GW scores for league **(member)**
@@ -421,7 +430,7 @@ All routes require Auth.js session unless noted. **Platform admin** = `User.role
 
 ### Season Admin
 - `POST /api/admin/season/init` — Import fixtures from SportMonks **(platform admin, one-time)**
-- `POST /api/admin/season/start` — Validate all teams have rosters meeting `minSquadSize`, then set `League.seasonStarted = true`. Returns 422 if any team's roster is incomplete. **(league admin)**
+- `POST /api/admin/season/start` — Validates: (1) league has ≥2 managers (min), (2) all teams have rosters meeting `minSquadSize`. Sets `League.seasonStarted = true`. Returns 422 if validation fails. **(league admin)**
 - `POST /api/admin/scoring/csv-import` — Manual CSV stat upload for a match (fallback when SportMonks API is unavailable). CSV format: playerId, runs, balls, fours, sixes, wickets, overs, maidens, catches, stumpings, etc. **(platform admin)**
 
 ### Leaderboard
