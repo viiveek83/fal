@@ -7,7 +7,7 @@ Private IPL fantasy league platform for friends, featuring custom scoring, strat
 Preview all UI mockups locally:
 
 ```bash
-node .superpowers/brainstorm/17822-1773600508/server.js
+node server.js
 ```
 
 Then open [http://localhost:64472](http://localhost:64472)
