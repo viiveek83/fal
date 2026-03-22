@@ -1,6 +1,6 @@
 'use client'
 
-import { useSession } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import { useState, useCallback, useRef, useEffect } from 'react'
 
 /* ─── IPL team colors ─── */
@@ -410,6 +410,7 @@ export default function AdminPage() {
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <span style={styles.logo}>FAL</span>
           <span style={styles.badge}>League Admin</span>
+          <button onClick={() => signOut({ callbackUrl: '/login' })} style={{ marginLeft: 'auto', background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 8, padding: '4px 10px', color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>Sign Out</button>
         </div>
 
         {league ? (
