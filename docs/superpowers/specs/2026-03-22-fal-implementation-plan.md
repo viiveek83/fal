@@ -326,7 +326,203 @@ vercel --prod            # Production deployment
 vercel env pull          # Sync Vercel env vars to local
 ```
 
+## 9. Database Schema
+
+### Entities
+
+- **User** — `email`, `name`, `image`, `role` (enum: `USER`/`ADMIN`).
+- **League** — `adminUserId` (creator), `inviteCode`, `name`, settings.
+- **Team** — `name`, `totalPoints` (incremental — updated at GW end).
+- **TeamPlayer** — `leagueId`, `playerId`, `purchasePrice` (from CSV upload).
+- **Player** — `apiPlayerId` (SportMonks ID), `fullname`, `iplTeamId`, `role` (BAT/BOWL/ALL/WK), `battingStyle`, `bowlingStyle`, `imageUrl`.
+- **Gameweek** — `number` (1-10), `lockTime` (DateTime), `status` (`upcoming`/`active`/`completed`), `aggregationStatus` (`pending`/`aggregating`/`done`).
+- **Match** — `apiMatchId`, `gameweekId`, `localTeamId`, `visitorTeamId`, `startingAt`, `apiStatus` (`NS`/`Finished`/`Cancelled`), `scoringStatus` (`scheduled`/`completed`/`scoring`/`scored`/`error`), `note` (result text), `winnerTeamId`, `scoringAttempts` (Int, default 0).
+- **Lineup** — `teamId`, `gameweekId`.
+- **LineupSlot** — `lineupId`, `playerId`, `slotType` (XI/BENCH), `benchPriority` (1-4, null for XI), `role` (CAPTAIN/VC/TRIPLE_CAPTAIN/null).
+- **PlayerPerformance** — Per-player per-match:
+  - Batting: `runs`, `balls`, `fours`, `sixes`, `strikeRate`, `wicketId`
+  - Bowling: `overs`, `maidens`, `runsConceded`, `wickets`, `economyRate`, `dotBalls`
+  - Fielding: `catches`, `stumpings`, `runoutsDirect`, `runoutsAssisted`
+  - Computed: `fantasyPoints` (base points, before multipliers)
+  - Meta: `inStartingXI` (boolean), `isImpactPlayer` (boolean)
+- **PlayerScore** — Per-player per-GW aggregate (after C/VC multipliers + chip effects).
+- **ChipUsage** — `teamId`, `chipType` (`TRIPLE_CAPTAIN`/`BENCH_BOOST`/`BAT_BOOST`/`BOWL_BOOST`), `gameweekId`, `status` (`pending`/`used`).
+
+### Relationships
+```
+User 1→N Team, League 1→N Team, Team 1→N TeamPlayer, Player 1→N TeamPlayer
+Team 1→N Lineup, Lineup 1→N LineupSlot
+Gameweek 1→N Match, Match 1→N PlayerPerformance, PlayerPerformance N→1 Player
+Team 1→N ChipUsage
+```
+
+### Uniqueness Constraints
+- `TeamPlayer`: unique(`leagueId`, `playerId`)
+- `Lineup`: unique(`teamId`, `gameweekId`)
+- `ChipUsage`: unique(`teamId`, `chipType`)
+- `LineupSlot`: unique(`lineupId`, `playerId`)
+
+### Required Indexes
+- `Match(scoringStatus)` — optimistic lock claim
+- `Match(gameweekId, scoringStatus)` — GW-end check
+- `PlayerPerformance(playerId, matchId)` — upsert key
+- `PlayerPerformance(matchId)` — per-match lookups
+- `Player(role, iplTeamId)` — player search/filter
+- `Team(leagueId)` — leaderboard queries
+- `Gameweek(status)` — current GW lookup
+
+## 10. API Routes
+
+All routes require Auth.js session unless noted. **Platform admin** = `User.role === 'ADMIN'`. **League admin** = `league.adminUserId === session.userId`. **Owner** = `team.userId === session.userId`.
+
+**Standard error responses:** `401` (unauthenticated), `403` (forbidden), `404` (not found), `409` (conflict), `422` (validation), `423` (locked).
+
+### Auth
+- `GET/POST /api/auth/[...nextauth]` — Auth.js v5 handler (public)
+
+### Leagues
+- `POST /api/leagues` — Create league (caller = league admin)
+- `GET /api/leagues` — List user's leagues
+- `GET /api/leagues/[id]` — League detail **(member)**
+- `GET /api/leagues/[id]/teams` — Teams in league **(member)**
+- `POST /api/leagues/[id]/join` — Join via invite code
+- `PUT /api/leagues/[id]/settings` — Update settings **(league admin)**
+- `DELETE /api/leagues/[id]/managers/[userId]` — Remove manager **(league admin)**
+
+### Teams
+- `GET /api/teams/[teamId]` — Team detail **(owner or member)**
+- `GET /api/teams/[teamId]/squad` — Player list **(owner or member)**
+- `POST /api/leagues/[id]/roster` — CSV roster upload **(league admin)**
+
+### Lineups
+- `GET /api/teams/[teamId]/lineups/[gameweekId]` — Get lineup **(owner)**
+- `PUT /api/teams/[teamId]/lineups/[gameweekId]` — Submit/update lineup, 423 if locked **(owner)**
+- `POST /api/teams/[teamId]/lineups/[gameweekId]/chip` — Activate chip, 409 if used **(owner)**
+- `DELETE /api/teams/[teamId]/lineups/[gameweekId]/chip` — Deactivate chip before lock **(owner)**
+
+### Scoring
+- `GET /api/leagues/[leagueId]/scores/[gameweekId]` — GW scores for league **(member)**
+- `GET /api/teams/[teamId]/scores/[gameweekId]` — Per-player breakdown **(owner or member)**
+- `POST /api/scoring/import` — Trigger scoring pipeline **(platform admin)**
+- `GET /api/scoring/cron` — Vercel cron trigger (protected by `CRON_SECRET`) **(cron only)**
+- `POST /api/scoring/recalculate/[matchId]` — Re-score a match **(platform admin)**
+- `POST /api/scoring/cancel/[matchId]` — Cancel abandoned match **(platform admin)**
+- `POST /api/scoring/force-end-gw/[gameweekId]` — Force GW aggregation **(platform admin)**
+- `GET /api/scoring/status` — Match scoring statuses **(platform admin)**
+
+### Season Admin
+- `POST /api/admin/season/init` — Import fixtures from SportMonks **(platform admin, one-time)**
+
+### Leaderboard
+- `GET /api/leaderboard/[leagueId]` — Standings **(member)**
+- `GET /api/leaderboard/[leagueId]/history` — GW-by-GW history **(member)**
+
+### Players
+- `GET /api/players?role=BAT&team=MI&page=1&limit=25` — Search/filter **(authenticated)**
+- `GET /api/players/[id]` — Player detail **(authenticated)**
+
+### Gameweeks
+- `GET /api/gameweeks/current` — Current GW info **(authenticated)**
+- `GET /api/gameweeks` — All GWs with status **(authenticated)**
+
+## 11. Scoring Pipeline
+
+### Triggers
+- **Primary:** Admin taps "Import Scores" → `POST /api/scoring/import`
+- **Safety net:** Daily cron at midnight → `GET /api/scoring/cron`
+
+```json
+// vercel.json
+{ "crons": [{ "path": "/api/scoring/cron", "schedule": "0 0 * * *" }] }
+```
+
+### Pipeline Flow (`lib/scoring/pipeline.ts`)
+
+```
+1. Early exit: if any match has scoringStatus = 'scoring', return 409
+
+2. Claim matches (raw SQL — NOT Prisma update()):
+   $queryRaw`UPDATE "Match" SET "scoringStatus" = 'scoring'
+     WHERE "scoringStatus" = 'completed'
+     ORDER BY "startingAt" ASC LIMIT 4
+     RETURNING id`
+   → No rows → exit
+
+3. For each claimed match (try/catch):
+   try {
+     a. GET /fixtures/{id}?include=batting,bowling,lineup[,balls] (10s timeout)
+     b. Validate response (batting/bowling arrays exist)
+     c. Parse batting → runs, fours, sixes, SR, fielding attribution
+     d. Parse bowling → wickets, overs, maidens, ER (+ dot balls in-memory)
+     e. Compute fantasyPoints per player (base, no multipliers)
+     f. Batch upsert PlayerPerformance:
+        $executeRaw`INSERT INTO "PlayerPerformance" (...)
+          VALUES (...), (...), ...
+          ON CONFLICT ("playerId", "matchId") DO UPDATE SET ...`
+     g. Set Match.scoringStatus = 'scored'
+   } catch {
+     h. Reset Match.scoringStatus = 'completed'
+     i. Increment scoringAttempts; if >= 3 → set 'error'
+   }
+
+4. GW end check (atomic lock):
+   $queryRaw`UPDATE "Gameweek" SET "aggregationStatus" = 'aggregating'
+     WHERE id = ? AND "aggregationStatus" = 'pending'
+     AND NOT EXISTS (
+       SELECT 1 FROM "Match"
+       WHERE "gameweekId" = ?
+       AND "scoringStatus" NOT IN ('scored', 'error', 'cancelled')
+     )
+     RETURNING id`
+   → No rows → GW not complete, exit
+
+5. If GW claimed:
+   a. Aggregate PlayerPerformance.fantasyPoints across GW matches per player
+   b. Apply bench auto-substitutions
+      (player "played" = appears in lineup include of ANY match in GW)
+   c. Apply captain (2x), VC (1.5x), Triple Captain (3x) multipliers
+   d. Apply chip effects (multiplicative with captain)
+   e. Incremental leaderboard: UPDATE "Team" SET "totalPoints" += gwPoints
+   f. Set Gameweek.aggregationStatus = 'done'
+```
+
+### State Machine
+```
+scheduled → completed → scoring → scored
+                ↑           |         |
+                |    (fail) ↓         |
+                ←── (retry) ←─────────┘ (re-score)
+                         ↓
+                    error (after 3 attempts)
+                         ↓
+                    cancelled (admin, for abandoned matches)
+```
+
+### Error Recovery
+- Failed API call → reset to `completed` for retry
+- 3 failures → set `error`, admin notified
+- Stuck in `scoring` > 5 min → cron resets to `completed`
+- Cancelled match → admin sets `cancelled` (excluded from GW-end check)
+- Force end GW → admin triggers aggregation regardless of match statuses
+
+### Timing Budget
+| Step | Time |
+|---|---|
+| Vercel + Neon cold start | ~2-4s |
+| SportMonks API call | ~1-2s/match |
+| Parse + compute | <100ms |
+| Batch SQL upsert (~30 rows) | ~100ms |
+| GW aggregation (15 teams) | ~2-3s |
+| **4 matches + GW end** | **~25-35s** (within 60s) |
+
+### Critical Implementation Notes
+- **Use `$queryRaw` / `$executeRaw`** for match claims, GW claims, and batch upserts. Prisma's ORM doesn't support `UPDATE...RETURNING` or efficient batch upserts.
+- **Don't store ball-by-ball data.** Compute dot balls in-memory during scoring, store only `dotBalls` integer on PlayerPerformance. If re-scoring needed, re-fetch from SportMonks.
+- **Vercel cron sends GET**, not POST. The cron route (`/api/scoring/cron`) must be a GET handler that calls the same `runScoringPipeline()` function.
+- **Season init and seed scripts must share code** — fixture import logic lives in `lib/sportmonks/fixtures.ts`, called by both `POST /api/admin/season/init` and `npm run seed:fixtures`.
+
 ## Related Documents
-- [Architecture](2026-03-15-fal-architecture.md) — System design, entities, API routes, scoring pipeline
+- [Architecture](2026-03-15-fal-architecture.md) — High-level system design, diagrams, cost summary
 - [API Exploration](2026-03-22-sportmonks-api-exploration.md) — SportMonks field validation, gap analysis
 - [Design Spec](2026-03-15-fal-design.md) — Scoring rules, chips, lineup mechanics, UI designs
+- [PRD](2026-03-22-fal-prd.md) — Product requirements
