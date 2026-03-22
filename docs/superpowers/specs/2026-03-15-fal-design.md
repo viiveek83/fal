@@ -161,8 +161,8 @@ Each gameweek, managers submit:
 | Concussion / Impact Player sub | +4 |
 
 ### Multipliers:
-- Captain: 2x
-- Vice Captain: 1.5x
+- Captain: 2x (always)
+- Vice Captain: 2x **only if Captain did not play** across the entire GW (not in Starting XI, not as Impact Sub). Otherwise VC earns standard 1x — no multiplier.
 
 ### Milestone Bonus Rules:
 - Century bonus **replaces** all lower milestones (a player scoring 100 gets +16 for century only, NOT +4 for 25 + +8 for 50 + +12 for 75 + +16 for 100)
@@ -178,15 +178,15 @@ Each gameweek, managers submit:
 |---|---|
 | **Triple Captain** | Designate a 3rd player (not Captain or VC) as Triple Captain — earns 3× points for that gameweek |
 | **Bench Boost** | Bench player points also count |
-| **Bat Boost** | All players with BAT role get their total points doubled (2x) for the gameweek |
-| **Bowl Boost** | All players with BOWL role get their total points doubled (2x) for the gameweek |
+| **Power Play Bat** | All players with BAT role get their total points doubled (2x) for the gameweek |
+| **Bowling Boost** | All players with BOWL role get their total points doubled (2x) for the gameweek |
 
 ### Chip + Multiplier Stacking:
 Multipliers stack **multiplicatively** with category chips. Examples:
-- Captain (2x) who is a BAT + Bat Boost active = 2x × 2x = **4x total points**
-- Captain (2x) who is a BOWL + Bowl Boost active = 2x × 2x = **4x total points**
-- Triple Captain (3x) who is a BAT + Bat Boost active = 3x × 2x = **6x total points**
-- Only one chip per gameweek, so Triple Captain cannot combine with Bat Boost or Bowl Boost
+- Captain (2x) who is a BAT + Power Play Bat active = 2x × 2x = **4x total points**
+- Captain (2x) who is a BOWL + Bowling Boost active = 2x × 2x = **4x total points**
+- Triple Captain (3x) who is a BAT + Power Play Bat active = **not possible** (only 1 chip per GW)
+- Only one chip per gameweek, so Triple Captain cannot combine with Power Play Bat or Bowling Boost
 
 ### Triple Captain Rules:
 - The Triple Captain must be a **different player** from both Captain and Vice Captain
@@ -427,7 +427,7 @@ FAL now uses Dream11's T20 scoring system as the baseline.
 | Starting XI bonus | +4 | +4 | unconfirmed |
 | Impact Player sub | +4 | +4 | — |
 | Captain | 2x | 2x | — |
-| Vice Captain | 1.5x | 1.5x | — |
+| Vice Captain | 2x only if Captain absent, else 1x | 1.5x | — |
 
 ### Scoring Balance
 
@@ -445,7 +445,7 @@ FAL now uses Dream11's T20 scoring system as the baseline.
 |---|-------|--------|--------|
 | 6 | **No role composition constraints** | Managers could field 11 batsmen or 11 bowlers with no restriction. Consider minimum role requirements (e.g., min 1 WK, 3 BAT, 3 BOWL, 1 ALL). | Open |
 | 7 | **Impact Sub undefined in spec** | The mockup shows an Impact Sub slot but the spec doesn't define it. Need rules: when can it be used, does it replace a bench slot, does it score differently? | Open |
-| 8 | **Chip balance — Powerplay vs Bowling Boost** | Powerplay (2x batting) benefits more players per team than Bowling Boost (2x bowling), since most teams have 5-6 batters vs 4-5 bowlers in XI. Powerplay may be strictly better. | Open |
+| 8 | **Chip balance — Power Play Bat vs Bowling Boost** | Power Play Bat (2x batting) benefits more players per team than Bowling Boost (2x bowling), since most teams have 5-6 batters vs 4-5 bowlers in XI. Power Play Bat may be strictly better. | Open |
 | 9 | **No transfer/trade mechanism in Phase 1** | If a player gets injured mid-season, the manager is stuck. Consider a simple free-agent pickup (drop one, pick one unclaimed) even in Phase 1. | Open |
 | 10 | **Captain/VC didn't play — harsh penalty** | Both absent = no multipliers for anyone. Consider auto-promoting highest scorer to captain in this edge case. | Open |
 

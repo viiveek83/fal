@@ -50,7 +50,7 @@ Points are earned from real IPL performance. Here's what scores:
 | Century (100) | +16 *(replaces all lower milestones)* |
 | Duck (0 runs, batters/keepers/all-rounders only) | −2 |
 
-**Strike rate also counts** (minimum 10 balls faced):
+**Strike rate also counts** (minimum 10 balls faced; bowlers are exempt from SR penalties):
 | Strike Rate | Points |
 |---|---|
 | 170+ | +6 |
@@ -58,6 +58,7 @@ Points are earned from real IPL performance. Here's what scores:
 | 130–150 | +2 |
 | 70–130 | 0 |
 | 60–70 | −2 |
+| 50–60 | −4 |
 | Below 50 | −6 |
 
 ### Bowling

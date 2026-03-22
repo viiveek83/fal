@@ -101,7 +101,7 @@ All services run as modules in `lib/`:
 
 ## 5. Data Model (summary)
 
-11 entities — see [Implementation Plan](2026-03-22-fal-implementation-plan.md) for full field definitions, indexes, and constraints.
+12 entities — see [Implementation Plan](2026-03-22-fal-implementation-plan.md) for full field definitions, indexes, and constraints.
 
 ```
 User → Team → TeamPlayer → Player
@@ -109,6 +109,7 @@ League → Team
 Team → Lineup → LineupSlot
 Gameweek → Match → PlayerPerformance → Player
 Team → ChipUsage
+Team → GameweekScore (per-team per-GW total after adjustments)
 PlayerScore (per player per GW, aggregated)
 ```
 

@@ -349,7 +349,8 @@ vercel env pull          # Sync Vercel env vars to local
   - Computed: `fantasyPoints` (base points, before multipliers)
   - Meta: `inStartingXI` (boolean), `isImpactPlayer` (boolean)
 - **PlayerScore** — Per-player per-GW aggregate (after C/VC multipliers + chip effects).
-- **ChipUsage** — `teamId`, `chipType` (`TRIPLE_CAPTAIN`/`BENCH_BOOST`/`BAT_BOOST`/`BOWL_BOOST`), `gameweekId`, `status` (`pending`/`used`).
+- **ChipUsage** — `teamId`, `chipType` (`TRIPLE_CAPTAIN`/`BENCH_BOOST`/`POWER_PLAY_BAT`/`BOWLING_BOOST`), `gameweekId`, `status` (`pending`/`used`).
+- **GameweekScore** — Per-team per-GW total after all adjustments. Stores `teamId`, `gameweekId`, `totalPoints` (Int — final GW score after subs + multipliers + chips), `chipUsed` (enum or null). Used for GW history, leaderboard tiebreaker, and `Team.bestGwScore` updates.
 
 ### Relationships
 ```
@@ -515,18 +516,17 @@ All routes require Auth.js session unless noted. **Platform admin** = `User.role
    c. BENCH AUTO-SUBSTITUTION (see detailed algorithm below):
       Determine which XI players "played" and apply ordered bench subs.
 
-   d. CAPTAIN/VC MULTIPLIER PROMOTION:
-      - Determine effective C/VC/TC after bench subs:
-        · If Captain played → captainMultiplier = 2x
-        · If Captain did NOT play → VC promoted to Captain (2x).
-          VC slot gets no multiplier. No new VC assigned.
-        · If VC also did NOT play → no C/VC multipliers for anyone
-        · If Triple Captain chip active AND TC player played → TC gets 3x
-        · If TC did NOT play → chip consumed, no 3x applied to anyone
+   d. CAPTAIN/VC MULTIPLIER (PRD model — VC has NO default multiplier):
+      - Captain played → Captain gets 2x. VC gets 1x (no multiplier).
+      - Captain did NOT play → VC promoted to 2x. Bench sub who
+        replaced Captain does NOT inherit multiplier.
+      - Both Captain AND VC did NOT play → no multipliers for anyone.
+      - Triple Captain chip active AND TC played → TC gets 3x.
+        If TC did NOT play → chip consumed, no 3x inherited.
       - Apply multipliers to gwBasePoints:
-        · effectiveC player: gwBasePoints[C] *= 2
-        · effectiveVC player (if not promoted): gwBasePoints[VC] *= 1.5
-        · TC player (if played): gwBasePoints[TC] *= 3
+        · Captain (if played): gwBasePoints[C] *= 2
+        · VC (only if Captain absent): gwBasePoints[VC] *= 2
+        · TC (if played): gwBasePoints[TC] *= 3
 
    e. CHIP EFFECTS (multiplicative with captain multipliers):
       - Bench Boost: add bench players' gwBasePoints to team total
@@ -697,12 +697,9 @@ function resolveMultipliers(lineup: LineupSlot[], playedPlayerIds: Set<number>, 
   }
   // If both C and VC didn't play → no C/VC multipliers for anyone
 
-  // VC multiplier (only if not promoted)
-  if (vc && playedPlayerIds.has(vc.playerId) &&
-      captain && playedPlayerIds.has(captain.playerId)) {
-    // VC only gets 1.5x if Captain also played (VC wasn't promoted)
-    multipliers.set(vc.playerId, 1.5);
-  }
+  // VC multiplier: VC earns 1x (no multiplier) when Captain plays.
+  // VC only gets 2x if promoted to Captain (handled above).
+  // This is NOT the Dream11 model (1.5x always) — FAL uses the PRD model.
 
   // Triple Captain (only if chip active AND TC played)
   if (tc && playedPlayerIds.has(tc.playerId)) {
@@ -740,7 +737,7 @@ function applyChipEffects(
       }
       break;
 
-    case 'BAT_BOOST':
+    case 'POWER_PLAY_BAT':
       // All BAT role players in scoring XI get 2x (on top of any C/VC multiplier)
       for (const pid of scoringXI) {
         if (playerRoles.get(pid) === 'BAT') {
@@ -749,7 +746,7 @@ function applyChipEffects(
       }
       break;
 
-    case 'BOWL_BOOST':
+    case 'BOWLING_BOOST':
       // All BOWL role players in scoring XI get 2x
       for (const pid of scoringXI) {
         if (playerRoles.get(pid) === 'BOWL') {
@@ -767,11 +764,12 @@ function applyChipEffects(
 }
 ```
 
-### Stacking Examples (from Design Spec)
-- Captain (2x) BAT player, Bat Boost active: base × 2 (captain) → then Bat Boost adds another 1x = **4x total**
-- Triple Captain (3x) BAT player, Bat Boost active: **impossible** — only 1 chip per GW (TC and Bat Boost are different chips)
-- Captain (2x) BOWL player, Bowl Boost active: base × 2 (captain) + another 1x (Bowl Boost) = **4x total**
-- VC (1.5x) BAT player, Bat Boost active: base × 1.5 + another 1x = **3x total**
+### Stacking Examples (from PRD)
+- Captain (2x) BAT player, Power Play Bat active: base × 2 (captain) × 2 (chip) = **4x total**
+- Captain (2x) BOWL player, Bowling Boost active: base × 2 (captain) × 2 (chip) = **4x total**
+- Triple Captain (3x) + Power Play Bat: **impossible** — only 1 chip per GW
+- VC when Captain plays, Power Play Bat active: base × 1 (no VC bonus) × 2 (chip) = **2x total**
+- VC when Captain absent, Power Play Bat: **impossible** — only 1 chip per GW (VC promotion is not a chip)
 
 ### State Machine
 ```
@@ -813,8 +811,11 @@ scheduled → completed → scoring → scored
 - **Duck rule precision** — Duck penalty (-2) requires ALL of: `runs === 0`, `balls >= 1` (faced at least 1 delivery), player is dismissed (`wicketId !== 84`), and `role !== 'BOWL'`. A player who is not-out on 0*(0) (never faced a ball) does NOT get duck penalty.
 - **Live GW scores** — During an active GW, leaderboard shows approximate mid-week scores computed from `SUM(PlayerPerformance.fantasyPoints)` for scored matches. These are pre-multiplier/pre-bench-sub estimates. Final scores are only accurate after GW aggregation (step 5).
 
-### Design Spec Chip Naming Note
-Design spec Section 2 uses "Powerplay" but Section 7 defines the chip as "Bat Boost" (2x for BAT role). Implementation uses `BAT_BOOST`. The correct name per the detailed spec is **Bat Boost**.
+### Authoritative Sources
+The **PRD** and **Player Guide** are the source of truth, not the design spec. Key differences from Dream11:
+- **VC multiplier:** FAL uses 1x normally, 2x only if Captain absent (NOT Dream11's 1.5x always)
+- **Chip names:** `POWER_PLAY_BAT` (PRD: "Power Play Bat"), `BOWLING_BOOST` (PRD: "Bowling Boost")
+- Design spec may reference older naming/rules — defer to PRD when in conflict
 
 ## Related Documents
 - [Architecture](2026-03-15-fal-architecture.md) — High-level system design, diagrams, cost summary
