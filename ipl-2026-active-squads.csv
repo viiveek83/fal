@@ -1,0 +1,242 @@
+team_code,team_name,player_id,player_name,role,batting_style,bowling_style,country_id,date_of_birth,availability
+MI,Mumbai Indians,40997,AM Ghazanfar,Bowler,right-hand-bat,right-arm-offbreak,43444,2006-03-20,AVAILABLE
+MI,Mumbai Indians,58342,Ashwani Kumar,Bowler,left-hand-bat,left-arm-fast-medium,153732,2001-08-29,AVAILABLE
+MI,Mumbai Indians,4337,Corbin Bosch,Allrounder,right-hand-bat,right-arm-fast-medium,146,1994-09-10,AVAILABLE
+MI,Mumbai Indians,60480,Danish Malewar,Batsman,right-hand-bat,legbreak,153732,2003-10-08,AVAILABLE
+MI,Mumbai Indians,279,Deepak Chahar,Bowler,right-hand-bat,right-arm-fast-medium,153732,1992-08-07,AVAILABLE
+MI,Mumbai Indians,281,Hardik Pandya,Allrounder,right-hand-bat,right-arm-fast-medium,153732,1993-10-11,AVAILABLE
+MI,Mumbai Indians,284,Jasprit Bumrah,Bowler,right-hand-bat,right-arm-fast,153732,1993-12-06,AVAILABLE
+MI,Mumbai Indians,3347,Mayank Markande,Bowler,right-hand-bat,legbreak,153732,1997-11-11,AVAILABLE
+MI,Mumbai Indians,59490,Mayank Rawat,Allrounder,right-hand-bat,right-arm-offbreak,153732,1999-12-04,AVAILABLE
+MI,Mumbai Indians,227,Mitchell Santner,Allrounder,left-hand-bat,slow-left-arm-orthodox,2817,1992-02-05,AVAILABLE
+MI,Mumbai Indians,60728,Mohammed Salahuddin Izhar,Bowler,right-hand-bat,left-arm-fast-medium,153732,2004-01-01,AVAILABLE
+MI,Mumbai Indians,53075,Naman Dhir,Allrounder,right-hand-bat,right-arm-offbreak,153732,1999-12-31,AVAILABLE
+MI,Mumbai Indians,77,Quinton de Kock,Wicketkeeper,left-hand-bat,,146,1992-12-17,AVAILABLE
+MI,Mumbai Indians,22935,Raghu Sharma,Allrounder,,,153732,1993-03-11,AVAILABLE
+MI,Mumbai Indians,35051,Raj Angad Bawa,Allrounder,left-hand-bat,right-arm-fast-medium,153732,2002-11-12,AVAILABLE
+MI,Mumbai Indians,39047,Robin Minz,Wicketkeeper,left-hand-bat,,153732,2002-09-13,AVAILABLE
+MI,Mumbai Indians,278,Rohit Sharma,Batsman,right-hand-bat,right-arm-offbreak,153732,1987-04-30,AVAILABLE
+MI,Mumbai Indians,662,Ryan Rickelton,Wicketkeeper,left-hand-bat,,146,1996-07-11,AVAILABLE
+MI,Mumbai Indians,60,Shardul Thakur,Bowler,right-hand-bat,right-arm-fast-medium,153732,1991-10-16,AVAILABLE
+MI,Mumbai Indians,128,Sherfane Rutherford,Middle Order Batter,left-hand-bat,right-arm-fast-medium,24150873,1998-08-15,AVAILABLE
+MI,Mumbai Indians,2879,Suryakumar Yadav,Batsman,right-hand-bat,right-arm-fast-medium,153732,1990-09-14,AVAILABLE
+MI,Mumbai Indians,8370,Tilak Varma,Batsman,left-hand-bat,right-arm-offbreak,153732,2002-11-08,AVAILABLE
+MI,Mumbai Indians,221,Trent Boult,Bowler,right-hand-bat,left-arm-fast-medium,2817,1989-07-22,AVAILABLE
+MI,Mumbai Indians,3806,Will Jacks,Batsman,right-hand-bat,right-arm-offbreak,462,1998-11-21,AVAILABLE
+CSK,Chennai Super Kings,7083,Akeal Hosein,Bowler,left-hand-bat,slow-left-arm-orthodox,24150873,1993-04-25,AVAILABLE
+CSK,Chennai Super Kings,36473,Aman Hakim Khan,Bowler,right-hand-bat,right-arm-offbreak,153732,1996-11-23,AVAILABLE
+CSK,Chennai Super Kings,53078,Anshul Kamboj,Allrounder,right-hand-bat,right-arm-fast-medium,153732,2000-12-06,AVAILABLE
+CSK,Chennai Super Kings,57345,Ayush Mhatre,Allrounder,right-hand-bat,right-arm-offbreak,153732,2007-07-16,AVAILABLE
+CSK,Chennai Super Kings,35309,Dewald Brevis,Batsman,right-hand-bat,legbreak,146,2003-04-29,AVAILABLE
+CSK,Chennai Super Kings,31028,Gurjapneet Singh,Bowler,,,153732,2000-01-01,AVAILABLE
+CSK,Chennai Super Kings,3491,Jamie Overton,Bowler,right-hand-bat,right-arm-fast,462,1994-04-10,AVAILABLE
+CSK,Chennai Super Kings,60723,Kartik Sharma,Wicketkeeper,right-hand-bat,,153732,2006-04-26,AVAILABLE
+CSK,Chennai Super Kings,322,Khaleel Ahmed,Bowler,right-hand-bat,left-arm-fast-medium,153732,1997-12-05,AVAILABLE
+CSK,Chennai Super Kings,274,Mahendra Singh Dhoni,Wicketkeeper,right-hand-bat,right-arm-fast-medium,153732,1981-07-07,AVAILABLE
+CSK,Chennai Super Kings,214,Matt Henry,Bowler,right-hand-bat,right-arm-fast-medium,2817,1991-12-14,AVAILABLE
+CSK,Chennai Super Kings,34319,Mukesh Choudhary,Bowler,left-hand-bat,left-arm-fast-medium,153732,1996-07-06,AVAILABLE
+CSK,Chennai Super Kings,8490,Noor Ahmad,Bowler,left-hand-bat,slow-left-arm-orthodox,43444,2005-01-03,AVAILABLE
+CSK,Chennai Super Kings,60167,Prashant Veer,Allrounder,right-hand-bat,slow-left-arm-orthodox,153732,2005-11-24,AVAILABLE
+CSK,Chennai Super Kings,3296,Rahul Chahar,Bowler,right-hand-bat,legbreak-googly,153732,1999-08-04,AVAILABLE
+CSK,Chennai Super Kings,57613,Ramakrishna Ghosh,Bowler,right-hand-bat,right-arm-fast-medium,153732,1997-08-28,AVAILABLE
+CSK,Chennai Super Kings,4856,Ruturaj Gaikwad,Batsman,right-hand-bat,right-arm-offbreak,153732,1997-01-31,AVAILABLE
+CSK,Chennai Super Kings,2900,Sanju Samson,Wicketkeeper,right-hand-bat,,153732,1994-11-11,AVAILABLE
+CSK,Chennai Super Kings,2774,Sarfaraz Khan,Batsman,right-hand-bat,legbreak,153732,1997-10-27,AVAILABLE
+CSK,Chennai Super Kings,4940,Shivam Dube,Allrounder,left-hand-bat,right-arm-fast-medium,153732,1993-06-26,AVAILABLE
+CSK,Chennai Super Kings,2846,Shreyas Gopal,Allrounder,right-hand-bat,legbreak,153732,1993-09-04,AVAILABLE
+CSK,Chennai Super Kings,34463,Urvil Patel,Wicketkeeper,right-hand-bat,,153732,1998-10-17,AVAILABLE
+CSK,Chennai Super Kings,36716,Zak Foulkes,Allrounder,right-hand-bat,right-arm-fast-medium,2817,2002-06-05,AVAILABLE
+CSK,Chennai Super Kings,397,Matthew Short,Allrounder,right-hand-bat,right-arm-offbreak,98,1995-11-08,"LATE JOINER — Fractured thumb, expected late March/early April"
+KKR,Kolkata Knight Riders,51,Ajinkya Rahane,Batsman,right-hand-bat,right-arm-fast-medium,153732,1988-06-06,AVAILABLE
+KKR,Kolkata Knight Riders,35066,Angkrish Raghuvanshi,Batsman,right-hand-bat,slow-left-arm-orthodox,153732,2005-06-05,AVAILABLE
+KKR,Kolkata Knight Riders,3350,Anukul Roy,Allrounder,left-hand-bat,slow-left-arm-orthodox,153732,1998-11-30,AVAILABLE
+KKR,Kolkata Knight Riders,630,Cameron Green,Allrounder,right-hand-bat,right-arm-fast-medium,98,1999-06-03,AVAILABLE
+KKR,Kolkata Knight Riders,60725,Daksh Kamra,Allrounder,right-hand-bat,legbreak-googly,153732,2003-01-09,AVAILABLE
+KKR,Kolkata Knight Riders,10623,Finn Allen,Batsman,right-hand-bat,,2817,1999-04-22,AVAILABLE
+KKR,Kolkata Knight Riders,9462,Kartik Tyagi,Bowler,right-hand-bat,right-arm-fast-medium,153732,2000-11-08,AVAILABLE
+KKR,Kolkata Knight Riders,276,Manish Pandey,Batsman,right-hand-bat,right-arm-fast-medium,153732,1989-09-10,AVAILABLE
+KKR,Kolkata Knight Riders,6775,Prashant Solanki,Bowler,right-hand-bat,legbreak,153732,2000-02-22,AVAILABLE
+KKR,Kolkata Knight Riders,5594,Rachin Ravindra,Batting Allrounder,left-hand-bat,slow-left-arm-orthodox,2817,1999-11-18,AVAILABLE
+KKR,Kolkata Knight Riders,3305,Rahul Tripathi,Batsman,right-hand-bat,right-arm-fast-medium,153732,1991-03-02,AVAILABLE
+KKR,Kolkata Knight Riders,24822,Ramandeep Singh,Batsman,right-hand-bat,right-arm-fast-medium,153732,1997-04-13,AVAILABLE
+KKR,Kolkata Knight Riders,3215,Rinku Singh,Batsman,left-hand-bat,right-arm-offbreak,153732,1997-10-12,AVAILABLE
+KKR,Kolkata Knight Riders,118,Rovman Powell,Batsman,right-hand-bat,right-arm-fast-medium,24150873,1993-07-23,AVAILABLE
+KKR,Kolkata Knight Riders,59505,Sarthak Ranjan,Batsman,right-hand-bat,right-arm-offbreak,153732,1996-09-25,AVAILABLE
+KKR,Kolkata Knight Riders,758,Sunil Narine,Bowler,left-hand-bat,right-arm-offbreak,24150873,1988-05-26,AVAILABLE
+KKR,Kolkata Knight Riders,59804,Tejasvi Dahiya,Wicketkeeper,right-hand-bat,,153732,2002-04-18,AVAILABLE
+KKR,Kolkata Knight Riders,208,Tim Seifert,Wicketkeeper,right-hand-bat,,2817,1994-12-14,AVAILABLE
+KKR,Kolkata Knight Riders,33572,Umran Malik,Bowler,right-hand-bat,right-arm-fast-medium,153732,1999-11-22,AVAILABLE
+KKR,Kolkata Knight Riders,24882,Vaibhav Arora,Bowler,right-hand-bat,right-arm-fast-medium,153732,1997-12-14,AVAILABLE
+KKR,Kolkata Knight Riders,4877,Varun Chakaravarthy,Bowler,right-hand-bat,legbreak-googly,153732,1991-08-29,AVAILABLE
+KKR,Kolkata Knight Riders,10395,Matheesha Pathirana,Bowler,right-hand-bat,right-arm-fast-medium,38404,2002-12-18,"LATE JOINER — Calf strain, available from 2nd match onwards"
+RR,Rajasthan Royals,60730,Aman Rao Perala,Batsman,right-hand-bat,,153732,2004-06-02,AVAILABLE
+RR,Rajasthan Royals,60729,Brijesh Sharma,Bowler,right-hand-bat,right-arm-fast-medium,153732,1998-12-16,AVAILABLE
+RR,Rajasthan Royals,8391,Dhruv Jurel,Wicketkeeper,right-hand-bat,,153732,2001-01-21,AVAILABLE
+RR,Rajasthan Royals,6472,Donovan Ferreira,Wicketkeeper,right-hand-bat,right-arm-offbreak,146,1998-07-21,AVAILABLE
+RR,Rajasthan Royals,424,Jofra Archer,Bowler,right-hand-bat,right-arm-fast,462,1995-04-01,AVAILABLE
+RR,Rajasthan Royals,36497,Kuldeep Sen,Bowler,right-hand-bat,right-arm-fast-medium,153732,1996-10-22,AVAILABLE
+RR,Rajasthan Royals,35321,Kwena Maphaka,Bowler,left-hand-bat,left-arm-fast-medium,146,2006-04-08,AVAILABLE
+RR,Rajasthan Royals,53165,Lhuan-dre Pretorius,Wicketkeeper,left-hand-bat,,146,2006-03-27,AVAILABLE
+RR,Rajasthan Royals,4346,Nandre Burger,Bowler,left-hand-bat,left-arm-fast-medium,146,1995-08-11,AVAILABLE
+RR,Rajasthan Royals,9459,Ravi Bishnoi,Bowler,right-hand-bat,legbreak-googly,153732,2000-09-05,AVAILABLE
+RR,Rajasthan Royals,60289,Ravi Singh,Wicketkeeper,left-hand-bat,legbreak,153732,2001-05-25,AVAILABLE
+RR,Rajasthan Royals,55,Ravindra Jadeja,Allrounder,left-hand-bat,slow-left-arm-orthodox,153732,1988-12-06,AVAILABLE
+RR,Rajasthan Royals,4922,Riyan Parag,Batsman,right-hand-bat,legbreak,153732,2001-11-10,AVAILABLE
+RR,Rajasthan Royals,2966,Sandeep Sharma,Bowler,right-hand-bat,right-arm-fast-medium,153732,1993-05-18,AVAILABLE
+RR,Rajasthan Royals,108,Shimron Hetmyer,Batsman,left-hand-bat,,24150873,1996-12-26,AVAILABLE
+RR,Rajasthan Royals,34355,Shubham Dubey,Batsman,left-hand-bat,right-arm-offbreak,153732,1994-08-27,AVAILABLE
+RR,Rajasthan Royals,8397,Sushant Mishra,Bowler,left-hand-bat,left-arm-fast-medium,153732,2000-12-23,AVAILABLE
+RR,Rajasthan Royals,6697,Tushar Deshpande,Bowler,left-hand-bat,right-arm-fast-medium,153732,1995-05-15,AVAILABLE
+RR,Rajasthan Royals,57622,Vaibhav Suryavanshi,Batsman,left-hand-bat,slow-left-arm-orthodox,153732,2011-03-27,AVAILABLE
+RR,Rajasthan Royals,48821,Vignesh Puthur,Allrounder,,,153732,2000-01-01,AVAILABLE
+RR,Rajasthan Royals,60085,Yash Raj Punja,Allrounder,left-hand-bat,,153732,2006-01-01,AVAILABLE
+RR,Rajasthan Royals,6820,Yashasvi Jaiswal,Batsman,left-hand-bat,legbreak,153732,2001-12-28,AVAILABLE
+RR,Rajasthan Royals,26024,Yudhvir Singh Charak,Bowler,right-hand-bat,right-arm-fast-medium,153732,1997-09-13,AVAILABLE
+RCB,Royal Challengers Bengaluru,57679,Abhinandan Singh,Bowler,right-hand-bat,right-arm-fast-medium,153732,1997-03-30,AVAILABLE
+RCB,Royal Challengers Bengaluru,280,Bhuvneshwar Kumar,Bowler,right-hand-bat,right-arm-fast-medium,153732,1990-02-05,AVAILABLE
+RCB,Royal Challengers Bengaluru,4931,Devdutt Padikkal,Batsman,left-hand-bat,right-arm-offbreak,153732,2000-07-07,AVAILABLE
+RCB,Royal Challengers Bengaluru,26819,Jacob Bethell,Allrounder,left-hand-bat,slow-left-arm-orthodox,462,2003-10-23,AVAILABLE
+RCB,Royal Challengers Bengaluru,4799,Jacob Duffy,Bowler,right-hand-bat,right-arm-fast-medium,2817,1994-08-02,AVAILABLE
+RCB,Royal Challengers Bengaluru,3092,Jitesh Sharma,Wicketkeeper,right-hand-bat,,153732,1993-10-22,AVAILABLE
+RCB,Royal Challengers Bengaluru,5132,Jordan Cox,Wicketkeeper,right-hand-bat,,462,2000-10-21,AVAILABLE
+RCB,Royal Challengers Bengaluru,59055,Kanishk Chouhan,Allrounder,right-hand-bat,right-arm-fast-medium,153732,2006-09-26,AVAILABLE
+RCB,Royal Challengers Bengaluru,2687,Krunal Pandya,Allrounder,left-hand-bat,slow-left-arm-orthodox,153732,1991-03-24,AVAILABLE
+RCB,Royal Challengers Bengaluru,60731,Mangesh Yadav,Allrounder,left-hand-bat,left-arm-fast,153732,2002-10-10,AVAILABLE
+RCB,Royal Challengers Bengaluru,21924,Nuwan Thushara,Bowler,right-hand-bat,right-arm-fast-medium,38404,1994-08-06,AVAILABLE
+RCB,Royal Challengers Bengaluru,3431,Philip Salt,Wicketkeeper,right-hand-bat,right-arm-offbreak,462,1996-08-28,AVAILABLE
+RCB,Royal Challengers Bengaluru,26027,Rajat Patidar,Batsman,right-hand-bat,right-arm-offbreak,153732,1993-06-01,AVAILABLE
+RCB,Royal Challengers Bengaluru,4898,Rasikh Salam Dar,Bowler,right-hand-bat,right-arm-fast-medium,153732,2000-04-05,AVAILABLE
+RCB,Royal Challengers Bengaluru,5222,Romario Shepherd,Bowling Allrounder,right-hand-bat,right-arm-fast-medium,24150873,1994-11-26,AVAILABLE
+RCB,Royal Challengers Bengaluru,60732,Satvik Deswal,Bowler,right-hand-bat,slow-left-arm-orthodox,153732,2007-03-23,AVAILABLE
+RCB,Royal Challengers Bengaluru,44513,Suyash Sharma,Bowler,right-hand-bat,legbreak,153732,2003-05-15,AVAILABLE
+RCB,Royal Challengers Bengaluru,3098,Swapnil Singh,Allrounder,right-hand-bat,slow-left-arm-orthodox,153732,1991-01-22,AVAILABLE
+RCB,Royal Challengers Bengaluru,617,Tim David,Batsman,right-hand-bat,right-arm-offbreak,98,1996-03-16,AVAILABLE
+RCB,Royal Challengers Bengaluru,26042,Venkatesh Iyer,Allrounder,left-hand-bat,right-arm-fast-medium,153732,1994-12-25,AVAILABLE
+RCB,Royal Challengers Bengaluru,35060,Vicky Kanhaiya Ostwal,Bowler,right-hand-bat,slow-left-arm-orthodox,153732,2002-09-01,AVAILABLE
+RCB,Royal Challengers Bengaluru,60733,Vihaan Manoj Malhotra,Allrounder,left-hand-bat,right-arm-offbreak,153732,2007-01-01,AVAILABLE
+RCB,Royal Challengers Bengaluru,46,Virat Kohli,Batsman,right-hand-bat,right-arm-fast-medium,153732,1988-11-05,AVAILABLE
+RCB,Royal Challengers Bengaluru,36524,Yash Dayal,Bowler,left-hand-bat,left-arm-fast-medium,153732,1997-12-13,AVAILABLE
+RCB,Royal Challengers Bengaluru,191,Josh Hazlewood,Bowler,left-hand-bat,right-arm-fast-medium,98,1991-01-08,"LATE JOINER — Hamstring/Achilles, expected mid-April"
+PBKS,Punjab Kings,4880,Arshdeep Singh,Bowler,left-hand-bat,left-arm-fast-medium,153732,1999-02-05,AVAILABLE
+PBKS,Punjab Kings,343,Azmatullah Omarzai,Allrounder,right-hand-bat,right-arm-fast-medium,43444,2000-03-24,AVAILABLE
+PBKS,Punjab Kings,1052,Ben Dwarshuis,Bowler,left-hand-bat,left-arm-fast-medium,98,1994-06-23,AVAILABLE
+PBKS,Punjab Kings,10131,Cooper Connolly,Allrounder,left-hand-bat,slow-left-arm-orthodox,98,2003-08-22,AVAILABLE
+PBKS,Punjab Kings,35018,Harnoor Singh,Batsman,right-hand-bat,legbreak,153732,2003-01-30,AVAILABLE
+PBKS,Punjab Kings,4868,Harpreet Brar,Bowler,left-hand-bat,slow-left-arm-orthodox,153732,1995-09-16,AVAILABLE
+PBKS,Punjab Kings,6478,Marco Jansen,Allrounder,right-hand-bat,left-arm-fast,146,2000-05-01,AVAILABLE
+PBKS,Punjab Kings,199,Marcus Stoinis,Allrounder,right-hand-bat,right-arm-fast-medium,98,1989-08-16,AVAILABLE
+PBKS,Punjab Kings,24153,Mitchell Owen,Allrounder,right-hand-bat,right-arm-fast-medium,98,2001-09-16,AVAILABLE
+PBKS,Punjab Kings,52496,Musheer Khan,Allrounder,right-hand-bat,slow-left-arm-orthodox,153732,2005-02-27,AVAILABLE
+PBKS,Punjab Kings,8373,Nehal Wadhera,Batsman,left-hand-bat,legbreak,153732,2000-09-04,AVAILABLE
+PBKS,Punjab Kings,6496,Prabhsimran Singh,Wicketkeeper,right-hand-bat,,153732,2000-10-08,AVAILABLE
+PBKS,Punjab Kings,3053,Praveen Dubey,Bowler,right-hand-bat,legbreak-googly,153732,1993-07-01,AVAILABLE
+PBKS,Punjab Kings,57620,Priyansh Arya,Batsman,left-hand-bat,right-arm-offbreak,153732,2001-01-18,AVAILABLE
+PBKS,Punjab Kings,57621,Pyla Avinash,Batsman,right-hand-bat,right-arm-fast-medium,153732,2000-07-07,AVAILABLE
+PBKS,Punjab Kings,3167,Shashank Singh,Allrounder,right-hand-bat,right-arm-offbreak,153732,1991-11-21,AVAILABLE
+PBKS,Punjab Kings,2813,Shreyas Iyer,Batsman,right-hand-bat,legbreak-googly,153732,1994-12-06,AVAILABLE
+PBKS,Punjab Kings,6670,Suryansh Shedge,Batsman,right-hand-bat,right-arm-fast-medium,153732,2003-01-29,AVAILABLE
+PBKS,Punjab Kings,46736,Vijaykumar Vyshak,Bowler,right-hand-bat,right-arm-fast-medium,153732,1997-01-31,AVAILABLE
+PBKS,Punjab Kings,60160,Vishal Nishad,Bowler,right-hand-bat,legbreak,153732,2005-04-01,AVAILABLE
+PBKS,Punjab Kings,3146,Vishnu Vinod,Wicketkeeper,right-hand-bat,,153732,1993-12-02,AVAILABLE
+PBKS,Punjab Kings,947,Xavier Bartlett,Bowler,right-hand-bat,right-arm-fast-medium,98,1998-12-17,AVAILABLE
+PBKS,Punjab Kings,34364,Yash Thakur,Bowler,right-hand-bat,right-arm-fast-medium,153732,1998-12-28,AVAILABLE
+PBKS,Punjab Kings,273,Yuzvendra Chahal,Bowler,right-hand-bat,legbreak-googly,153732,1990-07-23,AVAILABLE
+PBKS,Punjab Kings,223,Lockie Ferguson,Bowler,right-hand-bat,right-arm-fast,2817,1991-06-13,"LATE JOINER — Paternity leave, expected second half of season"
+GT,Gujarat Titans,9921,Anuj Rawat,Wicketkeeper,left-hand-bat,,153732,1999-10-17,AVAILABLE
+GT,Gujarat Titans,36509,Arshad Khan,Allrounder,left-hand-bat,left-arm-fast-medium,153732,1997-12-20,AVAILABLE
+GT,Gujarat Titans,36479,Ashok Sharma,Bowler,right-hand-bat,right-arm-fast-medium,153732,2002-06-17,AVAILABLE
+GT,Gujarat Titans,216,Glenn Phillips,Wicketkeeper,right-hand-bat,,2817,1996-12-06,AVAILABLE
+GT,Gujarat Titans,46730,Gurnoor Brar,Bowler,left-hand-bat,right-arm-fast,153732,2000-05-25,AVAILABLE
+GT,Gujarat Titans,288,Ishant Sharma,Bowler,right-hand-bat,right-arm-fast-medium,153732,1988-09-02,AVAILABLE
+GT,Gujarat Titans,100,Jason Holder,Bowling Allrounder,right-hand-bat,right-arm-fast-medium,24150873,1991-11-05,AVAILABLE
+GT,Gujarat Titans,2792,Jayant Yadav,Bowler,right-hand-bat,right-arm-offbreak,153732,1990-01-22,AVAILABLE
+GT,Gujarat Titans,143,Jos Buttler,Wicketkeeper,right-hand-bat,,462,1990-09-08,AVAILABLE
+GT,Gujarat Titans,70,Kagiso Rabada,Bowler,left-hand-bat,right-arm-fast,146,1995-05-25,AVAILABLE
+GT,Gujarat Titans,9450,Kumar Kushagra,Wicketkeeper,right-hand-bat,,153732,2004-10-23,AVAILABLE
+GT,Gujarat Titans,3773,Luke Wood,Bowling Allrounder,left-hand-bat,left-arm-fast-medium,462,1995-08-02,AVAILABLE
+GT,Gujarat Titans,9456,Manav Suthar,Bowler,left-hand-bat,slow-left-arm-orthodox,153732,2002-08-03,AVAILABLE
+GT,Gujarat Titans,59,Mohammed Siraj,Bowler,right-hand-bat,right-arm-fast-medium,153732,1994-03-13,AVAILABLE
+GT,Gujarat Titans,35048,Nishant Sindhu,Allrounder,left-hand-bat,slow-left-arm-orthodox,153732,2004-04-09,AVAILABLE
+GT,Gujarat Titans,3374,Prasidh Krishna,Bowler,right-hand-bat,right-arm-fast-medium,153732,1996-02-19,AVAILABLE
+GT,Gujarat Titans,4886,Prithvi Raj Yarra,Bowler,left-hand-bat,left-arm-fast-medium,153732,1998-02-20,AVAILABLE
+GT,Gujarat Titans,2927,Rahul Tewatia,Allrounder,left-hand-bat,legbreak,153732,1993-05-20,AVAILABLE
+GT,Gujarat Titans,306,Rashid Khan,Bowler,right-hand-bat,legbreak-googly,43444,1998-09-20,AVAILABLE
+GT,Gujarat Titans,7650,Sai Kishore,Bowler,left-hand-bat,slow-left-arm-orthodox,153732,1996-11-06,AVAILABLE
+GT,Gujarat Titans,28955,Sai Sudharsan,Batsman,left-hand-bat,legbreak,153732,2001-10-15,AVAILABLE
+GT,Gujarat Titans,7668,Shahrukh Khan,Batsman,right-hand-bat,right-arm-offbreak,153732,1995-05-27,AVAILABLE
+GT,Gujarat Titans,3362,Shubman Gill,Batsman,right-hand-bat,right-arm-offbreak,153732,1999-09-08,AVAILABLE
+GT,Gujarat Titans,3497,Tom Banton,Batsman,right-hand-bat,,462,1998-11-11,AVAILABLE
+GT,Gujarat Titans,1211,Washington Sundar,Bowling Allrounder,left-hand-bat,right-arm-offbreak,153732,1999-10-05,AVAILABLE
+SRH,Sunrisers Hyderabad,3338,Abhishek Sharma,Allrounder,left-hand-bat,slow-left-arm-orthodox,153732,2000-09-04,AVAILABLE
+SRH,Sunrisers Hyderabad,60734,Amit Kumar,Bowler,right-hand-bat,legbreak-googly,153732,2002-11-02,AVAILABLE
+SRH,Sunrisers Hyderabad,57681,Aniket Verma,Batsman,right-hand-bat,right-arm-fast-medium,153732,2002-02-05,AVAILABLE
+SRH,Sunrisers Hyderabad,4061,Brydon Carse,Bowler,right-hand-bat,right-arm-fast,462,1995-07-31,AVAILABLE
+SRH,Sunrisers Hyderabad,34358,Harsh Dubey,Bowler,left-hand-bat,slow-left-arm-orthodox,153732,2002-07-23,AVAILABLE
+SRH,Sunrisers Hyderabad,2744,Harshal Patel,Bowler,right-hand-bat,right-arm-fast-medium,153732,1990-11-23,AVAILABLE
+SRH,Sunrisers Hyderabad,65,Heinrich Klaasen,Wicketkeeper,right-hand-bat,,146,1991-07-30,AVAILABLE
+SRH,Sunrisers Hyderabad,3122,Ishan Kishan,Wicketkeeper,left-hand-bat,,153732,1998-07-18,AVAILABLE
+SRH,Sunrisers Hyderabad,2795,Jaydev Unadkat,Bowler,right-hand-bat,left-arm-fast-medium,153732,1991-10-18,AVAILABLE
+SRH,Sunrisers Hyderabad,914,Kamindu Mendis,Allrounder,left-hand-bat,right-arm-offbreak,38404,1998-09-30,AVAILABLE
+SRH,Sunrisers Hyderabad,60736,Krains Bhaveshbhai Fuletra,Bowler,right-hand-bat,,153732,2004-06-19,AVAILABLE
+SRH,Sunrisers Hyderabad,780,Liam Livingstone,Allrounder,right-hand-bat,legbreak,462,1993-08-04,AVAILABLE
+SRH,Sunrisers Hyderabad,22134,Nitish Kumar Reddy,Batting Allrounder,right-hand-bat,right-arm-fast-medium,153732,2003-05-26,AVAILABLE
+SRH,Sunrisers Hyderabad,58883,Onkar Tarmale,Bowler,right-hand-bat,right-arm-fast-medium,153732,2000-01-01,AVAILABLE
+SRH,Sunrisers Hyderabad,60484,Praful Hinge,Bowler,right-hand-bat,right-arm-fast-medium,153732,2002-01-18,AVAILABLE
+SRH,Sunrisers Hyderabad,60737,Ravichandran Smaran,Batsman,left-hand-bat,right-arm-offbreak,153732,2003-05-05,AVAILABLE
+SRH,Sunrisers Hyderabad,53063,Sakib Hussain,Allrounder,right-hand-bat,right-arm-fast-medium,153732,2004-12-14,AVAILABLE
+SRH,Sunrisers Hyderabad,8406,Salil Arora,Batsman,right-hand-bat,,153732,2000-01-01,AVAILABLE
+SRH,Sunrisers Hyderabad,3368,Shivam Mavi,Bowler,right-hand-bat,right-arm-fast-medium,153732,1998-11-26,AVAILABLE
+SRH,Sunrisers Hyderabad,60735,Shivang Kumar,Bowler,right-hand-bat,slow-left-arm-orthodox,153732,2002-05-26,AVAILABLE
+SRH,Sunrisers Hyderabad,26,Travis Head,Batsman,left-hand-bat,right-arm-offbreak,98,1993-12-29,AVAILABLE
+SRH,Sunrisers Hyderabad,57680,Zeeshan Ansari,Bowler,right-hand-bat,legbreak-googly,153732,1999-12-16,AVAILABLE
+SRH,Sunrisers Hyderabad,190,Pat Cummins,Bowler,right-hand-bat,right-arm-fast,98,1993-05-08,"LATE JOINER — Back stress injury, expected mid-April"
+DC,Delhi Capitals,50576,Abishek Porel,Wicketkeeper,left-hand-bat,,153732,2002-10-17,AVAILABLE
+DC,Delhi Capitals,44507,Ajay Mandal,Allrounder,left-hand-bat,slow-left-arm-orthodox,153732,1996-02-25,AVAILABLE
+DC,Delhi Capitals,53087,Ashutosh Sharma,Batsman,,,153732,1998-09-15,AVAILABLE
+DC,Delhi Capitals,60724,Auqib Nabi,Bowler,right-hand-bat,right-arm-fast-medium,153732,1996-11-04,AVAILABLE
+DC,Delhi Capitals,815,Axar Patel,Allrounder,left-hand-bat,slow-left-arm-orthodox,153732,1994-01-20,AVAILABLE
+DC,Delhi Capitals,670,Ben Duckett,Wicketkeeper,left-hand-bat,right-arm-offbreak,462,1994-10-17,AVAILABLE
+DC,Delhi Capitals,79,David Miller,Batsman,left-hand-bat,right-arm-offbreak,146,1989-06-10,AVAILABLE
+DC,Delhi Capitals,170,Dushmantha Chameera,Bowler,right-hand-bat,right-arm-fast,38404,1992-01-11,AVAILABLE
+DC,Delhi Capitals,2912,Karun Nair,Batsman,right-hand-bat,right-arm-offbreak,153732,1991-12-06,AVAILABLE
+DC,Delhi Capitals,56,Kuldeep Yadav,Bowler,left-hand-bat,left-arm-chinaman,153732,1994-12-14,AVAILABLE
+DC,Delhi Capitals,4712,Kyle Jamieson,Bowler,right-hand-bat,right-arm-fast-medium,2817,1994-12-30,AVAILABLE
+DC,Delhi Capitals,47,Lokesh Rahul,Wicketkeeper,right-hand-bat,,153732,1992-04-18,AVAILABLE
+DC,Delhi Capitals,68,Lungi Ngidi,Bowler,right-hand-bat,right-arm-fast,146,1996-03-29,AVAILABLE
+DC,Delhi Capitals,58239,Madhav Tiwari,Allrounder,right-hand-bat,right-arm-fast-medium,153732,2003-09-28,AVAILABLE
+DC,Delhi Capitals,23943,Mukesh Kumar,Bowler,,,153732,1993-10-12,AVAILABLE
+DC,Delhi Capitals,2858,Nitish Rana,Batsman,left-hand-bat,right-arm-offbreak,153732,1993-12-27,AVAILABLE
+DC,Delhi Capitals,6403,Pathum Nissanka,Batsman,right-hand-bat,,38404,1998-05-18,AVAILABLE
+DC,Delhi Capitals,48,Prithvi Shaw,Batsman,right-hand-bat,right-arm-offbreak,153732,1999-11-09,AVAILABLE
+DC,Delhi Capitals,57235,Sahil Parakh,Bowler,left-hand-bat,legbreak,153732,2007-06-07,AVAILABLE
+DC,Delhi Capitals,53057,Sameer Rizvi,Batsman,right-hand-bat,right-arm-offbreak,153732,2003-12-06,AVAILABLE
+DC,Delhi Capitals,3218,Thangarasu Natarajan,Bowler,left-hand-bat,left-arm-fast-medium,153732,1991-05-27,AVAILABLE
+DC,Delhi Capitals,58245,Tripurana Vijay,Allrounder,right-hand-bat,right-arm-offbreak,153732,2001-09-05,AVAILABLE
+DC,Delhi Capitals,25797,Tristan Stubbs,Wicketkeeper,right-hand-bat,legbreak,146,2000-08-14,AVAILABLE
+DC,Delhi Capitals,57614,Vipraj Nigam,Bowler,right-hand-bat,legbreak,153732,2004-07-28,AVAILABLE
+DC,Delhi Capitals,36,Mitchell Starc,Bowler,left-hand-bat,left-arm-fast,98,1990-01-30,"LATE JOINER — Workload management, expected mid-April"
+LSG,Lucknow Super Giants,9927,Abdul Samad,Allrounder,right-hand-bat,legbreak,153732,2001-10-28,AVAILABLE
+LSG,Lucknow Super Giants,66,Aiden Markram,Batsman,right-hand-bat,right-arm-offbreak,146,1994-10-04,AVAILABLE
+LSG,Lucknow Super Giants,8394,Akash Maharaj Singh,Bowler,right-hand-bat,left-arm-fast-medium,153732,2002-04-26,AVAILABLE
+LSG,Lucknow Super Giants,60727,Akshat Raghuwanshi,Batsman,right-hand-bat,right-arm-offbreak,153732,2003-09-15,AVAILABLE
+LSG,Lucknow Super Giants,636,Anrich Nortje,Bowler,right-hand-bat,right-arm-fast,146,1993-11-16,AVAILABLE
+LSG,Lucknow Super Giants,6667,Arjun Tendulkar,Bowler,left-hand-bat,left-arm-fast-medium,153732,1999-09-24,AVAILABLE
+LSG,Lucknow Super Giants,52484,Arshin Kulkarni,Allrounder,right-hand-bat,right-arm-fast-medium,153732,2005-02-15,AVAILABLE
+LSG,Lucknow Super Giants,3152,Avesh Khan,Bowler,right-hand-bat,right-arm-fast-medium,153732,1996-12-13,AVAILABLE
+LSG,Lucknow Super Giants,36515,Ayush Badoni,Batsman,right-hand-bat,right-arm-offbreak,153732,1999-12-03,AVAILABLE
+LSG,Lucknow Super Giants,57616,Digvesh Rathi,Bowler,right-hand-bat,right-arm-offbreak,153732,1999-12-15,AVAILABLE
+LSG,Lucknow Super Giants,4928,Himmat Singh,Batsman,right-hand-bat,right-arm-offbreak,153732,1996-11-08,AVAILABLE
+LSG,Lucknow Super Giants,623,Josh Inglis,Wicketkeeper,right-hand-bat,,98,1995-03-04,AVAILABLE
+LSG,Lucknow Super Giants,7389,Manimaran Siddharth,Bowler,right-hand-bat,slow-left-arm-orthodox,153732,1998-07-03,AVAILABLE
+LSG,Lucknow Super Giants,6071,Matthew Breetzke,Batsman,right-hand-bat,,146,1998-11-03,AVAILABLE
+LSG,Lucknow Super Giants,31,Mitchell Marsh,Allrounder,right-hand-bat,right-arm-fast-medium,98,1991-10-20,AVAILABLE
+LSG,Lucknow Super Giants,57,Mohammed Shami,Bowler,right-hand-bat,right-arm-fast,153732,1990-09-03,AVAILABLE
+LSG,Lucknow Super Giants,60726,Mukul Dalip Choudhary,Batsman,right-hand-bat,,153732,2004-08-06,AVAILABLE
+LSG,Lucknow Super Giants,52511,Naman Tiwari,Bowler,left-hand-bat,left-arm-fast-medium,153732,2005-11-08,AVAILABLE
+LSG,Lucknow Super Giants,736,Nicholas Pooran,Wicketkeeper,left-hand-bat,,24150873,1995-10-02,AVAILABLE
+LSG,Lucknow Super Giants,23691,Prince Yadav,Bowler,right-hand-bat,right-arm-fast-medium,153732,2001-12-12,AVAILABLE
+LSG,Lucknow Super Giants,53,Rishabh Pant,Wicketkeeper,left-hand-bat,,153732,1997-10-04,AVAILABLE
+LSG,Lucknow Super Giants,9924,Shahbaz Ahmed,Allrounder,left-hand-bat,slow-left-arm-orthodox,153732,1994-12-11,AVAILABLE
+LSG,Lucknow Super Giants,36521,Mayank Yadav,Bowler,right-hand-bat,right-arm-fast-medium,153732,2002-06-17,LATE JOINER (DOUBTFUL) — Recurring fitness concerns
+LSG,Lucknow Super Giants,3353,Mohsin Khan,Bowler,left-hand-bat,left-arm-fast-medium,153732,1998-07-15,LATE JOINER (DOUBTFUL) — Knee surgery rehab since Jul 2025
+LSG,Lucknow Super Giants,4916,Wanindu Hasaranga,Allrounder,right-hand-bat,legbreak,38404,1997-07-29,"LATE JOINER (DOUBTFUL) — Hamstring tear, may miss entire season"
