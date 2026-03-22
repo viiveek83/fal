@@ -2,6 +2,7 @@
 
 import { useSession, signOut } from 'next-auth/react'
 import { useState, useCallback, useRef, useEffect } from 'react'
+import { AppFrame } from '@/app/components/AppFrame'
 
 /* ─── IPL team colors ─── */
 const teamColors: Record<string, string> = {
@@ -164,21 +165,25 @@ export default function AdminPage() {
   /* ─── Auth guard ─── */
   if (sessionStatus === 'loading') {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f2f3f8' }}>
-        <p style={{ color: '#888', fontSize: 14 }}>Loading...</p>
-      </div>
+      <AppFrame>
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <p style={{ color: '#888', fontSize: 14 }}>Loading...</p>
+        </div>
+      </AppFrame>
     )
   }
 
   if (!session) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, background: '#f2f3f8' }}>
-        <p style={{ color: '#888', fontSize: 14 }}>Please log in to access the admin dashboard.</p>
-        <a href="/login" style={{
-          background: 'linear-gradient(160deg, #1a0a3e 0%, #2d1b69 25%, #004BA0 50%, #0EB1A2 80%, #00AEEF 100%)',
-          color: '#fff', padding: '10px 20px', borderRadius: 10, fontWeight: 600, fontSize: 14, textDecoration: 'none'
-        }}>Go to Login</a>
-      </div>
+      <AppFrame>
+        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+          <p style={{ color: '#888', fontSize: 14 }}>Please log in to access the admin dashboard.</p>
+          <a href="/login" style={{
+            background: 'linear-gradient(160deg, #1a0a3e 0%, #2d1b69 25%, #004BA0 50%, #0EB1A2 80%, #00AEEF 100%)',
+            color: '#fff', padding: '10px 20px', borderRadius: 10, fontWeight: 600, fontSize: 14, textDecoration: 'none'
+          }}>Go to Login</a>
+        </div>
+      </AppFrame>
     )
   }
 
@@ -311,10 +316,6 @@ export default function AdminPage() {
   /* ─── Styles ─── */
   const styles = {
     wrapper: {
-      minHeight: '100vh',
-      background: '#f2f3f8',
-      maxWidth: 393,
-      margin: '0 auto',
       position: 'relative' as const,
       paddingBottom: 80,
     },
@@ -404,6 +405,7 @@ export default function AdminPage() {
 
   /* ─── Render ─── */
   return (
+    <AppFrame>
     <div style={styles.wrapper}>
       {/* ── Hero Section ── */}
       <div style={styles.hero}>
@@ -882,6 +884,7 @@ export default function AdminPage() {
         </a>
       </nav>
     </div>
+    </AppFrame>
   )
 }
 

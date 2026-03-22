@@ -3,6 +3,7 @@
 import { useSession } from 'next-auth/react'
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { AppFrame } from '@/app/components/AppFrame'
 
 /* ─── Types ─── */
 interface SquadPlayer {
@@ -322,29 +323,34 @@ export default function ViewLineupPage() {
   /* ─── Loading ─── */
   if (sessionStatus === 'loading' || loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f2f3f8' }}>
-        <p style={{ color: '#888', fontSize: 14, fontFamily: "'Plus Jakarta Sans', -apple-system, sans-serif" }}>Loading...</p>
-      </div>
+      <AppFrame>
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <p style={{ color: '#888', fontSize: 14, fontFamily: "'Plus Jakarta Sans', -apple-system, sans-serif" }}>Loading...</p>
+        </div>
+      </AppFrame>
     )
   }
 
   if (!session) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, background: '#f2f3f8' }}>
-        <p style={{ color: '#888', fontSize: 14 }}>Please log in to view lineups.</p>
-        <a href="/login" style={{
-          background: 'linear-gradient(160deg, #1a0a3e 0%, #2d1b69 25%, #004BA0 50%, #0EB1A2 80%, #00AEEF 100%)',
-          color: '#fff', padding: '10px 20px', borderRadius: 10, fontWeight: 600, fontSize: 14, textDecoration: 'none',
-        }}>Go to Login</a>
-      </div>
+      <AppFrame>
+        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+          <p style={{ color: '#888', fontSize: 14 }}>Please log in to view lineups.</p>
+          <a href="/login" style={{
+            background: 'linear-gradient(160deg, #1a0a3e 0%, #2d1b69 25%, #004BA0 50%, #0EB1A2 80%, #00AEEF 100%)',
+            color: '#fff', padding: '10px 20px', borderRadius: 10, fontWeight: 600, fontSize: 14, textDecoration: 'none',
+          }}>Go to Login</a>
+        </div>
+      </AppFrame>
     )
   }
 
   return (
+    <AppFrame>
     <div style={{
-      minHeight: '100vh', background: '#f2f3f8',
-      maxWidth: 393, margin: '0 auto', position: 'relative',
+      position: 'relative',
       display: 'flex', flexDirection: 'column',
+      minHeight: '100vh',
       fontFamily: "'Plus Jakarta Sans', -apple-system, sans-serif",
       WebkitFontSmoothing: 'antialiased',
     }}>
@@ -566,5 +572,6 @@ export default function ViewLineupPage() {
         ))}
       </nav>
     </div>
+    </AppFrame>
   )
 }

@@ -20,7 +20,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={jakarta.variable}>
-      <body className="font-sans antialiased bg-[#f2f3f8] text-[#1a1a2e] min-h-screen" style={{ fontFamily: 'var(--font-jakarta), sans-serif' }}>
+      <body style={{ fontFamily: 'var(--font-jakarta), sans-serif', margin: 0, padding: 0 }}>
         <Providers>{children}</Providers>
       </body>
     </html>

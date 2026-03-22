@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { AppFrame } from '@/app/components/AppFrame'
 
 /* ─── Mock scoring data ─── */
 const mockTeamScores = [
@@ -63,11 +64,8 @@ export default function LeaderboardPage() {
   const maxGW = Math.max(...yourData.gwScores)
 
   return (
+    <AppFrame>
     <div style={{
-      minHeight: '100vh',
-      background: '#f2f3f8',
-      maxWidth: 393,
-      margin: '0 auto',
       position: 'relative',
       paddingBottom: 80,
       fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
@@ -357,6 +355,7 @@ export default function LeaderboardPage() {
         <NavItem href="/admin" icon={<IconLeague />} label="League" active={false} />
       </nav>
     </div>
+    </AppFrame>
   )
 }
 

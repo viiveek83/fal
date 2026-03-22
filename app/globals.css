@@ -1,1 +1,37 @@
 @import "tailwindcss";
+
+/* Phone frame on desktop — dark background with centered 393px app */
+html, body {
+  background: #111 !important;
+  min-height: 100vh;
+}
+
+/* The app container mimics a phone frame */
+.app-frame {
+  max-width: 393px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: #f2f3f8;
+  position: relative;
+  overflow-x: hidden;
+  box-shadow: 0 0 60px rgba(0,0,0,0.3);
+}
+
+/* On actual mobile (<=393px), go full width */
+@media (max-width: 393px) {
+  .app-frame {
+    max-width: 100%;
+    box-shadow: none;
+  }
+  html, body {
+    background: #f2f3f8 !important;
+  }
+}
+
+/* Hide scrollbar in app frame */
+.app-frame::-webkit-scrollbar {
+  display: none;
+}
+.app-frame {
+  scrollbar-width: none;
+}
