@@ -16,7 +16,7 @@ FAL is a fantasy cricket platform for IPL where teams are built via auction (man
 - Weekly lineup management (Playing XI, Captain, VC, bench order)
 - Post-match scoring automation via cricket data APIs
 - Bench auto-substitution
-- 4 strategy chips (Triple Captain, Bench Boost, Powerplay, Bowling Boost)
+- 4 strategy chips (Triple Captain, Bench Boost, Bat Boost, Bowl Boost)
 - Leaderboard tracking
 - API-sourced IPL player registry (SportMonks Cricket API, €29/mo)
 

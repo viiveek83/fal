@@ -178,6 +178,9 @@ fal/
 │   ├── league/
 │   │   ├── page.tsx
 │   │   └── loading.tsx
+│   ├── scores/
+│   │   └── [matchId]/
+│   │       └── page.tsx    # Match score breakdown page
 │   ├── layout.tsx          # Root layout (nav, providers)
 │   ├── error.tsx           # Global error boundary
 │   ├── loading.tsx         # Global loading skeleton
@@ -331,8 +334,8 @@ vercel env pull          # Sync Vercel env vars to local
 ### Entities
 
 - **User** — `email`, `name`, `image`, `role` (enum: `USER`/`ADMIN`).
-- **League** — `adminUserId` (creator), `inviteCode`, `name`, settings.
-- **Team** — `name`, `totalPoints` (incremental — updated at GW end).
+- **League** — `adminUserId` (creator), `inviteCode`, `name`, `maxManagers` (Int, default 15), `minSquadSize` (Int, default 12), `maxSquadSize` (Int, default 15), `seasonStarted` (boolean, default false — admin flips after all rosters valid).
+- **Team** — `name`, `totalPoints` (incremental — updated at GW end), `bestGwScore` (Int, default 0 — for leaderboard tiebreaker).
 - **TeamPlayer** — `leagueId`, `playerId`, `purchasePrice` (from CSV upload).
 - **Player** — `apiPlayerId` (SportMonks ID), `fullname`, `iplTeamId`, `role` (BAT/BOWL/ALL/WK), `battingStyle`, `bowlingStyle`, `imageUrl`.
 - **Gameweek** — `number` (1-10), `lockTime` (DateTime), `status` (`upcoming`/`active`/`completed`), `aggregationStatus` (`pending`/`aggregating`/`done`).
@@ -395,8 +398,14 @@ All routes require Auth.js session unless noted. **Platform admin** = `User.role
 - `POST /api/leagues/[id]/roster` — CSV roster upload **(league admin)**
 
 ### Lineups
-- `GET /api/teams/[teamId]/lineups/[gameweekId]` — Get lineup **(owner)**
+- `GET /api/teams/[teamId]/lineups/[gameweekId]` — Get lineup. If no lineup exists for this GW, auto-copies previous GW lineup (carry-forward). Returns 404 only if no previous lineup exists either. **(owner)**
 - `PUT /api/teams/[teamId]/lineups/[gameweekId]` — Submit/update lineup, 423 if locked **(owner)**
+  - **Validation rules** (in `lib/lineup/validation.ts`):
+    - Exactly 11 players in XI, remaining on bench
+    - Exactly 1 Captain, 1 VC (different players)
+    - If Triple Captain chip active: TC must differ from both C and VC
+    - All players must be on this team's squad (`TeamPlayer`)
+    - No duplicate players across XI + bench
 - `POST /api/teams/[teamId]/lineups/[gameweekId]/chip` — Activate chip, 409 if used **(owner)**
 - `DELETE /api/teams/[teamId]/lineups/[gameweekId]/chip` — Deactivate chip before lock **(owner)**
 
@@ -412,10 +421,15 @@ All routes require Auth.js session unless noted. **Platform admin** = `User.role
 
 ### Season Admin
 - `POST /api/admin/season/init` — Import fixtures from SportMonks **(platform admin, one-time)**
+- `POST /api/admin/season/start` — Validate all teams have rosters meeting `minSquadSize`, then set `League.seasonStarted = true`. Returns 422 if any team's roster is incomplete. **(league admin)**
+- `POST /api/admin/scoring/csv-import` — Manual CSV stat upload for a match (fallback when SportMonks API is unavailable). CSV format: playerId, runs, balls, fours, sixes, wickets, overs, maidens, catches, stumpings, etc. **(platform admin)**
 
 ### Leaderboard
-- `GET /api/leaderboard/[leagueId]` — Standings **(member)**
+- `GET /api/leaderboard/[leagueId]` — Standings: `Team.totalPoints` desc, tiebreaker `Team.bestGwScore` desc. During an active GW, also computes live GW scores from `PlayerPerformance.fantasyPoints` for scored matches (before multipliers — approximate mid-week ranking). **(member)**
 - `GET /api/leaderboard/[leagueId]/history` — GW-by-GW history **(member)**
+
+### Match Scores
+- `GET /api/matches/[matchId]/scores` — Per-player fantasy breakdown for a match (batting/bowling/fielding points, fielder attribution). Used by match scores page. **(member)**
 
 ### Players
 - `GET /api/players?role=BAT&team=MI&page=1&limit=25` — Search/filter **(authenticated)**
@@ -438,6 +452,8 @@ All routes require Auth.js session unless noted. **Platform admin** = `User.role
 
 ### Pipeline Flow (`lib/scoring/pipeline.ts`)
 
+#### Phase A: Per-Match Scoring (runs after each match)
+
 ```
 1. Early exit: if any match has scoringStatus = 'scoring', return 409
 
@@ -452,19 +468,28 @@ All routes require Auth.js session unless noted. **Platform admin** = `User.role
    try {
      a. GET /fixtures/{id}?include=batting,bowling,lineup[,balls] (10s timeout)
      b. Validate response (batting/bowling arrays exist)
-     c. Parse batting → runs, fours, sixes, SR, fielding attribution
-     d. Parse bowling → wickets, overs, maidens, ER (+ dot balls in-memory)
-     e. Compute fantasyPoints per player (base, no multipliers)
-     f. Batch upsert PlayerPerformance:
+     c. If match has super_over = true, filter batting/bowling/balls
+        to scoreboard S1/S2 only (exclude Super Over data)
+     d. Parse batting → runs, balls, fours, sixes, SR, wicketId, fielding attribution
+     e. Parse bowling → wickets, overs, maidens, ER, wides, noballs
+        (+ compute dot balls in-memory from balls include if enabled)
+     f. Compute fantasyPoints per player (see "Base Points Calculation" below)
+     g. Determine inStartingXI (lineup.substitution === false)
+        and isImpactPlayer (sub who appears in batting or bowling)
+     h. Batch upsert PlayerPerformance:
         $executeRaw`INSERT INTO "PlayerPerformance" (...)
           VALUES (...), (...), ...
           ON CONFLICT ("playerId", "matchId") DO UPDATE SET ...`
-     g. Set Match.scoringStatus = 'scored'
+     i. Set Match.scoringStatus = 'scored'
    } catch {
-     h. Reset Match.scoringStatus = 'completed'
-     i. Increment scoringAttempts; if >= 3 → set 'error'
+     j. Reset Match.scoringStatus = 'completed'
+     k. Increment scoringAttempts; if >= 3 → set 'error'
    }
+```
 
+#### Phase B: Gameweek Aggregation (runs once all GW matches are done)
+
+```
 4. GW end check (atomic lock):
    $queryRaw`UPDATE "Gameweek" SET "aggregationStatus" = 'aggregating'
      WHERE id = ? AND "aggregationStatus" = 'pending'
@@ -476,15 +501,277 @@ All routes require Auth.js session unless noted. **Platform admin** = `User.role
      RETURNING id`
    → No rows → GW not complete, exit
 
-5. If GW claimed:
-   a. Aggregate PlayerPerformance.fantasyPoints across GW matches per player
-   b. Apply bench auto-substitutions
-      (player "played" = appears in lineup include of ANY match in GW)
-   c. Apply captain (2x), VC (1.5x), Triple Captain (3x) multipliers
-   d. Apply chip effects (multiplicative with captain)
-   e. Incremental leaderboard: UPDATE "Team" SET "totalPoints" += gwPoints
-   f. Set Gameweek.aggregationStatus = 'done'
+5. If GW claimed, FOR EACH TEAM in each league:
+   (order matters — steps a-g must execute in this sequence)
+
+   a. AGGREGATE base points per player across all matches in this GW:
+      gwBasePoints[playerId] = SUM(PlayerPerformance.fantasyPoints)
+        for all matches in this GW
+
+   b. LINEUP CARRY-FORWARD: if team has no Lineup for this GW,
+      copy the previous GW's Lineup + LineupSlots. If no previous
+      lineup exists (first GW), team scores 0.
+
+   c. BENCH AUTO-SUBSTITUTION (see detailed algorithm below):
+      Determine which XI players "played" and apply ordered bench subs.
+
+   d. CAPTAIN/VC MULTIPLIER PROMOTION:
+      - Determine effective C/VC/TC after bench subs:
+        · If Captain played → captainMultiplier = 2x
+        · If Captain did NOT play → VC promoted to Captain (2x).
+          VC slot gets no multiplier. No new VC assigned.
+        · If VC also did NOT play → no C/VC multipliers for anyone
+        · If Triple Captain chip active AND TC player played → TC gets 3x
+        · If TC did NOT play → chip consumed, no 3x applied to anyone
+      - Apply multipliers to gwBasePoints:
+        · effectiveC player: gwBasePoints[C] *= 2
+        · effectiveVC player (if not promoted): gwBasePoints[VC] *= 1.5
+        · TC player (if played): gwBasePoints[TC] *= 3
+
+   e. CHIP EFFECTS (multiplicative with captain multipliers):
+      - Bench Boost: add bench players' gwBasePoints to team total
+        (bench players already have their points; just include them)
+      - Bat Boost: for each player with role === BAT in the scoring XI,
+        multiply their current points (including any C/VC multiplier) by 2x
+      - Bowl Boost: same but role === BOWL
+      - Triple Captain: already applied in step d
+      - Formula: finalPts = gwBasePoints × captainMultiplier × chipMultiplier
+        e.g., Captain (2x) who is BAT with Bat Boost = basePoints × 2 × 2 = 4x
+
+   f. SUM team GW total, write PlayerScore rows per player,
+      update Team.totalPoints += gwTotal,
+      update Team.bestGwScore = MAX(Team.bestGwScore, gwTotal)
+
+   g. Set Gameweek.aggregationStatus = 'done'
 ```
+
+### Base Points Calculation (`lib/scoring/batting.ts`, `bowling.ts`, `fielding.ts`)
+
+Per player per match — returns `fantasyPoints` (Int):
+
+```typescript
+function computeBasePoints(batting, bowling, fielding, role, inStartingXI, isImpactPlayer): number {
+  let pts = 0;
+
+  // Starting XI / Impact Player bonus
+  if (inStartingXI) pts += 4;
+  if (isImpactPlayer) pts += 4;
+
+  // --- BATTING ---
+  if (batting) {
+    pts += batting.runs * 1;                       // +1 per run
+    pts += batting.fours * 4;                      // +4 per four
+    pts += batting.sixes * 6;                      // +6 per six
+
+    // Milestone bonuses (century REPLACES all lower, below century they STACK)
+    if (batting.runs >= 100) {
+      pts += 16;                                   // century only — no 25/50/75
+    } else {
+      if (batting.runs >= 75) pts += 12;           // stacks with 25 + 50
+      if (batting.runs >= 50) pts += 8;            // stacks with 25
+      if (batting.runs >= 25) pts += 4;
+    }
+
+    // Duck: -2 if scored 0, faced >= 1 ball, got out, and role is NOT Bowler
+    if (batting.runs === 0 && batting.balls >= 1 &&
+        batting.wicketId !== 84 /* Not Out */ &&
+        role !== 'BOWL') {
+      pts -= 2;
+    }
+
+    // Strike Rate bonus/penalty (min 10 balls, bowlers exempt)
+    if (batting.balls >= 10 && role !== 'BOWL') {
+      const sr = (batting.runs / batting.balls) * 100;
+      if (sr > 170) pts += 6;
+      else if (sr > 150) pts += 4;
+      else if (sr >= 130) pts += 2;
+      else if (sr >= 60 && sr <= 70) pts -= 2;
+      else if (sr >= 50 && sr < 60) pts -= 4;
+      else if (sr < 50) pts -= 6;
+    }
+  }
+
+  // --- BOWLING ---
+  if (bowling) {
+    pts += bowling.wickets * 30;                   // +30 per wicket (excl. runout)
+    pts += bowling.maidens * 12;                   // +12 per maiden
+    pts += bowling.dotBalls * 1;                   // +1 per dot ball
+
+    // LBW/Bowled bonus: +8 per wicket where dismissal was LBW (83) or Bowled (79)
+    // Requires checking batting data for wickets attributed to this bowler
+    pts += bowling.lbwBowledCount * 8;
+
+    // Wicket bonuses
+    if (bowling.wickets >= 5) pts += 12;
+    else if (bowling.wickets >= 4) pts += 8;
+    else if (bowling.wickets >= 3) pts += 4;
+
+    // Economy Rate bonus/penalty (min 2 overs)
+    if (bowling.overs >= 2) {
+      const er = bowling.runsConceded / bowling.overs;
+      if (er < 5) pts += 6;
+      else if (er < 6) pts += 4;
+      else if (er <= 7) pts += 2;
+      else if (er >= 10 && er <= 11) pts -= 2;
+      else if (er > 11 && er <= 12) pts -= 4;
+      else if (er > 12) pts -= 6;
+    }
+  }
+
+  // --- FIELDING ---
+  if (fielding) {
+    pts += fielding.catches * 8;                   // +8 per catch
+    if (fielding.catches >= 3) pts += 4;           // one-time 3-catch bonus
+    pts += fielding.stumpings * 12;                // +12 per stumping
+    pts += fielding.runoutsDirect * 12;            // +12 per direct hit
+    pts += fielding.runoutsAssisted * 6;           // +6 per assisted runout
+  }
+
+  return pts;
+}
+```
+
+### Bench Auto-Substitution Algorithm (`lib/scoring/multipliers.ts`)
+
+Runs at GW end for each team:
+
+```typescript
+function applyBenchSubs(lineup: LineupSlot[], performances: Map<number, PlayerPerformance[]>) {
+  // 1. Determine which players "played" in ANY match this GW
+  //    "played" = player's ID appears in ANY match lineup with substitution=false,
+  //    OR player's ID appears in batting/bowling data (impact player)
+  const playedPlayerIds: Set<number> = /* from PlayerPerformance records */;
+
+  // 2. Find XI players who did NOT play
+  const xiSlots = lineup.filter(s => s.slotType === 'XI')
+    .sort((a, b) => a.playerId - b.playerId);
+  const absentXI = xiSlots.filter(s => !playedPlayerIds.has(s.playerId));
+
+  // 3. Find bench players sorted by priority, who DID play
+  const bench = lineup.filter(s => s.slotType === 'BENCH')
+    .sort((a, b) => a.benchPriority - b.benchPriority);
+  const availableBench = bench.filter(s => playedPlayerIds.has(s.playerId));
+
+  // 4. Assign subs in order (no double-dipping)
+  const usedBench = new Set<number>();
+  const subs: Array<{out: number, in: number}> = [];
+  for (const absent of absentXI) {
+    const sub = availableBench.find(b => !usedBench.has(b.playerId));
+    if (sub) {
+      usedBench.add(sub.playerId);
+      subs.push({ out: absent.playerId, in: sub.playerId });
+    }
+    // else: no available bench player → position scores 0
+  }
+
+  return subs;
+}
+```
+
+### Captain/VC/TC Promotion Logic (`lib/scoring/multipliers.ts`)
+
+```typescript
+function resolveMultipliers(lineup: LineupSlot[], playedPlayerIds: Set<number>, subs: Sub[]) {
+  const captain = lineup.find(s => s.role === 'CAPTAIN');
+  const vc = lineup.find(s => s.role === 'VC');
+  const tc = lineup.find(s => s.role === 'TRIPLE_CAPTAIN'); // null if no TC chip
+
+  // After bench subs, determine the "scoring XI" (original XI with subs applied)
+  const scoringXI: Set<number> = new Set(
+    lineup.filter(s => s.slotType === 'XI').map(s => s.playerId)
+  );
+  for (const sub of subs) {
+    scoringXI.delete(sub.out);
+    scoringXI.add(sub.in);
+  }
+
+  const multipliers: Map<number, number> = new Map(); // playerId → multiplier
+
+  // Captain logic
+  if (captain && playedPlayerIds.has(captain.playerId)) {
+    multipliers.set(captain.playerId, 2);
+  } else if (vc && playedPlayerIds.has(vc.playerId)) {
+    // VC promoted to Captain (2x). VC slot gets NO multiplier.
+    multipliers.set(vc.playerId, 2);
+    // Note: the bench sub who replaced Captain does NOT inherit 2x
+  }
+  // If both C and VC didn't play → no C/VC multipliers for anyone
+
+  // VC multiplier (only if not promoted)
+  if (vc && playedPlayerIds.has(vc.playerId) &&
+      captain && playedPlayerIds.has(captain.playerId)) {
+    // VC only gets 1.5x if Captain also played (VC wasn't promoted)
+    multipliers.set(vc.playerId, 1.5);
+  }
+
+  // Triple Captain (only if chip active AND TC played)
+  if (tc && playedPlayerIds.has(tc.playerId)) {
+    multipliers.set(tc.playerId, 3);
+    // If TC didn't play → chip consumed, no 3x applied, bench sub gets no 3x
+  }
+
+  return multipliers; // only played players get multipliers
+}
+```
+
+### Chip Effects Computation
+
+```typescript
+function applyChipEffects(
+  chip: ChipType | null,
+  scoringXI: Set<number>,
+  bench: number[],
+  gwPoints: Map<number, number>,      // playerId → points after C/VC multipliers
+  playerRoles: Map<number, string>    // playerId → BAT/BOWL/ALL/WK
+): number {
+  let teamTotal = 0;
+
+  // Sum XI points
+  for (const pid of scoringXI) {
+    teamTotal += gwPoints.get(pid) ?? 0;
+  }
+
+  // Apply chip
+  switch (chip) {
+    case 'BENCH_BOOST':
+      // Bench players' points count too (they already have base points)
+      for (const pid of bench) {
+        teamTotal += gwPoints.get(pid) ?? 0;
+      }
+      break;
+
+    case 'BAT_BOOST':
+      // All BAT role players in scoring XI get 2x (on top of any C/VC multiplier)
+      for (const pid of scoringXI) {
+        if (playerRoles.get(pid) === 'BAT') {
+          teamTotal += gwPoints.get(pid) ?? 0; // add another 1x = total 2x
+        }
+      }
+      break;
+
+    case 'BOWL_BOOST':
+      // All BOWL role players in scoring XI get 2x
+      for (const pid of scoringXI) {
+        if (playerRoles.get(pid) === 'BOWL') {
+          teamTotal += gwPoints.get(pid) ?? 0;
+        }
+      }
+      break;
+
+    case 'TRIPLE_CAPTAIN':
+      // Already handled in resolveMultipliers — TC gets 3x there
+      break;
+  }
+
+  return teamTotal;
+}
+```
+
+### Stacking Examples (from Design Spec)
+- Captain (2x) BAT player, Bat Boost active: base × 2 (captain) → then Bat Boost adds another 1x = **4x total**
+- Triple Captain (3x) BAT player, Bat Boost active: **impossible** — only 1 chip per GW (TC and Bat Boost are different chips)
+- Captain (2x) BOWL player, Bowl Boost active: base × 2 (captain) + another 1x (Bowl Boost) = **4x total**
+- VC (1.5x) BAT player, Bat Boost active: base × 1.5 + another 1x = **3x total**
 
 ### State Machine
 ```
@@ -520,6 +807,14 @@ scheduled → completed → scoring → scored
 - **Don't store ball-by-ball data.** Compute dot balls in-memory during scoring, store only `dotBalls` integer on PlayerPerformance. If re-scoring needed, re-fetch from SportMonks.
 - **Vercel cron sends GET**, not POST. The cron route (`/api/scoring/cron`) must be a GET handler that calls the same `runScoringPipeline()` function.
 - **Season init and seed scripts must share code** — fixture import logic lives in `lib/sportmonks/fixtures.ts`, called by both `POST /api/admin/season/init` and `npm run seed:fixtures`.
+- **Super Over exclusion** — When `match.super_over === true`, filter batting/bowling/balls data to `scoreboard` values `S1` and `S2` only. Discard any data from Super Over innings.
+- **Lineup carry-forward** — When `GET /api/teams/[teamId]/lineups/[gameweekId]` finds no lineup, auto-copy the previous GW's Lineup + LineupSlots. If GW1 has no lineup, return empty (team scores 0).
+- **Player IPL transfer mid-season** — `Player.iplTeamId` may change if SportMonks updates a traded player. Fantasy ownership (`TeamPlayer`) is independent and unaffected. The "vs MI · Tue" opponent display uses the current `Player.iplTeamId`, which is correct behavior.
+- **Duck rule precision** — Duck penalty (-2) requires ALL of: `runs === 0`, `balls >= 1` (faced at least 1 delivery), player is dismissed (`wicketId !== 84`), and `role !== 'BOWL'`. A player who is not-out on 0*(0) (never faced a ball) does NOT get duck penalty.
+- **Live GW scores** — During an active GW, leaderboard shows approximate mid-week scores computed from `SUM(PlayerPerformance.fantasyPoints)` for scored matches. These are pre-multiplier/pre-bench-sub estimates. Final scores are only accurate after GW aggregation (step 5).
+
+### Design Spec Chip Naming Note
+Design spec Section 2 uses "Powerplay" but Section 7 defines the chip as "Bat Boost" (2x for BAT role). Implementation uses `BAT_BOOST`. The correct name per the detailed spec is **Bat Boost**.
 
 ## Related Documents
 - [Architecture](2026-03-15-fal-architecture.md) — High-level system design, diagrams, cost summary
