@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #0a0a0a; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-font-smoothing: antialiased; }
+  body { background: #0a0a0a; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
 
   :root {
     --mi: #004BA0; --csk: #F9CD05; --rcb: #EC1C24; --kkr: #3A225D;
@@ -51,9 +51,9 @@
   }
   .header-title { font-size: 16px; font-weight: 700; color: #1a1a2e; letter-spacing: -0.5px; }
   .meta-line {
-    font-size: 11.5px; font-weight: 400; color: #888; margin-bottom: 10px;
+    font-size: 14px; font-weight: 500; color: #555; margin-bottom: 10px;
   }
-  .meta-line strong { font-weight: 700; color: #1a1a2e; }
+  .meta-line strong { font-weight: 800; color: #1a1a2e; font-size: 15px; }
 
   /* ═══ Chips — clean white row ═══ */
   .chips-bar {
@@ -75,14 +75,14 @@
   .chip-circle.off {
     background: #f5f4f6; border: 1.5px solid #e0dde2; opacity: 0.4;
   }
-  .chip-label { font-size: 9px; font-weight: 600; color: #333; text-align: center; line-height: 1.2; }
-  .chip-tag { font-size: 8px; font-weight: 600; }
+  .chip-label { font-size: 11px; font-weight: 600; color: #333; text-align: center; line-height: 1.2; }
+  .chip-tag { font-size: 10px; font-weight: 600; }
   .chip-tag.on { color: var(--mint); border: 1px solid rgba(13,158,95,0.3); padding: 1px 6px; border-radius: 6px; background: rgba(13,158,95,0.06); }
   .chip-tag.off { color: #999; }
 
   /* ═══ PITCH — rich green, Dream11 style ═══ */
   .pitch {
-    flex: 1; position: relative; overflow: hidden; max-height: 380px;
+    flex: 1; position: relative; overflow: hidden; max-height: 460px;
     background: linear-gradient(180deg,
       #3aad5c 0%, #35a254 15%,
       #30964c 30%, #34a058 45%,
@@ -109,7 +109,7 @@
   .players-layout {
     position: absolute; inset: 0;
     display: flex; flex-direction: column;
-    justify-content: space-between;
+    justify-content: space-evenly;
     padding: 12px 0 10px; z-index: 3;
   }
 
@@ -120,7 +120,7 @@
   /* ═══ Player Card ═══ */
   .player {
     display: flex; flex-direction: column; align-items: center;
-    width: 82px; text-decoration: none; cursor: pointer;
+    width: 92px; text-decoration: none; cursor: pointer;
   }
 
   /* Upper body cutout — head + shoulders */
@@ -184,18 +184,19 @@
 
   /* ═══ Name plate — team-colored solid bar ═══ */
   .name-plate {
-    min-width: 68px; max-width: 80px;
-    padding: 3px 8px 2px; border-radius: 4px;
+    min-width: 82px; max-width: 90px; height: 72px;
+    padding: 4px 8px; border-radius: 5px;
     text-align: center;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
   }
   .name-plate .pname {
-    font-size: 10px; font-weight: 700; color: #fff;
+    font-size: 12px; font-weight: 700; color: #fff;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     text-shadow: 0 1px 2px rgba(0,0,0,0.2);
   }
   .name-plate .pvalue {
-    font-size: 8px; font-weight: 500; color: rgba(255,255,255,0.65);
-    margin-top: 0;
+    font-size: 10px; font-weight: 500; color: rgba(255,255,255,0.8);
+    margin-top: 2px; line-height: 1.55;
   }
 
   /* Team plate colors */
@@ -219,7 +220,7 @@
   .bench-header {
     display: flex; align-items: center; gap: 8px; margin-bottom: 4px; justify-content: center;
   }
-  .bench-title { font-size: 8px; font-weight: 800; color: rgba(255,255,255,0.2); text-transform: uppercase; letter-spacing: 2px; }
+  .bench-title { font-size: 10px; font-weight: 800; color: rgba(255,255,255,0.2); text-transform: uppercase; letter-spacing: 2px; }
   .bench-line { flex: 1; height: 1px; background: rgba(255,255,255,0.06); max-width: 80px; }
   .bench-row { display: flex; justify-content: space-around; }
   .bench .player { width: 76px; }
@@ -228,10 +229,10 @@
   .bench .fig-body { width: 40px; height: 28px; top: 16px; border-radius: 10px 10px 3px 3px; }
   .bench .fig-logo { width: 16px; height: 16px; margin-top: 4px; }
   .bench .name-plate { min-width: 60px; max-width: 72px; padding: 2px 5px 1px; }
-  .bench .name-plate .pname { font-size: 8.5px; }
-  .bench .name-plate .pvalue { font-size: 7px; }
+  .bench .name-plate .pname { font-size: 11px; }
+  .bench .name-plate .pvalue { font-size: 9px; }
   .bench-role {
-    font-size: 7px; font-weight: 700; text-align: center; margin-bottom: 2px;
+    font-size: 9px; font-weight: 700; text-align: center; margin-bottom: 2px;
     text-transform: uppercase; letter-spacing: 0.5px;
   }
   .bench-role.bat { color: rgba(249,205,5,0.4); }
@@ -347,8 +348,6 @@
     <div class="meta-line">Gameweek 8 · <strong>Deadline: Tue 17 Mar, 19:30</strong></div>
 
     <div class="chips-bar">
-      <div class="chip-item"><div class="chip-circle on">⚡</div><div class="chip-label">Triple Captain</div><div class="chip-tag on">Play</div></div>
-      <div class="chip-item"><div class="chip-circle on">↑</div><div class="chip-label">Bench Boost</div><div class="chip-tag on">Play</div></div>
       <div class="chip-item"><div class="chip-circle off">💰</div><div class="chip-label">Power Pay</div><div class="chip-tag off">Played GW3</div></div>
       <div class="chip-item"><div class="chip-circle on">🏏</div><div class="chip-label">Bat Boost</div><div class="chip-tag on">Play</div></div>
     </div>
@@ -406,14 +405,14 @@
             <div class="fig-head mi">HP</div>
             <div class="fig-body mi"><img class="fig-logo" src="https://documents.iplt20.com/ipl/MI/Logos/Logooutline/MIoutline.png" alt="MI"></div>
           </div>
-          <div class="name-plate plate-mi"><div class="pname">H Pandya</div><div class="pvalue">vs RCB · Tue</div></div>
+          <div class="name-plate plate-mi"><div class="pname">H Pandya</div><div class="pvalue">vs RCB · Tue<br>vs CSK · Thu</div></div>
         </div>
         <div class="player" onclick="openPlayer()">
           <div class="player-figure">
             <div class="fig-head kkr">AR</div>
             <div class="fig-body kkr"><img class="fig-logo" src="https://documents.iplt20.com/ipl/KKR/Logos/Logooutline/KKRoutline.png" alt="KKR"></div>
           </div>
-          <div class="name-plate plate-kkr"><div class="pname">A Russell</div><div class="pvalue">vs CSK · Thu</div></div>
+          <div class="name-plate plate-kkr"><div class="pname">A Russell</div><div class="pvalue">vs CSK · Thu<br>vs MI · Tue<br>vs RR · Sat</div></div>
         </div>
         <div class="player" onclick="openPlayer()">
           <div class="player-figure">
@@ -425,13 +424,13 @@
       </div>
 
       <!-- Row 3 (3 players) -->
-      <div class="player-row">
+      <div class="player-row" style="justify-content: space-evenly; width: 100%;">
         <div class="player" onclick="openPlayer()">
           <div class="player-figure">
             <div class="fig-head mi">JB</div>
             <div class="fig-body mi"><img class="fig-logo" src="https://documents.iplt20.com/ipl/MI/Logos/Logooutline/MIoutline.png" alt="MI"></div>
           </div>
-          <div class="name-plate plate-mi"><div class="pname">J Bumrah</div><div class="pvalue">vs RCB · Tue</div></div>
+          <div class="name-plate plate-mi"><div class="pname">J Bumrah</div><div class="pvalue">vs RCB · Tue<br>vs CSK · Thu</div></div>
         </div>
         <div class="player" onclick="openPlayer()">
           <div class="player-figure">
@@ -459,22 +458,22 @@
       <div class="player" style="width:76px;display:flex;flex-direction:column;align-items:center;">
         <div class="bench-role bat">BAT</div>
         <div class="player-figure" style="width:42px;height:44px;"><div class="fig-head gt" style="width:24px;height:24px;font-size:9px;">KW</div><div class="fig-body gt" style="width:40px;height:28px;top:16px;border-radius:10px 10px 3px 3px;"><img class="fig-logo" src="https://documents.iplt20.com/ipl/GT/Logos/Logooutline/GToutline.png" alt="GT" style="width:16px;height:16px;margin-top:4px;"></div></div>
-        <div class="name-plate plate-gt" style="min-width:60px;max-width:72px;padding:2px 5px 1px;"><div class="pname" style="font-size:8.5px;">Williamson</div><div class="pvalue" style="font-size:7px;">vs SRH · Sat</div></div>
+        <div class="name-plate plate-gt" style="min-width:60px;max-width:72px;padding:2px 5px 1px;"><div class="pname" style="font-size:11px;">Williamson</div><div class="pvalue" style="font-size:9px;">vs SRH · Sat</div></div>
       </div>
       <div class="player" style="width:76px;display:flex;flex-direction:column;align-items:center;">
         <div class="bench-role bowl">BOWL</div>
         <div class="player-figure" style="width:42px;height:44px;"><div class="fig-head mi" style="width:24px;height:24px;font-size:9px;">AP</div><div class="fig-body mi" style="width:40px;height:28px;top:16px;border-radius:10px 10px 3px 3px;"><img class="fig-logo" src="https://documents.iplt20.com/ipl/MI/Logos/Logooutline/MIoutline.png" alt="MI" style="width:16px;height:16px;margin-top:4px;"></div></div>
-        <div class="name-plate plate-mi" style="min-width:60px;max-width:72px;padding:2px 5px 1px;"><div class="pname" style="font-size:8.5px;">A Patel<span class="imp-tag">IMP</span></div><div class="pvalue" style="font-size:7px;">vs RCB · Tue</div></div>
+        <div class="name-plate plate-mi" style="min-width:60px;max-width:72px;padding:2px 5px 1px;"><div class="pname" style="font-size:11px;">A Patel<span class="imp-tag">IMP</span></div><div class="pvalue" style="font-size:9px;">vs RCB · Tue</div></div>
       </div>
       <div class="player" style="width:76px;display:flex;flex-direction:column;align-items:center;">
         <div class="bench-role wk">WK</div>
         <div class="player-figure" style="width:42px;height:44px;"><div class="fig-head rr" style="width:24px;height:24px;font-size:9px;">SS</div><div class="fig-body rr" style="width:40px;height:28px;top:16px;border-radius:10px 10px 3px 3px;"><img class="fig-logo" src="https://documents.iplt20.com/ipl/RR/Logos/Logooutline/RRoutline.png" alt="RR" style="width:16px;height:16px;margin-top:4px;"></div></div>
-        <div class="name-plate plate-rr" style="min-width:60px;max-width:72px;padding:2px 5px 1px;"><div class="pname" style="font-size:8.5px;">Samson</div><div class="pvalue" style="font-size:7px;">vs DC · Fri</div></div>
+        <div class="name-plate plate-rr" style="min-width:60px;max-width:72px;padding:2px 5px 1px;"><div class="pname" style="font-size:11px;">Samson</div><div class="pvalue" style="font-size:9px;">vs DC · Fri</div></div>
       </div>
       <div class="player" style="width:76px;display:flex;flex-direction:column;align-items:center;">
         <div class="bench-role all">ALL</div>
         <div class="player-figure" style="width:42px;height:44px;"><div class="fig-head srh" style="width:24px;height:24px;font-size:9px;">WS</div><div class="fig-body srh" style="width:40px;height:28px;top:16px;border-radius:10px 10px 3px 3px;"><img class="fig-logo" src="https://documents.iplt20.com/ipl/SRH/Logos/Logooutline/SRHoutline.png" alt="SRH" style="width:16px;height:16px;margin-top:4px;"></div></div>
-        <div class="name-plate plate-srh" style="min-width:60px;max-width:72px;padding:2px 5px 1px;"><div class="pname" style="font-size:8.5px;">Sundar</div><div class="pvalue" style="font-size:7px;">vs GT · Sat</div></div>
+        <div class="name-plate plate-srh" style="min-width:60px;max-width:72px;padding:2px 5px 1px;"><div class="pname" style="font-size:11px;">Sundar</div><div class="pvalue" style="font-size:9px;">vs GT · Sat</div></div>
       </div>
     </div>
   </div>
