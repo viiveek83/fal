@@ -117,7 +117,7 @@ Some players play **two or three matches** in a single gameweek. Their points ac
 
 ## Strategy Chips
 
-You have **4 chips** for the entire season. Each can only be used **once** and only **one per gameweek**. Use them wisely — they can swing a gameweek dramatically.
+You have **2 chips** for the entire season — one of each. Each can only be used **once** and only **one per gameweek**. Use them wisely — they can swing a gameweek dramatically.
 
 ---
 
@@ -139,31 +139,13 @@ The mirror of Bowling Boost — if your squad is stacked with top-order batters 
 
 ---
 
-### 👑 Triple Captain
-**Pick a third player (different from Captain and VC) to earn 3× points.**
-
-In a Triple Captain week, you have two guaranteed multipliers: Captain 2× and Triple Captain 3×. Your VC only gets 2× if the Captain doesn't play. Choose your Triple Captain wisely — someone with a great fixture and ideally a double gameweek.
-
-*Best used when:* An elite player has two matches this week on a batter/bowler-friendly pitch. A Bumrah with two games under Triple Captain is a season-defining play.
-
----
-
-### ↑ Bench Boost
-**Your bench players' points count this gameweek too.**
-
-Instead of 11 players scoring, all 15 (or however many are on your bench) contribute. Only works if your bench players actually play — check their fixture lists first.
-
-*Best used when:* Your bench has players with strong double gameweek fixtures, giving you effectively 15 active scorers instead of 11.
-
----
-
 ### Chip Strategy Tips
 
-- **Don't panic-use chips early.** The best chip weeks are usually when a player has double or triple fixtures.
-- **Triple Captain on a double-fixture bowler** (like Bumrah with two games) is often the highest-ceiling play of the season.
-- **Bowling Boost + bowling Captain = 4× on your best bowler.** Save this for when you have a 3+ wicket game on the cards.
-- **Bench Boost requires bench depth.** If your bench is weak, this chip won't do much.
-- **Once a chip is played, it's gone.** The system will ask you to confirm before activating — take that moment seriously.
+- **Don't panic-use chips early.** The best weeks are double or triple gameweek weeks — a player with two matches under a chip doubles your ceiling.
+- **Power Play Bat + batting Captain = 4× on your Captain.** Stack these when you have a top-order batter captained in a great fixture.
+- **Bowling Boost + bowling Captain = 4× on your Captain.** Save this for a week where your best bowler has two matches or a wicket-friendly pitch.
+- **You only have one of each.** Once a chip is played it's gone for the season — the app will ask you to confirm before activating.
+- **The chips are roughly symmetric** — Power Play Bat benefits more players in a typical XI (batters outnumber bowlers), so pick your Bowling Boost week carefully for maximum impact.
 
 ---
 
@@ -199,7 +181,7 @@ Scores update live as each IPL match finishes — you can watch your gameweek to
 | **Playing XI** | 11 from your squad |
 | **Captain** | 2× points |
 | **Vice Captain** | 2× only if Captain doesn't play, else 1× |
-| **Chips** | 4 total, 1 per gameweek, once each |
+| **Chips** | 2 total (Power Play Bat + Bowling Boost), 1 per GW, once each |
 | **Bench subs** | Automatic if a player doesn't feature |
 | **Scoring** | Dream11 T20-aligned |
 | **Tiebreaker** | Highest single GW score |
