@@ -325,6 +325,81 @@ Each ball in the `?include=balls` response contains:
 
 **Fallback:** Admin manual stat entry via CSV upload if API is unavailable for a match. Design spec already supports this.
 
+### Fixture-Level Fields (validated Mar 2026)
+
+Each fixture object contains these fields relevant to FAL:
+
+| Field | Type | Description | Used For |
+|---|---|---|---|
+| `id` | number | Unique fixture ID | API match reference |
+| `localteam_id` | number | Home team ID | Match display |
+| `visitorteam_id` | number | Away team ID | Match display |
+| `starting_at` | datetime | Match start time (UTC) | Lineup lock, gameweek assignment, "vs MI · Tue" display |
+| `status` | string | `NS` (not started), `Finished`, etc. | Scoring trigger |
+| `note` | string | Result text (e.g., "RCB won by 7 wickets (with 22 balls remaining)") | Match scores UI |
+| `winner_team_id` | number | Winning team ID | Match result display |
+| `toss_won_team_id` | number | Toss winner | Optional display |
+| `elected` | string | "batting" or "bowling" | Optional display |
+| `man_of_match_id` | number | MoM player ID | Optional display |
+| `super_over` | boolean | Whether match went to Super Over | Exclude Super Over balls from scoring |
+| `round` | string | "1st Match", "2nd Match", etc. | Match display |
+
+**`?include=runs` response** (innings summary):
+
+| Field | Type | Description |
+|---|---|---|
+| `team_id` | number | Batting team |
+| `inning` | number | 1 or 2 |
+| `score` | number | Team total runs |
+| `wickets` | number | Wickets fallen |
+| `overs` | number | Overs bowled (e.g., 16.2) |
+
+### Lineup Include Fields (validated Mar 2026)
+
+Each player in the `?include=lineup` response contains a `lineup` sub-object:
+
+| Field | Type | Description | Used For |
+|---|---|---|---|
+| `team_id` | number | Player's IPL team in this match | Team identification |
+| `captain` | boolean | IPL match captain | Optional display |
+| `wicketkeeper` | boolean | Designated keeper | Optional display |
+| `substitution` | boolean | `false` = Starting XI, `true` = substitute/bench | Starting XI +4 bonus, Impact Player detection |
+
+**Starting XI detection:** `substitution === false` → player was in the announced Starting XI → +4 pts.
+
+**Impact Player detection (derived):** SportMonks has no explicit Impact Player flag. Detection logic:
+```typescript
+// A substitute who actually participated = Impact Player
+const isImpactPlayer = (player: LineupPlayer, battedIds: Set<number>, bowledIds: Set<number>) =>
+  player.lineup.substitution === true &&
+  (battedIds.has(player.id) || bowledIds.has(player.id));
+```
+Validated against IPL 2025 Match 65240: KKR's Vaibhav Arora (sub who bowled) and RCB's Devdutt Padikkal (sub who batted) correctly identified as Impact Players. Each team had 16 players in lineup (11 starters + 5 subs), with exactly 1 sub per team who actually played.
+
+### Design-to-API Gap Analysis (validated Mar 2026)
+
+Cross-referenced all UI mockup data points against SportMonks API responses. **No blocking gaps found.**
+
+**Fully covered (20 data points):** All batting, bowling, fielding stats, SR/ER bonuses, dismissal types, match results, lineup detection, upcoming opponent info — all map directly to validated API fields.
+
+**Derived data (not directly from API but computable):**
+
+| Data Point | Derivation |
+|---|---|
+| Impact Player (+4 pts) | Sub who appears in batting or bowling data (see above) |
+| Player auction price | App-internal — from admin CSV upload, stored in `TeamPlayer.purchasePrice` |
+| Season/GW aggregated stats | Computed from `PlayerPerformance` + `PlayerScore` tables |
+| Player form trends | Computed from historical `PlayerScore` data |
+| "vs MI · Tue" opponent display | Cross-reference player's IPL team with fixture `localteam_id`/`visitorteam_id` + `starting_at` |
+
+**Accepted limitations:**
+
+| Limitation | Impact | Mitigation |
+|---|---|---|
+| Overthrow boundary vs regular boundary indistinguishable | Very low (~2-3 per season) | Accept inaccuracy, or admin manual correction |
+| Super Over ball scoreboard values unvalidated | Very low (rare event) | Filter by `scoreboard` in `S1`/`S2` only; use `super_over` flag on fixture |
+| No commentary text on balls | None — original design assumed this existed | Use structured `catchstump_id`/`runout_by_id` instead (better) |
+
 ## 5. Data Ingestion Pipeline
 
 ### Requests Per Match (SportMonks) — validated Mar 2026
