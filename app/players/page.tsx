@@ -234,7 +234,7 @@ export default function PlayersPage() {
     )
   }
 
-  /* ─── Mock data for player detail sheet ─── */
+  /* ─── Player detail sheet constants ─── */
   const roleIconGradients: Record<string, { bg: string; color: string; label: string }> = {
     BAT:  { bg: 'linear-gradient(135deg, #F9CD05, #e0b800)', color: '#1a1a1a', label: 'BA' },
     BOWL: { bg: 'linear-gradient(135deg, #004BA0, #0066cc)', color: '#fff', label: 'BO' },
@@ -244,90 +244,6 @@ export default function PlayersPage() {
 
   const roleFullName: Record<string, string> = {
     BAT: 'Batsman', BOWL: 'Bowler', ALL: 'All-Rounder', WK: 'Wicket-keeper',
-  }
-
-  function getMockStats(role: string, seed: number) {
-    const r = (base: number, range: number) => base + (seed % range)
-    if (role === 'BAT') return {
-      section: 'Batting',
-      stats: [
-        { val: String(r(20, 80)), label: 'Runs' },
-        { val: String(r(1, 7)), label: '4s' },
-        { val: String(r(0, 4)), label: '6s' },
-        { val: (r(100, 80)).toFixed(1), label: 'SR' },
-        { val: String(r(12, 30)), label: 'Balls' },
-      ],
-      points: [
-        { event: `Runs (${r(20, 80)})`, val: `+${r(20, 80)}` },
-        { event: `Fours (${r(1, 7)} × 4)`, val: `+${r(1, 7) * 4}` },
-        { event: `Sixes (${r(0, 4)} × 6)`, val: `+${r(0, 4) * 6}` },
-        { event: '50 Bonus', val: '+8', accent: true },
-        { event: 'SR Bonus', val: '+4', accent: true },
-      ],
-    }
-    if (role === 'BOWL') return {
-      section: 'Bowling',
-      stats: [
-        { val: String(r(1, 4)), label: 'Wkts' },
-        { val: (r(2, 3)).toFixed(1), label: 'Overs' },
-        { val: String(r(18, 20)), label: 'Runs' },
-        { val: String(r(0, 2)), label: 'Maiden' },
-        { val: (r(5, 4)).toFixed(1), label: 'Econ' },
-      ],
-      points: [
-        { event: `Wickets (${r(1, 4)} × 25)`, val: `+${r(1, 4) * 25}` },
-        { event: `Dot Balls (${r(8, 14)} × 1)`, val: `+${r(8, 14)}` },
-        { event: 'Economy Rate', val: '+6', accent: true },
-        { event: 'Maiden Over', val: r(0, 2) > 0 ? '+8' : '+0', accent: true },
-      ],
-    }
-    if (role === 'WK') return {
-      section: 'Wicket-keeping',
-      stats: [
-        { val: String(r(15, 50)), label: 'Runs' },
-        { val: String(r(1, 5)), label: '4s' },
-        { val: String(r(0, 3)), label: 'Catches' },
-        { val: String(r(0, 2)), label: 'Stumpings' },
-        { val: (r(100, 60)).toFixed(1), label: 'SR' },
-      ],
-      points: [
-        { event: `Runs (${r(15, 50)})`, val: `+${r(15, 50)}` },
-        { event: `Catches (${r(0, 3)} × 8)`, val: `+${r(0, 3) * 8}` },
-        { event: `Stumpings (${r(0, 2)} × 12)`, val: `+${r(0, 2) * 12}` },
-        { event: 'SR Bonus', val: '+4', accent: true },
-      ],
-    }
-    // ALL
-    return {
-      section: 'All-Round',
-      stats: [
-        { val: String(r(15, 45)), label: 'Runs' },
-        { val: String(r(0, 3)), label: 'Wkts' },
-        { val: (r(100, 60)).toFixed(1), label: 'SR' },
-        { val: (r(5, 5)).toFixed(1), label: 'Econ' },
-        { val: String(r(0, 2)), label: 'Catches' },
-      ],
-      points: [
-        { event: `Runs (${r(15, 45)})`, val: `+${r(15, 45)}` },
-        { event: `Wickets (${r(0, 3)} × 25)`, val: `+${r(0, 3) * 25}` },
-        { event: `Catches (${r(0, 2)} × 8)`, val: `+${r(0, 2) * 8}` },
-        { event: 'SR Bonus', val: '+4', accent: true },
-      ],
-    }
-  }
-
-  function getMockForm(seed: number): number[] {
-    return [
-      30 + (seed % 50),
-      40 + ((seed * 3) % 45),
-      20 + ((seed * 7) % 55),
-      35 + ((seed * 11) % 50),
-      45 + ((seed * 13) % 60),
-    ]
-  }
-
-  function getMockPrice(seed: number): string {
-    return `$${(5 + (seed % 60) / 10).toFixed(1)}M`
   }
 
   return (
@@ -539,15 +455,116 @@ export default function PlayersPage() {
 
       {/* ── Player Detail Bottom Sheet ── */}
       {selectedPlayer && (() => {
-        const seed = seededRandom(selectedPlayer.id)
-        const pts = 100 + (seed % 400)
-        const mockStats = getMockStats(selectedPlayer.role, seed)
-        const mockForm = getMockForm(seed)
-        const maxForm = Math.max(...mockForm)
-        const totalPts = mockStats.points.reduce((sum, p) => sum + parseInt(p.val.replace('+', '')), 0)
         const iconInfo = roleIconGradients[selectedPlayer.role] || roleIconGradients.BAT
-        const gwTabs = ['GW7', 'GW6', 'GW5', 'Season']
-        const trendUp = mockForm[4] > mockForm[3] && mockForm[3] > mockForm[2]
+        const detail = playerDetail
+
+        // Build GW tabs from real data
+        const gwNumbers = detail
+          ? [...new Set(detail.performances.map((p) => p.match.gameweek?.number).filter((n): n is number => n != null))].sort((a, b) => b - a).slice(0, 3)
+          : []
+        const gwTabs = [...gwNumbers.map((n) => `GW${n}`), 'Season']
+
+        // Get performances for the active tab
+        const getActivePerformances = (): Performance[] => {
+          if (!detail) return []
+          if (activeGwTab === 'Season') return detail.performances
+          const gwNum = parseInt(activeGwTab.replace('GW', ''))
+          return detail.performances.filter((p) => p.match.gameweek?.number === gwNum)
+        }
+
+        const activePerfs = getActivePerformances()
+
+        // Aggregate stats for active performances
+        const aggregateStats = (perfs: Performance[]) => ({
+          runs: perfs.reduce((s, p) => s + (p.runs ?? 0), 0),
+          balls: perfs.reduce((s, p) => s + (p.balls ?? 0), 0),
+          fours: perfs.reduce((s, p) => s + (p.fours ?? 0), 0),
+          sixes: perfs.reduce((s, p) => s + (p.sixes ?? 0), 0),
+          wickets: perfs.reduce((s, p) => s + (p.wickets ?? 0), 0),
+          overs: perfs.reduce((s, p) => s + (p.overs ?? 0), 0),
+          maidens: perfs.reduce((s, p) => s + (p.maidens ?? 0), 0),
+          runsConceded: perfs.reduce((s, p) => s + (p.runsConceded ?? 0), 0),
+          dotBalls: perfs.reduce((s, p) => s + (p.dotBalls ?? 0), 0),
+          catches: perfs.reduce((s, p) => s + p.catches, 0),
+          stumpings: perfs.reduce((s, p) => s + p.stumpings, 0),
+          runouts: perfs.reduce((s, p) => s + p.runoutsDirect + p.runoutsAssisted, 0),
+          fantasyPoints: perfs.reduce((s, p) => s + p.fantasyPoints, 0),
+          matches: perfs.length,
+        })
+
+        const agg = aggregateStats(activePerfs)
+
+        // Build stats grid based on role
+        const buildStatsGrid = () => {
+          const role = selectedPlayer.role
+          if (role === 'BAT') return {
+            section: 'Batting',
+            stats: [
+              { val: String(agg.runs), label: 'Runs' },
+              { val: String(agg.fours), label: '4s' },
+              { val: String(agg.sixes), label: '6s' },
+              { val: agg.balls > 0 ? ((agg.runs / agg.balls) * 100).toFixed(1) : '0.0', label: 'SR' },
+              { val: String(agg.balls), label: 'Balls' },
+            ],
+          }
+          if (role === 'BOWL') return {
+            section: 'Bowling',
+            stats: [
+              { val: String(agg.wickets), label: 'Wkts' },
+              { val: agg.overs.toFixed(1), label: 'Overs' },
+              { val: String(agg.runsConceded), label: 'Runs' },
+              { val: String(agg.maidens), label: 'Maiden' },
+              { val: agg.overs > 0 ? (agg.runsConceded / agg.overs).toFixed(1) : '0.0', label: 'Econ' },
+            ],
+          }
+          if (role === 'WK') return {
+            section: 'Wicket-keeping',
+            stats: [
+              { val: String(agg.runs), label: 'Runs' },
+              { val: String(agg.fours), label: '4s' },
+              { val: String(agg.catches), label: 'Catches' },
+              { val: String(agg.stumpings), label: 'Stumpings' },
+              { val: agg.balls > 0 ? ((agg.runs / agg.balls) * 100).toFixed(1) : '0.0', label: 'SR' },
+            ],
+          }
+          // ALL
+          return {
+            section: 'All-Round',
+            stats: [
+              { val: String(agg.runs), label: 'Runs' },
+              { val: String(agg.wickets), label: 'Wkts' },
+              { val: agg.balls > 0 ? ((agg.runs / agg.balls) * 100).toFixed(1) : '0.0', label: 'SR' },
+              { val: agg.overs > 0 ? (agg.runsConceded / agg.overs).toFixed(1) : '0.0', label: 'Econ' },
+              { val: String(agg.catches), label: 'Catches' },
+            ],
+          }
+        }
+
+        // Build form data from per-GW points (most recent 5 GWs)
+        const buildFormData = (): { values: number[]; labels: string[] } => {
+          if (!detail || detail.performances.length === 0) return { values: [], labels: [] }
+          const gwMap = new Map<number, number>()
+          for (const p of detail.performances) {
+            const gw = p.match.gameweek?.number
+            if (gw != null) {
+              gwMap.set(gw, (gwMap.get(gw) || 0) + p.fantasyPoints)
+            }
+          }
+          const sorted = [...gwMap.entries()].sort((a, b) => a[0] - b[0]).slice(-5)
+          return {
+            values: sorted.map(([, pts]) => pts),
+            labels: sorted.map(([gw]) => `GW${gw}`),
+          }
+        }
+
+        const formData = buildFormData()
+        const maxForm = formData.values.length > 0 ? Math.max(...formData.values, 1) : 1
+        const trendUp = formData.values.length >= 3 &&
+          formData.values[formData.values.length - 1] > formData.values[formData.values.length - 2] &&
+          formData.values[formData.values.length - 2] > formData.values[formData.values.length - 3]
+
+        const statsGrid = buildStatsGrid()
+        const hasData = activePerfs.length > 0
 
         return (
           <>
@@ -596,14 +613,14 @@ export default function PlayersPage() {
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 15, fontWeight: 800, color: '#1a1a2e' }}>{selectedPlayer.fullname}</div>
                   <div style={{ fontSize: 10, color: '#888', fontWeight: 500 }}>
-                    {selectedPlayer.iplTeamCode || ''} · {roleFullName[selectedPlayer.role] || selectedPlayer.role} · {getMockPrice(seed)}
+                    {selectedPlayer.iplTeamCode || ''} · {roleFullName[selectedPlayer.role] || selectedPlayer.role}{detail ? ` · ${detail.stats.matches} matches` : ''}
                   </div>
                 </div>
                 <div style={{
                   fontSize: 24, fontWeight: 800, color: '#004BA0',
                   fontVariantNumeric: 'tabular-nums', letterSpacing: -1,
                 }}>
-                  {pts}
+                  {detail ? detail.stats.totalPoints : '—'}
                 </div>
                 <button
                   onClick={closePlayerSheet}
@@ -643,137 +660,225 @@ export default function PlayersPage() {
                 scrollbarWidth: 'none',
               } as React.CSSProperties}>
 
-                {/* Stat section */}
-                <div style={{ padding: '8px 16px' }}>
-                  <div style={{
-                    fontSize: 9, fontWeight: 700, color: '#aaa',
-                    textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6,
-                  }}>
-                    {mockStats.section}
-                  </div>
-                  <div style={{ display: 'flex', gap: 4 }}>
-                    {mockStats.stats.map((s, i) => (
-                      <div key={i} style={{
-                        flex: 1, textAlign: 'center', padding: '6px 3px',
-                        background: '#f7f8fb', borderRadius: 8,
-                      }}>
-                        <div style={{ fontSize: 14, fontWeight: 800, color: '#222', fontVariantNumeric: 'tabular-nums' }}>
-                          {s.val}
-                        </div>
-                        <div style={{ fontSize: 8, color: '#aaa', fontWeight: 500, marginTop: 1 }}>
-                          {s.label}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Fielding section (always show) */}
-                <div style={{ padding: '8px 16px', borderTop: '1px solid #f5f5f8' }}>
-                  <div style={{
-                    fontSize: 9, fontWeight: 700, color: '#aaa',
-                    textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6,
-                  }}>
-                    Fielding
-                  </div>
-                  <div style={{ display: 'flex', gap: 4 }}>
-                    {[
-                      { val: String(seed % 3), label: 'Catches' },
-                      { val: String(seed % 2), label: 'Runouts' },
-                    ].map((s, i) => (
-                      <div key={i} style={{
-                        flex: 1, textAlign: 'center', padding: '6px 3px',
-                        background: '#f7f8fb', borderRadius: 8, maxWidth: 80,
-                      }}>
-                        <div style={{ fontSize: 14, fontWeight: 800, color: '#222', fontVariantNumeric: 'tabular-nums' }}>
-                          {s.val}
-                        </div>
-                        <div style={{ fontSize: 8, color: '#aaa', fontWeight: 500, marginTop: 1 }}>
-                          {s.label}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Fantasy Points Breakdown */}
-                <div style={{ padding: '8px 16px', borderTop: '1px solid #f5f5f8' }}>
-                  <div style={{
-                    fontSize: 9, fontWeight: 700, color: '#aaa',
-                    textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6,
-                  }}>
-                    Fantasy Points
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    {mockStats.points.map((p, i) => (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 11 }}>
-                        <span style={{ color: '#666', fontWeight: 500 }}>{p.event}</span>
-                        <span style={{ color: p.accent ? '#0d9e5f' : '#333', fontWeight: 700 }}>{p.val}</span>
-                      </div>
-                    ))}
-                    {/* Total row */}
+                {/* Loading state */}
+                {detailLoading && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40 }}>
                     <div style={{
-                      display: 'flex', justifyContent: 'space-between', padding: '6px 0 4px',
-                      borderTop: '2px solid #1a1a2e', marginTop: 4,
-                    }}>
-                      <span style={{ fontWeight: 800, color: '#1a1a2e', fontSize: 11 }}>Total</span>
-                      <span style={{ fontWeight: 800, color: '#1a1a2e', fontSize: 14 }}>{totalPts}</span>
-                    </div>
+                      width: 24, height: 24, border: '3px solid #e8eaf0', borderTopColor: '#004BA0',
+                      borderRadius: '50%', animation: 'spin 0.8s linear infinite',
+                    }} />
+                    <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
                   </div>
-                </div>
+                )}
 
-                {/* Recent Form */}
-                <div style={{ padding: '8px 16px', borderTop: '1px solid #f5f5f8', textAlign: 'center' }}>
-                  <div style={{
-                    fontSize: 9, fontWeight: 700, color: '#aaa',
-                    textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6,
-                    textAlign: 'left',
-                  }}>
-                    Recent Form
+                {/* No data for this tab */}
+                {!detailLoading && detail && !hasData && activeGwTab !== 'Season' && (
+                  <div style={{ textAlign: 'center', padding: '32px 16px', color: '#aaa', fontSize: 12, fontWeight: 500 }}>
+                    No data for this gameweek
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 60, padding: '0 8px' }}>
-                    {mockForm.map((val, i) => {
-                      const isLast = i === mockForm.length - 1
-                      const isHot = i === mockForm.length - 2
-                      const pct = maxForm > 0 ? (val / maxForm) * 100 : 10
-                      return (
-                        <div key={i} style={{
-                          flex: 1,
-                          background: isLast ? '#004BA0' : isHot ? 'rgba(0,75,160,0.2)' : '#e8eaf0',
-                          borderRadius: '5px 5px 0 0',
-                          height: `${pct}%`,
-                          minHeight: 6,
-                          position: 'relative',
-                        }}>
-                          <span style={{
-                            position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)',
-                            fontSize: isLast ? 9 : 8, fontWeight: 700,
-                            color: isLast ? '#004BA0' : '#999',
+                )}
+
+                {/* No match data at all (season not started) */}
+                {!detailLoading && detail && detail.performances.length === 0 && activeGwTab === 'Season' && (
+                  <div style={{ textAlign: 'center', padding: '32px 16px', color: '#aaa', fontSize: 12, fontWeight: 500 }}>
+                    No match data yet
+                  </div>
+                )}
+
+                {/* Stats content — show when we have data */}
+                {!detailLoading && detail && hasData && (
+                  <>
+                    {/* Stat section */}
+                    <div style={{ padding: '8px 16px' }}>
+                      <div style={{
+                        fontSize: 9, fontWeight: 700, color: '#aaa',
+                        textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6,
+                      }}>
+                        {statsGrid.section}
+                      </div>
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        {statsGrid.stats.map((s, i) => (
+                          <div key={i} style={{
+                            flex: 1, textAlign: 'center', padding: '6px 3px',
+                            background: '#f7f8fb', borderRadius: 8,
                           }}>
-                            {val}
-                          </span>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: '#222', fontVariantNumeric: 'tabular-nums' }}>
+                              {s.val}
+                            </div>
+                            <div style={{ fontSize: 8, color: '#aaa', fontWeight: 500, marginTop: 1 }}>
+                              {s.label}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Fielding section */}
+                    <div style={{ padding: '8px 16px', borderTop: '1px solid #f5f5f8' }}>
+                      <div style={{
+                        fontSize: 9, fontWeight: 700, color: '#aaa',
+                        textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6,
+                      }}>
+                        Fielding
+                      </div>
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        {[
+                          { val: String(agg.catches), label: 'Catches' },
+                          { val: String(agg.runouts), label: 'Runouts' },
+                        ].map((s, i) => (
+                          <div key={i} style={{
+                            flex: 1, textAlign: 'center', padding: '6px 3px',
+                            background: '#f7f8fb', borderRadius: 8, maxWidth: 80,
+                          }}>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: '#222', fontVariantNumeric: 'tabular-nums' }}>
+                              {s.val}
+                            </div>
+                            <div style={{ fontSize: 8, color: '#aaa', fontWeight: 500, marginTop: 1 }}>
+                              {s.label}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Fantasy Points Breakdown */}
+                    <div style={{ padding: '8px 16px', borderTop: '1px solid #f5f5f8' }}>
+                      <div style={{
+                        fontSize: 9, fontWeight: 700, color: '#aaa',
+                        textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6,
+                      }}>
+                        Fantasy Points
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 11 }}>
+                          <span style={{ color: '#666', fontWeight: 500 }}>Matches Played</span>
+                          <span style={{ color: '#333', fontWeight: 700 }}>{agg.matches}</span>
                         </div>
-                      )
-                    })}
-                  </div>
-                  <div style={{
-                    display: 'flex', justifyContent: 'space-around', padding: '3px 8px 0',
-                    fontSize: 8, color: '#bbb', fontWeight: 500,
-                  }}>
-                    {['GW3', 'GW4', 'GW5', 'GW6', 'GW7'].map((gw) => (
-                      <span key={gw}>{gw}</span>
-                    ))}
-                  </div>
-                  <div style={{
-                    display: 'inline-block', marginTop: 6,
-                    fontSize: 10, fontWeight: 700,
-                    color: trendUp ? '#0d9e5f' : '#004BA0',
-                    background: trendUp ? 'rgba(13,158,95,0.08)' : 'rgba(0,75,160,0.08)',
-                    padding: '3px 10px', borderRadius: 6,
-                  }}>
-                    {trendUp ? '▲ Trending Up' : '● Consistent'}
-                  </div>
-                </div>
+                        {agg.runs > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 11 }}>
+                            <span style={{ color: '#666', fontWeight: 500 }}>Runs ({agg.runs})</span>
+                            <span style={{ color: '#333', fontWeight: 700 }}>+{agg.runs}</span>
+                          </div>
+                        )}
+                        {agg.fours > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 11 }}>
+                            <span style={{ color: '#666', fontWeight: 500 }}>Fours ({agg.fours})</span>
+                            <span style={{ color: '#333', fontWeight: 700 }}>+{agg.fours}</span>
+                          </div>
+                        )}
+                        {agg.sixes > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 11 }}>
+                            <span style={{ color: '#666', fontWeight: 500 }}>Sixes ({agg.sixes})</span>
+                            <span style={{ color: '#333', fontWeight: 700 }}>+{agg.sixes}</span>
+                          </div>
+                        )}
+                        {agg.wickets > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 11 }}>
+                            <span style={{ color: '#666', fontWeight: 500 }}>Wickets ({agg.wickets})</span>
+                            <span style={{ color: '#333', fontWeight: 700 }}>+{agg.wickets * 25}</span>
+                          </div>
+                        )}
+                        {agg.dotBalls > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 11 }}>
+                            <span style={{ color: '#666', fontWeight: 500 }}>Dot Balls ({agg.dotBalls})</span>
+                            <span style={{ color: '#333', fontWeight: 700 }}>+{agg.dotBalls}</span>
+                          </div>
+                        )}
+                        {agg.catches > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 11 }}>
+                            <span style={{ color: '#666', fontWeight: 500 }}>Catches ({agg.catches})</span>
+                            <span style={{ color: '#333', fontWeight: 700 }}>+{agg.catches * 8}</span>
+                          </div>
+                        )}
+                        {agg.stumpings > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 11 }}>
+                            <span style={{ color: '#666', fontWeight: 500 }}>Stumpings ({agg.stumpings})</span>
+                            <span style={{ color: '#333', fontWeight: 700 }}>+{agg.stumpings * 12}</span>
+                          </div>
+                        )}
+                        {/* Total row */}
+                        <div style={{
+                          display: 'flex', justifyContent: 'space-between', padding: '6px 0 4px',
+                          borderTop: '2px solid #1a1a2e', marginTop: 4,
+                        }}>
+                          <span style={{ fontWeight: 800, color: '#1a1a2e', fontSize: 11 }}>Total</span>
+                          <span style={{ fontWeight: 800, color: '#1a1a2e', fontSize: 14 }}>{agg.fantasyPoints}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Recent Form — only on Season tab */}
+                    {activeGwTab === 'Season' && formData.values.length > 0 && (
+                      <div style={{ padding: '8px 16px', borderTop: '1px solid #f5f5f8', textAlign: 'center' }}>
+                        <div style={{
+                          fontSize: 9, fontWeight: 700, color: '#aaa',
+                          textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6,
+                          textAlign: 'left',
+                        }}>
+                          Recent Form
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 60, padding: '0 8px' }}>
+                          {formData.values.map((val, i) => {
+                            const isLast = i === formData.values.length - 1
+                            const isHot = i === formData.values.length - 2
+                            const pct = maxForm > 0 ? (val / maxForm) * 100 : 10
+                            return (
+                              <div key={i} style={{
+                                flex: 1,
+                                background: isLast ? '#004BA0' : isHot ? 'rgba(0,75,160,0.2)' : '#e8eaf0',
+                                borderRadius: '5px 5px 0 0',
+                                height: `${pct}%`,
+                                minHeight: 6,
+                                position: 'relative',
+                              }}>
+                                <span style={{
+                                  position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)',
+                                  fontSize: isLast ? 9 : 8, fontWeight: 700,
+                                  color: isLast ? '#004BA0' : '#999',
+                                }}>
+                                  {val}
+                                </span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                        <div style={{
+                          display: 'flex', justifyContent: 'space-around', padding: '3px 8px 0',
+                          fontSize: 8, color: '#bbb', fontWeight: 500,
+                        }}>
+                          {formData.labels.map((gw) => (
+                            <span key={gw}>{gw}</span>
+                          ))}
+                        </div>
+                        <div style={{
+                          display: 'inline-block', marginTop: 6,
+                          fontSize: 10, fontWeight: 700,
+                          color: trendUp ? '#0d9e5f' : '#004BA0',
+                          background: trendUp ? 'rgba(13,158,95,0.08)' : 'rgba(0,75,160,0.08)',
+                          padding: '3px 10px', borderRadius: 6,
+                        }}>
+                          {trendUp ? '▲ Trending Up' : '● Consistent'}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Season tab with no form data */}
+                    {activeGwTab === 'Season' && formData.values.length === 0 && detail.performances.length > 0 && (
+                      <div style={{ padding: '8px 16px', borderTop: '1px solid #f5f5f8', textAlign: 'center' }}>
+                        <div style={{
+                          fontSize: 9, fontWeight: 700, color: '#aaa',
+                          textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6,
+                          textAlign: 'left',
+                        }}>
+                          Recent Form
+                        </div>
+                        <div style={{ padding: '16px 0', color: '#bbb', fontSize: 11, fontWeight: 500 }}>
+                          No gameweek data available
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           </>

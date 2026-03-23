@@ -1,24 +1,43 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { AppFrame } from '@/app/components/AppFrame'
 
-/* ─── Mock scoring data ─── */
-const mockTeamScores = [
-  { teamName: "Viiveek's XI", manager: 'Viiveek', initials: 'VS', gwScores: [98, 112, 145, 87, 134, 102, 142], total: 820, bestGW: 145, delta: -1 },
-  { teamName: "Rohit's Rockets", manager: 'Rohit', initials: 'RA', gwScores: [105, 88, 132, 110, 95, 120, 98], total: 748, bestGW: 132, delta: 2 },
-  { teamName: "Priya's Panthers", manager: 'Priya', initials: 'PR', gwScores: [92, 135, 78, 145, 112, 88, 105], total: 755, bestGW: 145, delta: 0 },
-  { teamName: "Arjun's Avengers", manager: 'Arjun', initials: 'AR', gwScores: [88, 102, 110, 92, 128, 135, 88], total: 743, bestGW: 135, delta: -1 },
-]
+/* ─── Types ─── */
+interface Standing {
+  rank: number
+  teamId: string
+  teamName: string
+  manager: string | null
+  managerId: string
+  totalPoints: number
+  bestGwScore: number
+  lastGwPoints: number
+  lastGwNumber: number | null
+  chipUsed: string | null
+}
 
-const sorted = [...mockTeamScores].sort((a, b) => b.total - a.total)
-const currentGW = 7
-const yourManager = 'Viiveek'
-const yourData = mockTeamScores.find(t => t.manager === yourManager)!
-const yourAvg = Math.round(yourData.gwScores.reduce((a, b) => a + b, 0) / yourData.gwScores.length)
-const yourBest = Math.max(...yourData.gwScores)
-const yourBestGWIndex = yourData.gwScores.indexOf(yourBest) + 1
+interface HistoryGW {
+  gameweekId: string
+  gameweekNumber: number
+  scores: {
+    teamId: string
+    teamName: string
+    manager: string | null
+    totalPoints: number
+    chipUsed: string | null
+  }[]
+}
+
+/* ─── Helpers ─── */
+function getInitials(name: string | null): string {
+  if (!name) return '??'
+  const parts = name.trim().split(/\s+/)
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  return name.slice(0, 2).toUpperCase()
+}
 
 /* ─── Avatar gradients ─── */
 const avatarStyles: Record<number, { bg: string; shadow: string; color: string }> = {
@@ -54,14 +73,81 @@ const IconLeague = () => (
 )
 
 export default function LeaderboardPage() {
+  const { data: session } = useSession()
   const [activeTab, setActiveTab] = useState<'season' | 'gw' | 'history'>('season')
+  const [standings, setStandings] = useState<Standing[]>([])
+  const [history, setHistory] = useState<HistoryGW[]>([])
+  const [leagueName, setLeagueName] = useState('')
+  const [loading, setLoading] = useState(true)
 
-  // Podium: 1st center, 2nd left, 3rd right
-  const first = sorted[0]
-  const second = sorted[1]
-  const third = sorted[2]
+  const userId = session?.user?.id
 
-  const maxGW = Math.max(...yourData.gwScores)
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const leaguesRes = await fetch('/api/leagues')
+        if (!leaguesRes.ok) return
+        const leagues = await leaguesRes.json()
+        if (leagues.length === 0) return
+
+        const leagueId = leagues[0].id
+        setLeagueName(leagues[0].name || '')
+
+        const [standingsRes, historyRes] = await Promise.all([
+          fetch(`/api/leaderboard/${leagueId}`),
+          fetch(`/api/leaderboard/${leagueId}/history`),
+        ])
+
+        if (standingsRes.ok) {
+          const data = await standingsRes.json()
+          setStandings(data.standings || [])
+        }
+        if (historyRes.ok) {
+          const data = await historyRes.json()
+          setHistory(data.history || [])
+        }
+      } catch {
+        // silent
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
+
+  // Derive data
+  const first = standings[0]
+  const second = standings[1]
+  const third = standings[2]
+  const hasPodium = standings.length >= 3
+
+  // Find current user's GW history scores
+  const yourScores: { gw: number; pts: number }[] = []
+  if (userId && history.length > 0) {
+    for (const gw of history) {
+      const mine = gw.scores.find(s => {
+        const standing = standings.find(st => st.teamId === s.teamId)
+        return standing?.managerId === userId
+      })
+      if (mine) yourScores.push({ gw: gw.gameweekNumber, pts: mine.totalPoints })
+    }
+  }
+  const yourAvg = yourScores.length > 0 ? Math.round(yourScores.reduce((a, b) => a + b.pts, 0) / yourScores.length) : 0
+  const yourBest = yourScores.length > 0 ? Math.max(...yourScores.map(s => s.pts)) : 0
+  const yourBestGW = yourScores.find(s => s.pts === yourBest)
+  const yourTotal = standings.find(s => s.managerId === userId)?.totalPoints ?? 0
+  const maxGW = yourScores.length > 0 ? Math.max(...yourScores.map(s => s.pts)) : 1
+  const lastGwNumber = standings[0]?.lastGwNumber ?? null
+
+  if (loading) {
+    return (
+      <AppFrame>
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <p style={{ color: '#888', fontSize: 14 }}>Loading...</p>
+        </div>
+      </AppFrame>
+    )
+  }
 
   return (
     <AppFrame>
@@ -101,7 +187,7 @@ export default function LeaderboardPage() {
             left: '50%',
             transform: 'translateX(-50%)',
           }}>Leaderboard</div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>Weekend Warriors</div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>{leagueName}</div>
         </div>
 
         {/* Tabs */}
@@ -133,7 +219,7 @@ export default function LeaderboardPage() {
                 cursor: 'pointer',
               }}
             >
-              {tab === 'season' ? 'Season' : tab === 'gw' ? `GW ${currentGW}` : 'History'}
+              {tab === 'season' ? 'Season' : tab === 'gw' ? `GW ${lastGwNumber ?? '-'}` : 'History'}
             </button>
           ))}
         </div>
@@ -146,34 +232,42 @@ export default function LeaderboardPage() {
           gap: 8,
           padding: '16px 14px 0',
         }}>
-          {/* 2nd place (left) */}
-          <PodiumItem
-            rank={2}
-            initials={second.initials}
-            name={second.manager === yourManager ? 'You' : second.manager}
-            points={second.total}
-            avatarStyle={avatarStyles[1]}
-            barHeight={60}
-          />
-          {/* 1st place (center) */}
-          <PodiumItem
-            rank={1}
-            initials={first.initials}
-            name={first.manager === yourManager ? 'You' : first.manager}
-            points={first.total}
-            avatarStyle={avatarStyles[0]}
-            barHeight={80}
-            showCrown
-          />
-          {/* 3rd place (right) */}
-          <PodiumItem
-            rank={3}
-            initials={third.initials}
-            name={third.manager === yourManager ? 'You' : third.manager}
-            points={third.total}
-            avatarStyle={avatarStyles[2]}
-            barHeight={44}
-          />
+          {hasPodium ? (
+            <>
+              {/* 2nd place (left) */}
+              <PodiumItem
+                rank={2}
+                initials={getInitials(second.manager)}
+                name={second.managerId === userId ? 'You' : (second.manager ?? 'Manager')}
+                points={second.totalPoints}
+                avatarStyle={avatarStyles[1]}
+                barHeight={60}
+              />
+              {/* 1st place (center) */}
+              <PodiumItem
+                rank={1}
+                initials={getInitials(first.manager)}
+                name={first.managerId === userId ? 'You' : (first.manager ?? 'Manager')}
+                points={first.totalPoints}
+                avatarStyle={avatarStyles[0]}
+                barHeight={80}
+                showCrown
+              />
+              {/* 3rd place (right) */}
+              <PodiumItem
+                rank={3}
+                initials={getInitials(third.manager)}
+                name={third.managerId === userId ? 'You' : (third.manager ?? 'Manager')}
+                points={third.totalPoints}
+                avatarStyle={avatarStyles[2]}
+                barHeight={44}
+              />
+            </>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '20px 0', color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: 600 }}>
+              {standings.length === 0 ? 'No scores yet' : 'Need at least 3 teams for podium'}
+            </div>
+          )}
         </div>
       </div>
 
@@ -187,10 +281,11 @@ export default function LeaderboardPage() {
           padding: 16,
           boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
         }}>
-          {sorted.map((team, i) => {
-            const rank = i + 1
-            const isYou = team.manager === yourManager
-            const gwScore = team.gwScores[currentGW - 1]
+          {standings.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: 20, color: '#999', fontSize: 13 }}>No scores yet</div>
+          ) : standings.map((team, i) => {
+            const rank = team.rank
+            const isYou = team.managerId === userId
 
             // Rank badge style
             let rankBg = 'rgba(0,0,0,0.04)'
@@ -199,21 +294,9 @@ export default function LeaderboardPage() {
             else if (rank === 2 && isYou) { rankBg = 'rgba(0,75,160,0.1)'; rankColor = '#004BA0' }
             else if (rank === 3) { rankBg = 'rgba(14,177,162,0.1)'; rankColor = '#0EB1A2' }
 
-            // Delta
-            let deltaClass = 'same'
-            let deltaText = '\u2014'
-            if (team.delta > 0) { deltaClass = 'up'; deltaText = `\u25B2 ${team.delta}` }
-            else if (team.delta < 0) { deltaClass = 'down'; deltaText = `\u25BC ${Math.abs(team.delta)}` }
-
-            const deltaColors: Record<string, { color: string; bg: string }> = {
-              up: { color: '#0d9e5f', bg: 'rgba(13,158,95,0.08)' },
-              down: { color: '#d63060', bg: 'rgba(214,48,96,0.08)' },
-              same: { color: '#999', bg: 'rgba(0,0,0,0.03)' },
-            }
-
             return (
               <div
-                key={team.manager}
+                key={team.teamId}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -238,28 +321,23 @@ export default function LeaderboardPage() {
                   alignItems: 'center', justifyContent: 'center',
                   fontSize: 11, fontWeight: 700, color: '#fff',
                   background: rankAvatarGradients[i % rankAvatarGradients.length],
-                }}>{team.initials}</div>
+                }}>{getInitials(team.manager)}</div>
                 {/* Info */}
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, fontWeight: isYou || rank === 1 ? 700 : 600, color: '#1a1a2e' }}>
-                    {isYou ? 'You' : team.manager}
+                    {isYou ? 'You' : (team.manager ?? 'Manager')}
                   </div>
-                  <div style={{ fontSize: 10, color: '#999', marginTop: 1 }}>Best GW: {team.bestGW}</div>
+                  <div style={{ fontSize: 10, color: '#999', marginTop: 1 }}>Best GW: {team.bestGwScore}</div>
                 </div>
                 {/* Stats */}
                 <div style={{ textAlign: 'right' as const }}>
                   <div style={{ fontSize: 15, fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: '#1a1a2e' }}>
-                    {team.total.toLocaleString()}
+                    {team.totalPoints.toLocaleString()}
                   </div>
-                  <div style={{ fontSize: 10, color: '#555', marginTop: 1 }}>GW{currentGW}: {gwScore}</div>
+                  {team.lastGwNumber && (
+                    <div style={{ fontSize: 10, color: '#555', marginTop: 1 }}>GW{team.lastGwNumber}: {team.lastGwPoints}</div>
+                  )}
                 </div>
-                {/* Delta badge */}
-                <div style={{
-                  position: 'absolute', top: 8, right: 8,
-                  fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 5,
-                  color: deltaColors[deltaClass].color,
-                  background: deltaColors[deltaClass].bg,
-                }}>{deltaText}</div>
               </div>
             )
           })}
@@ -274,60 +352,66 @@ export default function LeaderboardPage() {
           boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
         }}>
           <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: '#1a1a2e' }}>Your GW History</div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 60, padding: '0 4px' }}>
-            {yourData.gwScores.map((score, i) => {
-              const pct = (score / maxGW) * 100
-              const isHighest = score === maxGW
-              const isLast = i === yourData.gwScores.length - 1
+          {yourScores.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: 20, color: '#999', fontSize: 12 }}>Season not started</div>
+          ) : (
+            <>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 60, padding: '0 4px' }}>
+                {yourScores.map((entry, i) => {
+                  const pct = maxGW > 0 ? (entry.pts / maxGW) * 100 : 0
+                  const isHighest = entry.pts === maxGW
+                  const isLast = i === yourScores.length - 1
 
-              let barBg = 'linear-gradient(to top, rgba(0,75,160,0.08), rgba(0,75,160,0.3))'
-              let extraStyle: React.CSSProperties = {}
-              if (isHighest) {
-                barBg = 'linear-gradient(to top, rgba(0,75,160,0.15), rgba(0,75,160,0.5))'
-                extraStyle = { boxShadow: '0 0 8px rgba(0,75,160,0.15)' }
-              } else if (isLast) {
-                barBg = 'linear-gradient(to top, rgba(0,75,160,0.06), rgba(0,75,160,0.2))'
-                extraStyle = { border: '1px solid rgba(0,75,160,0.12)', borderBottom: 'none' }
-              }
+                  let barBg = 'linear-gradient(to top, rgba(0,75,160,0.08), rgba(0,75,160,0.3))'
+                  let extraStyle: React.CSSProperties = {}
+                  if (isHighest) {
+                    barBg = 'linear-gradient(to top, rgba(0,75,160,0.15), rgba(0,75,160,0.5))'
+                    extraStyle = { boxShadow: '0 0 8px rgba(0,75,160,0.15)' }
+                  } else if (isLast) {
+                    barBg = 'linear-gradient(to top, rgba(0,75,160,0.06), rgba(0,75,160,0.2))'
+                    extraStyle = { border: '1px solid rgba(0,75,160,0.12)', borderBottom: 'none' }
+                  }
 
-              return (
-                <div
-                  key={i}
-                  style={{
-                    flex: 1,
-                    borderRadius: '4px 4px 0 0',
-                    minWidth: 0,
-                    position: 'relative',
-                    height: `${pct}%`,
-                    background: barBg,
-                    cursor: 'pointer',
-                    ...extraStyle,
-                  }}
-                >
-                  <div style={{
-                    position: 'absolute',
-                    bottom: -16,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    fontSize: 8,
-                    color: (isHighest || isLast) ? '#004BA0' : '#999',
-                    fontWeight: 600,
-                  }}>{i + 1}</div>
-                </div>
-              )
-            })}
-          </div>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginTop: 22,
-            fontSize: 10,
-            color: '#999',
-          }}>
-            <span>Avg: {yourAvg}</span>
-            <span>Best: {yourBest} (GW{yourBestGWIndex})</span>
-            <span>Total: {yourData.total.toLocaleString()}</span>
-          </div>
+                  return (
+                    <div
+                      key={entry.gw}
+                      style={{
+                        flex: 1,
+                        borderRadius: '4px 4px 0 0',
+                        minWidth: 0,
+                        position: 'relative',
+                        height: `${pct}%`,
+                        background: barBg,
+                        cursor: 'pointer',
+                        ...extraStyle,
+                      }}
+                    >
+                      <div style={{
+                        position: 'absolute',
+                        bottom: -16,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        fontSize: 8,
+                        color: (isHighest || isLast) ? '#004BA0' : '#999',
+                        fontWeight: 600,
+                      }}>{entry.gw}</div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginTop: 22,
+                fontSize: 10,
+                color: '#999',
+              }}>
+                <span>Avg: {yourAvg}</span>
+                <span>Best: {yourBest} (GW{yourBestGW?.gw ?? '-'})</span>
+                <span>Total: {yourTotal.toLocaleString()}</span>
+              </div>
+            </>
+          )}
         </div>
 
         <div style={{ height: 40 }} />
