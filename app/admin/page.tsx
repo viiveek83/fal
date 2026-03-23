@@ -162,6 +162,22 @@ export default function AdminPage() {
     if (sessionStatus === 'authenticated') fetchLeagues()
   }, [sessionStatus, fetchLeagues])
 
+  // Fetch all team squads whenever league data changes
+  useEffect(() => {
+    if (!league) return
+    const loadSquads = async () => {
+      const result: Record<string, SquadData> = {}
+      for (const team of league.teams) {
+        try {
+          const res = await fetch(`/api/teams/${team.id}/squad`)
+          if (res.ok) result[team.id] = await res.json()
+        } catch { /* skip */ }
+      }
+      setSquads(result)
+    }
+    loadSquads()
+  }, [league])
+
   /* ─── Auth guard ─── */
   if (sessionStatus === 'loading') {
     return (
