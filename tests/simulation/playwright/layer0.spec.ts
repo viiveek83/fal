@@ -326,7 +326,7 @@ test('8. User views GW score detail — list view @user', async ({ page }) => {
     await expect(page.getByText('Base Pts')).toBeVisible()
     await expect(page.getByText('C/VC Bonus')).toBeVisible()
     await expect(page.getByText('Chip Bonus')).toBeVisible()
-    await expect(page.getByText('Total')).toBeVisible()
+    await expect(page.getByText('Total').first()).toBeVisible()
   } else {
     await expect(noScores).toBeVisible()
   }
