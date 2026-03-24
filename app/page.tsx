@@ -457,6 +457,9 @@ export default function DashboardPage() {
           {/* Section header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e', letterSpacing: -0.2 }}>League Standings</div>
+            <Link href="/standings" style={{ fontSize: 11, fontWeight: 600, color: '#004BA0', textDecoration: 'none' }}>
+              Full Standings &rarr;
+            </Link>
           </div>
 
           {standings.length === 0 ? (
