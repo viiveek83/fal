@@ -28,5 +28,21 @@ export async function GET(req: NextRequest) {
     prisma.player.count({ where }),
   ])
 
-  return Response.json({ players, total, page, limit })
+  // Aggregate season fantasy points per player
+  const playerIds = players.map(p => p.id)
+  const pointsAgg = await prisma.playerPerformance.groupBy({
+    by: ['playerId'],
+    where: { playerId: { in: playerIds } },
+    _sum: { fantasyPoints: true },
+    _count: true,
+  })
+  const pointsMap = new Map(pointsAgg.map(p => [p.playerId, { points: p._sum.fantasyPoints || 0, matches: p._count }]))
+
+  const enrichedPlayers = players.map(p => ({
+    ...p,
+    seasonPoints: pointsMap.get(p.id)?.points || 0,
+    matchesPlayed: pointsMap.get(p.id)?.matches || 0,
+  }))
+
+  return Response.json({ players: enrichedPlayers, total, page, limit })
 }

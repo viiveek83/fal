@@ -42,6 +42,8 @@ interface Player {
   iplTeamCode: string | null
   iplTeamName: string | null
   imageUrl: string | null
+  seasonPoints: number
+  matchesPlayed: number
 }
 
 interface Performance {
@@ -100,15 +102,6 @@ function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/)
   if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
   return name.slice(0, 2).toUpperCase()
-}
-
-function seededRandom(str: string): number {
-  let hash = 0
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i)
-    hash |= 0
-  }
-  return Math.abs(hash)
 }
 
 /* ─── Icons ─── */
@@ -383,7 +376,7 @@ export default function PlayersPage() {
           const teamColor = teamColorMap[player.iplTeamCode || ''] || '#888'
           const badge = roleBadgeStyles[player.role] || roleBadgeStyles.BAT
           const initials = getInitials(player.fullname)
-          const pts = 100 + (seededRandom(player.id) % 400)
+          const pts = player.seasonPoints
 
           return (
             <div
@@ -444,6 +437,7 @@ export default function PlayersPage() {
                   {pts}
                 </div>
                 <div style={{ fontSize: 9, color: '#999', marginTop: 1 }}>season pts</div>
+                <div style={{ fontSize: 9, color: '#bbb', marginTop: 1 }}>{player.matchesPlayed} {player.matchesPlayed === 1 ? 'match' : 'matches'}</div>
               </div>
             </div>
           )
