@@ -59,6 +59,15 @@ jobs:
           echo "branch_id=$BRANCH_ID" >> $GITHUB_OUTPUT
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
 
+          # Create compute endpoint for the branch
+          EP_RESPONSE=$(curl -s -X POST \
+            "https://console.neon.tech/api/v2/projects/${NEON_PROJECT_ID}/endpoints" \
+            -H "Authorization: Bearer ${NEON_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -d "{\"endpoint\": {\"branch_id\": \"${BRANCH_ID}\", \"type\": \"read_write\"}}")
+
+          echo "Endpoint creation response: $(echo $EP_RESPONSE | jq -r '.endpoint.host // "pending"')"
+
           # Wait for endpoint to be ready (retry up to 30s)
           HOST=""
           for i in {1..6}; do
