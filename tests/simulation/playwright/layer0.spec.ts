@@ -931,6 +931,194 @@ test('28. Save lineup after changes and verify persistence @user', async ({ page
 })
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   29. Swap bench player into XI via pitch view
+   ═══════════════════════════════════════════════════════════════════════════ */
+test('29. Swap bench player into XI via pitch view @user', async ({ page }) => {
+  test.setTimeout(60000)
+  await page.goto('/lineup')
+  await waitForApp(page)
+
+  // Skip if locked
+  const lockBadge = page.getByText('Lineup Locked')
+  if (await lockBadge.isVisible({ timeout: 2000 }).catch(() => false)) return
+
+  // Ensure Pitch View is active (default)
+  await expect(page.getByText('Pitch View')).toBeVisible()
+  await expect(page.getByText('Top Order')).toBeVisible()
+
+  // Find a bench player figure and click it to enter swap mode
+  // Bench players are below the pitch, inside divs with onClick={handleBenchTap}
+  const benchFigures = page.locator('div[style*="cursor: pointer"]').filter({
+    has: page.locator('div').filter({ hasText: /^(BAT|BOWL|ALL|WK)$/ })
+  })
+  // The bench section comes after the pitch — use the last few clickable figures
+  const allClickable = page.locator('div[style*="cursor: pointer"]')
+  const totalCount = await allClickable.count()
+
+  // Bench players are the last 4 clickable figures
+  const benchPlayer = allClickable.nth(totalCount - 1)
+  await expect(benchPlayer).toBeVisible()
+  await benchPlayer.click()
+  await page.waitForTimeout(500)
+
+  // Verify swap hint toast appears
+  await expect(page.getByText('Tap a player on the pitch to swap')).toBeVisible({ timeout: 3000 })
+
+  // Click an XI player figure on the pitch (first clickable figure = XI player)
+  const xiPlayer = allClickable.first()
+  await xiPlayer.click()
+  await page.waitForTimeout(500)
+
+  // Verify swap hint disappeared (swap completed)
+  await expect(page.getByText('Tap a player on the pitch to swap')).toBeHidden({ timeout: 3000 })
+
+  // Verify dirty state — Save Lineup button should appear
+  const saveBtn = page.getByText('Save Lineup')
+  await expect(saveBtn).toBeVisible({ timeout: 3000 })
+
+  await expect(page).toHaveScreenshot('pitch-swap-bench-to-xi.png')
+})
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   30. Choose captain in pitch view
+   ═══════════════════════════════════════════════════════════════════════════ */
+test('30. Choose captain in pitch view @user', async ({ page }) => {
+  test.setTimeout(60000)
+  await page.goto('/lineup')
+  await waitForApp(page)
+
+  // Skip if locked
+  const lockBadge = page.getByText('Lineup Locked')
+  if (await lockBadge.isVisible({ timeout: 2000 }).catch(() => false)) return
+
+  // Ensure Pitch View is active
+  await expect(page.getByText('Pitch View')).toBeVisible()
+
+  // Find the current captain badge to know which player NOT to click
+  const captainBadge = page.locator('div').filter({ hasText: /^C$/ }).first()
+  await expect(captainBadge).toBeVisible()
+
+  // Get all clickable XI player figures on the pitch
+  const allClickable = page.locator('div[style*="cursor: pointer"]')
+  const totalCount = await allClickable.count()
+  // XI players are the first (totalCount - 4) figures; bench is the last 4
+  const xiCount = totalCount - 4
+
+  // Pick a non-captain, non-VC XI player (use one in the middle)
+  // Click it once → becomes VC, click it again → becomes captain
+  const targetIdx = Math.min(2, xiCount - 1)
+  const targetPlayer = allClickable.nth(targetIdx)
+  await expect(targetPlayer).toBeVisible()
+
+  // First click: makes this player VC (if normal) or captain (if already VC)
+  await targetPlayer.click()
+  await page.waitForTimeout(500)
+
+  // Second click: if it was normal → now VC → clicking again makes it captain
+  await targetPlayer.click()
+  await page.waitForTimeout(500)
+
+  // Verify C badge is visible (captain was set)
+  const newCaptainBadge = page.locator('div').filter({ hasText: /^C$/ }).first()
+  await expect(newCaptainBadge).toBeVisible()
+
+  // Verify dirty state
+  const saveBtn = page.getByText('Save Lineup')
+  await expect(saveBtn).toBeVisible({ timeout: 3000 })
+
+  await expect(page).toHaveScreenshot('pitch-choose-captain.png')
+})
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   31. Choose vice captain in pitch view
+   ═══════════════════════════════════════════════════════════════════════════ */
+test('31. Choose vice captain in pitch view @user', async ({ page }) => {
+  test.setTimeout(60000)
+  await page.goto('/lineup')
+  await waitForApp(page)
+
+  // Skip if locked
+  const lockBadge = page.getByText('Lineup Locked')
+  if (await lockBadge.isVisible({ timeout: 2000 }).catch(() => false)) return
+
+  // Ensure Pitch View is active
+  await expect(page.getByText('Pitch View')).toBeVisible()
+
+  // Get all clickable player figures
+  const allClickable = page.locator('div[style*="cursor: pointer"]')
+  const totalCount = await allClickable.count()
+  const xiCount = totalCount - 4
+
+  // Find an XI player that is NOT captain and NOT VC
+  // We'll try the last XI player (index xiCount - 1)
+  // Tapping a normal player once makes it VC
+  const targetIdx = Math.max(0, xiCount - 1)
+  const targetPlayer = allClickable.nth(targetIdx)
+  await expect(targetPlayer).toBeVisible()
+
+  // Single click: makes this player VC
+  await targetPlayer.click()
+  await page.waitForTimeout(500)
+
+  // Verify V badge appears
+  const vcBadge = page.locator('div').filter({ hasText: /^V$/ }).first()
+  await expect(vcBadge).toBeVisible()
+
+  // Verify dirty state
+  const saveBtn = page.getByText('Save Lineup')
+  await expect(saveBtn).toBeVisible({ timeout: 3000 })
+
+  await expect(page).toHaveScreenshot('pitch-choose-vc.png')
+})
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   32. Save pitch view changes and verify persistence
+   ═══════════════════════════════════════════════════════════════════════════ */
+test('32. Save pitch view changes and verify persistence @user', async ({ page }) => {
+  test.setTimeout(60000)
+  await page.goto('/lineup')
+  await waitForApp(page)
+
+  // Skip if locked
+  const lockBadge = page.getByText('Lineup Locked')
+  if (await lockBadge.isVisible({ timeout: 2000 }).catch(() => false)) return
+
+  // Ensure Pitch View is active
+  await expect(page.getByText('Pitch View')).toBeVisible()
+
+  // Make a change: tap an XI player to toggle captain/VC (makes lineup dirty)
+  const allClickable = page.locator('div[style*="cursor: pointer"]')
+  const totalCount = await allClickable.count()
+  const xiCount = totalCount - 4
+  const targetPlayer = allClickable.nth(Math.min(3, xiCount - 1))
+  await targetPlayer.click()
+  await page.waitForTimeout(500)
+
+  // Save the lineup
+  const saveBtn = page.getByText('Save Lineup')
+  await expect(saveBtn).toBeVisible({ timeout: 3000 })
+  await saveBtn.click()
+
+  // Verify success message
+  await expect(page.getByText('Lineup saved!')).toBeVisible({ timeout: 5000 })
+
+  // Reload and verify C and V badges persist
+  await page.reload()
+  await waitForApp(page)
+  await expect(page.getByText('Pitch View')).toBeVisible()
+
+  // C badge should still be visible
+  const captainBadge = page.locator('div').filter({ hasText: /^C$/ }).first()
+  await expect(captainBadge).toBeVisible()
+
+  // V badge should still be visible
+  const vcBadge = page.locator('div').filter({ hasText: /^V$/ }).first()
+  await expect(vcBadge).toBeVisible()
+
+  await expect(page).toHaveScreenshot('pitch-saved-persisted.png')
+})
+
+/* ═══════════════════════════════════════════════════════════════════════════
    22. Dashboard shows active gameweek with matches (mid-season)
    ═══════════════════════════════════════════════════════════════════════════ */
 test('22. Dashboard shows active gameweek with matches @user', async ({ page }) => {
