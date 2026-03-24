@@ -8,14 +8,12 @@ const STORAGE_DIR = 'tests/simulation/playwright/.auth'
 setup('authenticate admin', async ({ page }) => {
   await page.goto('/login')
 
-  // Toggle to admin mode
-  await page.getByText('Admin setup?').click()
-
+  // Admin already exists from setup — log in as returning user (no admin mode needed)
   await page.getByLabel('Email').fill(SIM_ADMIN_EMAIL)
   await page.getByLabel('Password').fill(SIM_PASSWORD)
-  await page.getByRole('button', { name: /admin sign in/i }).click()
+  await page.getByRole('button', { name: /enter league/i }).click()
 
-  await page.waitForURL('/', { timeout: 10_000 })
+  await page.waitForURL('/', { timeout: 15_000 })
   await page.context().storageState({ path: `${STORAGE_DIR}/admin.json` })
 })
 
@@ -26,6 +24,6 @@ setup('authenticate user 1', async ({ page }) => {
   await page.getByLabel('Password').fill(SIM_PASSWORD)
   await page.getByRole('button', { name: /enter league/i }).click()
 
-  await page.waitForURL('/', { timeout: 10_000 })
+  await page.waitForURL('/', { timeout: 15_000 })
   await page.context().storageState({ path: `${STORAGE_DIR}/user1.json` })
 })

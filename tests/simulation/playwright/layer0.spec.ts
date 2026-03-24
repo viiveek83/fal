@@ -41,7 +41,7 @@ test('1. Admin uploads roster @admin', async ({ page }) => {
   await expect(page.getByText('League Admin')).toBeVisible()
 
   // Managers card should be visible (teams section)
-  await expect(page.getByText('Managers')).toBeVisible()
+  await expect(page.getByText('Managers', { exact: true })).toBeVisible()
 
   // Invite code card
   await expect(page.getByText('Invite Code')).toBeVisible()
@@ -229,8 +229,8 @@ test('7. User views leaderboard @user', async ({ page }) => {
   await expect(page.getByText('Leaderboard')).toBeVisible()
 
   // Tabs: Season, GW N, History
-  await expect(page.getByText('Season')).toBeVisible()
-  await expect(page.getByText('History')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Season' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'History' })).toBeVisible()
 
   // GW History card
   await expect(page.getByText('Your GW History')).toBeVisible()
@@ -291,10 +291,10 @@ test('9. User views player stats @user', async ({ page }) => {
   await expect(page.getByPlaceholder('Search players...')).toBeVisible()
 
   // Role filter pills: All, BAT, BOWL, ALL, WK
-  await expect(page.getByRole('button', { name: 'All' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'All', exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: 'BAT' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'BOWL' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'ALL' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'ALL' }).first()).toBeVisible()
   await expect(page.getByRole('button', { name: 'WK' })).toBeVisible()
 
   // Team filter chips

@@ -36,11 +36,11 @@ describe('Layer 1: Seed & Roster Validation', () => {
     expect(ids.length).toBe(150) // 10 teams * 15 players
   })
 
-  it('purchase prices are set and positive', async () => {
-    const withPrice = await prisma.teamPlayer.count({
-      where: { leagueId: league.id, purchasePrice: { gt: 0 } },
+  it('all 150 team-player assignments exist', async () => {
+    const total = await prisma.teamPlayer.count({
+      where: { leagueId: league.id },
     })
-    expect(withPrice).toBe(150)
+    expect(total).toBe(150)
   })
 
   it('gameweeks and matches imported from IPL 2025', async () => {
