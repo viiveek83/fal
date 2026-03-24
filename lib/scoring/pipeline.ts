@@ -109,7 +109,7 @@ export async function runScoringPipeline(): Promise<PipelineResult> {
 // Per-match scoring
 // ---------------------------------------------------------------------------
 
-async function scoreMatch(match: {
+export async function scoreMatch(match: {
   id: string
   apiMatchId: number
   gameweekId: string
@@ -358,7 +358,7 @@ async function scoreMatch(match: {
 // Gameweek aggregation
 // ---------------------------------------------------------------------------
 
-async function aggregateGameweek(gameweekId: string) {
+export async function aggregateGameweek(gameweekId: string) {
   const matches = await prisma.match.findMany({
     where: { gameweekId, scoringStatus: 'SCORED' },
     select: { id: true },
