@@ -85,8 +85,8 @@ test('3. User sets lineup @user', async ({ page }) => {
   await expect(page.getByText('Bowling Boost')).toBeVisible()
   await expect(page.getByText('Power Play Bat')).toBeVisible()
 
-  // 2-4-5 formation row labels should be visible
-  await expect(page.getByText('Openers')).toBeVisible()
+  // 4-3-3 formation row labels should be visible
+  await expect(page.getByText('Top Order')).toBeVisible()
   await expect(page.getByText('Middle Order')).toBeVisible()
   await expect(page.getByText('Lower Order')).toBeVisible()
 

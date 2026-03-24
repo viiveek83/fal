@@ -377,13 +377,12 @@ export default function LineupPage() {
     }
   }
 
-  /* ─── Arrange XI into fixed 2-4-5 rows, sorted by role priority within rows ─── */
+  /* ─── Arrange XI into fixed 4-3-3 formation, sorted by role priority ─── */
   const rolePri: Record<string, number> = { WK: 0, BAT: 1, ALL: 2, BOWL: 3 }
   const sortedXi = [...xi].sort((a, b) => (rolePri[normalizeRole(a.role)] ?? 1) - (rolePri[normalizeRole(b.role)] ?? 1))
-  // Always 2-4-5 split regardless of role distribution
-  const row1 = sortedXi.slice(0, 2)     // Openers (top 2 by role priority)
-  const row2 = sortedXi.slice(2, 6)     // Middle Order (next 4)
-  const row3 = sortedXi.slice(6, 11)    // Lower Order (remaining 5)
+  const row1 = sortedXi.slice(0, 4)     // Top order (4)
+  const row2 = sortedXi.slice(4, 7)     // Middle order (3)
+  const row3 = sortedXi.slice(7, 11)    // Lower order (4)
 
   /* ─── Auth guard ─── */
   if (sessionStatus === 'loading' || loading) {
@@ -738,12 +737,12 @@ export default function LineupPage() {
             padding: '12px 0 10px', zIndex: 3,
             gap: 6,
           }}>
-            {/* Row 1: Openers */}
+            {/* Row 1: Top Order */}
             <div style={{
               fontSize: 8, fontWeight: 700, letterSpacing: 1.2,
               textTransform: 'uppercase' as const, color: 'rgba(255,255,255,0.25)',
               textAlign: 'center', marginBottom: -2,
-            }}>Openers</div>
+            }}>Top Order</div>
             <div style={{ display: 'flex', justifyContent: 'center', gap: 0 }}>
               {row1.map(p => (
                 <div key={p.id} onClick={() => handlePlayerTap(p.id)}
@@ -758,7 +757,7 @@ export default function LineupPage() {
               ))}
             </div>
 
-            {/* Row 2: Middle Order */}
+            {/* Row 2: Middle order */}
             <div style={{
               fontSize: 8, fontWeight: 700, letterSpacing: 1.2,
               textTransform: 'uppercase' as const, color: 'rgba(255,255,255,0.25)',
@@ -778,7 +777,7 @@ export default function LineupPage() {
               ))}
             </div>
 
-            {/* Row 3: Lower Order */}
+            {/* Row 3: Lower order */}
             <div style={{
               fontSize: 8, fontWeight: 700, letterSpacing: 1.2,
               textTransform: 'uppercase' as const, color: 'rgba(255,255,255,0.25)',
