@@ -10,3 +10,5 @@ node_modules/
 .next/
 tsconfig.tsbuildinfo
 next-env.d.ts
+tests/simulation/results/
+tests/simulation/playwright/.auth/

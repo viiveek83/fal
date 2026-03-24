@@ -9,6 +9,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['tests/**/*.test.ts'],
+    exclude: ['tests/simulation/playwright/**', 'node_modules/**'],
     testTimeout: 30000,
   },
   resolve: {

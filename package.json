@@ -14,7 +14,9 @@
     "test:watch": "vitest",
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
-    "test:e2e": "vitest run tests/e2e"
+    "test:e2e": "vitest run tests/e2e",
+    "test:layer0": "npx playwright test --config tests/simulation/playwright/playwright.config.ts",
+    "simulate": "npx tsx scripts/simulate-season.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
@@ -30,6 +32,7 @@
     "ws": "^8.18.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4.1.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.13.0",
