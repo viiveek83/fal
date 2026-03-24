@@ -155,6 +155,7 @@ export default function LineupPage() {
   const [currentGW, setCurrentGW] = useState<CurrentGameweek | null>(null)
   const [saving, setSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const isLocked = currentGW?.lockTime ? new Date() >= new Date(currentGW.lockTime) : false
 
   /* ─── Fetch current gameweek ─── */
   useEffect(() => {
@@ -225,7 +226,7 @@ export default function LineupPage() {
 
   /* ─── Save lineup ─── */
   const saveLineup = async () => {
-    if (!squad || !currentGW || saving) return
+    if (!squad || !currentGW || saving || isLocked) return
     setSaving(true)
     setSaveMessage(null)
     try {
@@ -264,6 +265,7 @@ export default function LineupPage() {
 
   /* ─── Handlers ─── */
   const handlePlayerTap = (playerId: string) => {
+    if (isLocked) return // lineup locked after deadline
     // If in swap mode, do the swap
     if (swapMode) {
       const benchPlayer = bench.find(p => p.id === swapMode)
@@ -299,6 +301,7 @@ export default function LineupPage() {
   }
 
   const handleBenchTap = (playerId: string) => {
+    if (isLocked) return // lineup locked after deadline
     if (swapMode === playerId) {
       setSwapMode(null)
     } else {
@@ -307,6 +310,7 @@ export default function LineupPage() {
   }
 
   const handleChipToggle = () => {
+    if (isLocked) return
     if (bowlingBoostOn) {
       setBowlingBoostOn(false)
       setDirty(true)
@@ -502,11 +506,21 @@ export default function LineupPage() {
           {currentGW ? (
             <>
               Gameweek {currentGW.number} &middot;{' '}
-              <strong style={{ fontWeight: 800, color: '#1a1a2e', fontSize: 15 }}>
-                {currentGW.lockTime
-                  ? `Deadline: ${new Date(currentGW.lockTime).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}, ${new Date(currentGW.lockTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })}`
-                  : 'Deadline TBD'}
-              </strong>
+              {isLocked ? (
+                <span style={{
+                  fontWeight: 800, fontSize: 13, color: '#fff',
+                  background: '#d63060', padding: '3px 10px', borderRadius: 8,
+                  letterSpacing: 0.3,
+                }}>
+                  Lineup Locked
+                </span>
+              ) : (
+                <strong style={{ fontWeight: 800, color: '#1a1a2e', fontSize: 15 }}>
+                  {currentGW.lockTime
+                    ? `Deadline: ${new Date(currentGW.lockTime).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}, ${new Date(currentGW.lockTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })}`
+                    : 'Deadline TBD'}
+                </strong>
+              )}
             </>
           ) : (
             'Set your lineup for the season'
@@ -722,7 +736,7 @@ export default function LineupPage() {
       )}
 
       {/* ── Save Area ── */}
-      {(dirty || saveMessage) && (
+      {(dirty || saveMessage) && !isLocked && (
         <div style={{
           flexShrink: 0, padding: '6px 16px 34px', background: '#f2f3f8',
           animation: 'slideUp 0.3s ease',
