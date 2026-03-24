@@ -391,7 +391,7 @@ export default function DashboardPage() {
   }
 
   /* ─── Computed values ─── */
-  const leagueName = league?.name || 'Weekend Warriors'
+  const leagueName = league?.name || 'Join a League'
   const seasonStarted = !gwNotFound && currentGw !== null
 
   // Gameweek label
