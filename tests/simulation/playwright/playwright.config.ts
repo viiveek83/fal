@@ -9,7 +9,7 @@ export default defineConfig({
     baseURL: process.env.TEST_BASE_URL || 'http://localhost:3000',
     viewport: { width: 393, height: 852 },
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure', // record video only for failed tests (use 'on' for all)
+    video: 'retain-on-failure',
   },
   projects: [
     { name: 'setup', testMatch: 'auth.setup.ts' },
