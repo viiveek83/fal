@@ -7,6 +7,9 @@ import { AppFrame } from '@/app/components/AppFrame'
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
+  const [inviteCode, setInviteCode] = useState('')
+  const [adminSecret, setAdminSecret] = useState('')
+  const [adminMode, setAdminMode] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -20,7 +23,13 @@ export default function LoginPage() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, name }),
+        body: JSON.stringify({
+          email,
+          name,
+          ...(adminMode
+            ? { adminSecret: adminSecret.trim() || undefined }
+            : { inviteCode: inviteCode.trim() || undefined }),
+        }),
       })
 
       if (!res.ok) {
@@ -143,7 +152,7 @@ export default function LoginPage() {
                 />
               </div>
 
-              <div style={{ marginBottom: 20 }}>
+              <div style={{ marginBottom: 14 }}>
                 <label htmlFor="name" style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#888', marginBottom: 6 }}>
                   Name <span style={{ color: '#bbb' }}>(optional)</span>
                 </label>
@@ -168,6 +177,60 @@ export default function LoginPage() {
                 />
               </div>
 
+              <div style={{ marginBottom: 20 }}>
+                {adminMode ? (
+                  <>
+                    <label htmlFor="adminSecret" style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#888', marginBottom: 6 }}>
+                      Admin Secret
+                    </label>
+                    <input
+                      id="adminSecret"
+                      type="password"
+                      value={adminSecret}
+                      onChange={(e) => setAdminSecret(e.target.value)}
+                      placeholder="Enter admin secret"
+                      style={{
+                        width: '100%',
+                        padding: '11px 14px',
+                        borderRadius: 10,
+                        border: '1.5px solid rgba(0,0,0,0.08)',
+                        fontSize: 14,
+                        fontWeight: 500,
+                        color: '#1a1a2e',
+                        background: '#f8f9fc',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <label htmlFor="inviteCode" style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#888', marginBottom: 6 }}>
+                      Invite Code
+                    </label>
+                    <input
+                      id="inviteCode"
+                      type="text"
+                      value={inviteCode}
+                      onChange={(e) => setInviteCode(e.target.value)}
+                      placeholder="Enter your league code"
+                      style={{
+                        width: '100%',
+                        padding: '11px 14px',
+                        borderRadius: 10,
+                        border: '1.5px solid rgba(0,0,0,0.08)',
+                        fontSize: 14,
+                        fontWeight: 500,
+                        color: '#1a1a2e',
+                        background: '#f8f9fc',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </>
+                )}
+              </div>
+
               {error && (
                 <p style={{ color: '#d63060', fontSize: 12, textAlign: 'center', marginBottom: 12 }}>{error}</p>
               )}
@@ -189,14 +252,24 @@ export default function LoginPage() {
                   transition: 'opacity 0.2s',
                 }}
               >
-                {loading ? 'Signing in...' : 'Enter League'}
+                {loading ? 'Signing in...' : adminMode ? 'Admin Sign In' : 'Enter League'}
               </button>
+
+              <p
+                onClick={() => { setAdminMode(!adminMode); setError('') }}
+                style={{
+                  textAlign: 'center',
+                  fontSize: 11,
+                  color: '#bbb',
+                  marginTop: 16,
+                  cursor: 'pointer',
+                  userSelect: 'none',
+                }}
+              >
+                {adminMode ? 'Back to league sign in' : 'Admin setup?'}
+              </p>
             </form>
           </div>
-
-          <p style={{ fontSize: 10, color: '#bbb', textAlign: 'center', marginTop: 16 }}>
-            Dev mode — no password required
-          </p>
         </div>
       </div>
     </AppFrame>
