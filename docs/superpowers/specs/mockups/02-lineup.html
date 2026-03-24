@@ -395,6 +395,173 @@
   .pm-trend { text-align: center; }
   .gw-panel { display: none; }
   .gw-panel.active { display: block; }
+
+  /* ═══ View Toggle ═══ */
+  .view-toggle {
+    background: #fff; padding: 6px 16px 8px;
+    display: flex; flex-shrink: 0; border-bottom: 1px solid #efefF3;
+  }
+  .view-toggle-pill {
+    display: flex; background: #f2f3f8; border-radius: 10px; padding: 3px; flex: 1;
+  }
+  .vt-btn {
+    flex: 1; padding: 6px 0; border: none; border-radius: 8px;
+    font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
+    background: transparent; color: #888; transition: all 0.2s ease;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+  }
+  .vt-btn.active {
+    background: #fff; color: #1a1a2e;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  }
+  .vt-btn svg { flex-shrink: 0; }
+
+  /* ═══ List View ═══ */
+  .list-view {
+    display: none; flex: 1; overflow-y: auto;
+    background: #f2f3f8; scrollbar-width: none;
+  }
+  .list-view::-webkit-scrollbar { display: none; }
+  .list-view.active { display: flex; flex-direction: column; }
+
+  .lv-section-label {
+    font-size: 9px; font-weight: 700; color: #aaa; text-transform: uppercase;
+    letter-spacing: 0.8px; padding: 10px 16px 4px;
+  }
+  .lv-section-label:first-child { padding-top: 8px; }
+
+  .lv-player {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px; background: #fff;
+    border-bottom: 1px solid #f2f3f8; cursor: pointer;
+    transition: background 0.12s;
+    position: relative;
+  }
+  .lv-player:active { background: #f7f8fb; }
+  .lv-player.lv-bench { background: #fafbfd; }
+
+  .lv-role-icon {
+    width: 32px; height: 32px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800; flex-shrink: 0;
+  }
+  .lv-role-icon.bat  { background: linear-gradient(135deg, #F9CD05, #e0b800); color: #1a1a1a; }
+  .lv-role-icon.bowl { background: linear-gradient(135deg, #004BA0, #0066cc); color: #fff; }
+  .lv-role-icon.all  { background: linear-gradient(135deg, #0EB1A2, #089e90); color: #fff; }
+  .lv-role-icon.wk   { background: linear-gradient(135deg, #EA1A85, #c4166e); color: #fff; }
+
+  .lv-info { flex: 1; min-width: 0; }
+  .lv-name {
+    font-size: 13px; font-weight: 700; color: #1a1a2e;
+    display: flex; align-items: center; gap: 5px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .lv-badge {
+    font-size: 8px; font-weight: 800; padding: 1.5px 5px; border-radius: 4px;
+    flex-shrink: 0; line-height: 1.4;
+  }
+  .lv-badge.cap { background: #F9CD05; color: #1a1a1a; }
+  .lv-badge.vc  { background: #C0C7D0; color: #1a1a1a; }
+  .lv-sub {
+    font-size: 11px; color: #999; font-weight: 500; margin-top: 1px;
+  }
+  .lv-fixture {
+    font-size: 11px; font-weight: 600; color: #555;
+  }
+
+  /* Priority badge for bench */
+  .lv-priority {
+    width: 22px; height: 22px; border-radius: 6px;
+    background: #e8eaf0; color: #888;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 800; flex-shrink: 0;
+  }
+
+  /* Action buttons on each row */
+  .lv-actions {
+    display: flex; gap: 5px; flex-shrink: 0;
+  }
+  .lv-act-btn {
+    padding: 5px 8px; border-radius: 7px; border: 1.5px solid transparent;
+    font-size: 10px; font-weight: 700; cursor: pointer; font-family: inherit;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .lv-act-btn.cap-btn {
+    border-color: rgba(249,205,5,0.5); color: #b58800; background: rgba(249,205,5,0.08);
+  }
+  .lv-act-btn.cap-btn.active-cap {
+    background: #F9CD05; color: #1a1a1a; border-color: #F9CD05;
+  }
+  .lv-act-btn.vc-btn {
+    border-color: rgba(192,199,208,0.6); color: #666; background: rgba(192,199,208,0.1);
+  }
+  .lv-act-btn.vc-btn.active-vc {
+    background: #C0C7D0; color: #1a1a1a; border-color: #C0C7D0;
+  }
+  .lv-act-btn.bench-btn {
+    border-color: rgba(0,0,0,0.08); color: #888; background: #f2f3f8;
+  }
+  .lv-act-btn.xi-btn {
+    border-color: rgba(13,158,95,0.3); color: var(--mint); background: rgba(13,158,95,0.06);
+  }
+
+  /* Action bottom sheet */
+  .lv-action-overlay {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(3px); z-index: 70;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+  }
+  .lv-action-overlay.open { opacity: 1; pointer-events: all; }
+  .lv-action-sheet {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: #fff; border-radius: 20px 20px 0 0; z-index: 71;
+    transform: translateY(100%);
+    transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+    padding-bottom: 36px;
+  }
+  .lv-action-overlay.open .lv-action-sheet { transform: translateY(0); }
+  .lv-as-handle { width: 36px; height: 4px; background: #ddd; border-radius: 2px; margin: 12px auto 8px; }
+  .lv-as-player {
+    display: flex; align-items: center; gap: 10px; padding: 8px 20px 12px;
+    border-bottom: 1px solid #f2f3f8;
+  }
+  .lv-as-name { font-size: 15px; font-weight: 800; color: #1a1a2e; }
+  .lv-as-team { font-size: 11px; color: #999; }
+  .lv-as-btn {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 20px; font-size: 14px; font-weight: 600; color: #1a1a2e;
+    cursor: pointer; transition: background 0.12s; border: none; background: transparent;
+    width: 100%; font-family: inherit;
+  }
+  .lv-as-btn:hover { background: #f7f8fb; }
+  .lv-as-btn + .lv-as-btn { border-top: 1px solid #f2f3f8; }
+  .lv-as-btn-icon {
+    width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 14px;
+  }
+  .lv-as-btn.as-cap .lv-as-btn-icon { background: rgba(249,205,5,0.12); }
+  .lv-as-btn.as-vc  .lv-as-btn-icon { background: rgba(192,199,208,0.15); }
+  .lv-as-btn.as-bench .lv-as-btn-icon { background: #f2f3f8; }
+  .lv-as-btn.as-xi .lv-as-btn-icon { background: rgba(13,158,95,0.08); }
+  .lv-as-btn.as-cancel { color: #999; justify-content: center; font-size: 13px; margin-top: 4px; }
+
+  .lv-summary {
+    margin: 10px 16px 16px; padding: 12px 16px; border-radius: 14px;
+    background: #fff; border: 1px solid #eef0f5;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .lv-sum-item { text-align: center; }
+  .lv-sum-val { font-size: 13px; font-weight: 800; color: #333; }
+  .lv-sum-label { font-size: 9px; color: #aaa; font-weight: 500; margin-top: 1px; }
+  .lv-save-row {
+    padding: 0 16px 16px; flex-shrink: 0; background: #f2f3f8;
+  }
+  .lv-save-row .btn-save {
+    display: block; width: 100%; padding: 13px; border: none; border-radius: 14px;
+    background: linear-gradient(160deg, #1a0a3e 0%, #2d1b69 25%, #004BA0 50%, #0EB1A2 80%, #00AEEF 100%);
+    color: #fff; font-size: 14px; font-weight: 800; cursor: pointer;
+    font-family: inherit; text-align: center; letter-spacing: -0.3px;
+  }
 </style>
 </head>
 <body>
@@ -443,8 +610,247 @@
     </div>
   </div>
 
+  <!-- View Toggle -->
+  <div class="view-toggle">
+    <div class="view-toggle-pill">
+      <button class="vt-btn active" id="btnPitch" onclick="switchView('pitch')">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Pitch View
+      </button>
+      <button class="vt-btn" id="btnList" onclick="switchView('list')">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        List View
+      </button>
+    </div>
+  </div>
+
+  <!-- LIST VIEW -->
+  <div class="list-view" id="listView">
+
+    <div class="lv-section-label">Playing XI</div>
+
+    <!-- C: V Kohli -->
+    <div class="lv-player" onclick="openActionSheet('V Kohli','RCB · BAT','bat',true,false,false)">
+      <div class="lv-role-icon bat">B</div>
+      <div class="lv-info">
+        <div class="lv-name">V Kohli <span class="lv-badge cap">C</span></div>
+        <div class="lv-sub">RCB · BAT · <span class="lv-fixture">vs MI · Tue</span></div>
+      </div>
+      <div class="lv-actions">
+        <button class="lv-act-btn cap-btn active-cap" onclick="event.stopPropagation()">C</button>
+        <button class="lv-act-btn vc-btn" onclick="event.stopPropagation()">VC</button>
+        <button class="lv-act-btn bench-btn" onclick="event.stopPropagation()">→ Bench</button>
+      </div>
+    </div>
+
+    <!-- VC: H Pandya -->
+    <div class="lv-player" onclick="openActionSheet('H Pandya','MI · ALL',false,false,true,false)">
+      <div class="lv-role-icon all">A</div>
+      <div class="lv-info">
+        <div class="lv-name">H Pandya <span class="lv-badge vc">VC</span></div>
+        <div class="lv-sub">MI · ALL · <span class="lv-fixture">vs RCB · Tue, vs CSK · Thu</span></div>
+      </div>
+      <div class="lv-actions">
+        <button class="lv-act-btn cap-btn" onclick="event.stopPropagation()">C</button>
+        <button class="lv-act-btn vc-btn active-vc" onclick="event.stopPropagation()">VC</button>
+        <button class="lv-act-btn bench-btn" onclick="event.stopPropagation()">→ Bench</button>
+      </div>
+    </div>
+
+    <div class="lv-player" onclick="openActionSheet('R Gaikwad','CSK · BAT','bat',false,false,false)">
+      <div class="lv-role-icon bat">B</div>
+      <div class="lv-info">
+        <div class="lv-name">R Gaikwad</div>
+        <div class="lv-sub">CSK · BAT · <span class="lv-fixture">vs KKR · Thu</span></div>
+      </div>
+      <div class="lv-actions">
+        <button class="lv-act-btn cap-btn" onclick="event.stopPropagation()">C</button>
+        <button class="lv-act-btn vc-btn" onclick="event.stopPropagation()">VC</button>
+        <button class="lv-act-btn bench-btn" onclick="event.stopPropagation()">→ Bench</button>
+      </div>
+    </div>
+
+    <div class="lv-player" onclick="openActionSheet('R Pant','DC · WK','wk',false,false,false)">
+      <div class="lv-role-icon wk">W</div>
+      <div class="lv-info">
+        <div class="lv-name">R Pant</div>
+        <div class="lv-sub">DC · WK · <span class="lv-fixture">vs RR · Fri</span></div>
+      </div>
+      <div class="lv-actions">
+        <button class="lv-act-btn cap-btn" onclick="event.stopPropagation()">C</button>
+        <button class="lv-act-btn vc-btn" onclick="event.stopPropagation()">VC</button>
+        <button class="lv-act-btn bench-btn" onclick="event.stopPropagation()">→ Bench</button>
+      </div>
+    </div>
+
+    <div class="lv-player" onclick="openActionSheet('S Gill','GT · BAT','bat',false,false,false)">
+      <div class="lv-role-icon bat">B</div>
+      <div class="lv-info">
+        <div class="lv-name">S Gill</div>
+        <div class="lv-sub">GT · BAT · <span class="lv-fixture">vs SRH · Sat</span></div>
+      </div>
+      <div class="lv-actions">
+        <button class="lv-act-btn cap-btn" onclick="event.stopPropagation()">C</button>
+        <button class="lv-act-btn vc-btn" onclick="event.stopPropagation()">VC</button>
+        <button class="lv-act-btn bench-btn" onclick="event.stopPropagation()">→ Bench</button>
+      </div>
+    </div>
+
+    <div class="lv-player" onclick="openActionSheet('R Jadeja','CSK · ALL','all',false,false,false)">
+      <div class="lv-role-icon all">A</div>
+      <div class="lv-info">
+        <div class="lv-name">R Jadeja</div>
+        <div class="lv-sub">CSK · ALL · <span class="lv-fixture">vs KKR · Thu</span></div>
+      </div>
+      <div class="lv-actions">
+        <button class="lv-act-btn cap-btn" onclick="event.stopPropagation()">C</button>
+        <button class="lv-act-btn vc-btn" onclick="event.stopPropagation()">VC</button>
+        <button class="lv-act-btn bench-btn" onclick="event.stopPropagation()">→ Bench</button>
+      </div>
+    </div>
+
+    <div class="lv-player" onclick="openActionSheet('A Russell','KKR · ALL','all',false,false,false)">
+      <div class="lv-role-icon all">A</div>
+      <div class="lv-info">
+        <div class="lv-name">A Russell</div>
+        <div class="lv-sub">KKR · ALL · <span class="lv-fixture">vs CSK · Thu, vs MI · Tue, vs RR · Sat</span></div>
+      </div>
+      <div class="lv-actions">
+        <button class="lv-act-btn cap-btn" onclick="event.stopPropagation()">C</button>
+        <button class="lv-act-btn vc-btn" onclick="event.stopPropagation()">VC</button>
+        <button class="lv-act-btn bench-btn" onclick="event.stopPropagation()">→ Bench</button>
+      </div>
+    </div>
+
+    <div class="lv-player" onclick="openActionSheet('Kuldeep Yadav','CSK · BOWL','bowl',false,false,false)">
+      <div class="lv-role-icon bowl">B</div>
+      <div class="lv-info">
+        <div class="lv-name">Kuldeep Yadav</div>
+        <div class="lv-sub">CSK · BOWL · <span class="lv-fixture">vs KKR · Thu</span></div>
+      </div>
+      <div class="lv-actions">
+        <button class="lv-act-btn cap-btn" onclick="event.stopPropagation()">C</button>
+        <button class="lv-act-btn vc-btn" onclick="event.stopPropagation()">VC</button>
+        <button class="lv-act-btn bench-btn" onclick="event.stopPropagation()">→ Bench</button>
+      </div>
+    </div>
+
+    <div class="lv-player" onclick="openActionSheet('J Bumrah','MI · BOWL','bowl',false,false,false)">
+      <div class="lv-role-icon bowl">B</div>
+      <div class="lv-info">
+        <div class="lv-name">J Bumrah</div>
+        <div class="lv-sub">MI · BOWL · <span class="lv-fixture">vs RCB · Tue, vs CSK · Thu</span></div>
+      </div>
+      <div class="lv-actions">
+        <button class="lv-act-btn cap-btn" onclick="event.stopPropagation()">C</button>
+        <button class="lv-act-btn vc-btn" onclick="event.stopPropagation()">VC</button>
+        <button class="lv-act-btn bench-btn" onclick="event.stopPropagation()">→ Bench</button>
+      </div>
+    </div>
+
+    <div class="lv-player" onclick="openActionSheet('T Boult','RR · BOWL','bowl',false,false,false)">
+      <div class="lv-role-icon bowl">B</div>
+      <div class="lv-info">
+        <div class="lv-name">T Boult</div>
+        <div class="lv-sub">RR · BOWL · <span class="lv-fixture">vs DC · Fri</span></div>
+      </div>
+      <div class="lv-actions">
+        <button class="lv-act-btn cap-btn" onclick="event.stopPropagation()">C</button>
+        <button class="lv-act-btn vc-btn" onclick="event.stopPropagation()">VC</button>
+        <button class="lv-act-btn bench-btn" onclick="event.stopPropagation()">→ Bench</button>
+      </div>
+    </div>
+
+    <div class="lv-player" onclick="openActionSheet('M Shami','GT · BOWL','bowl',false,false,false)">
+      <div class="lv-role-icon bowl">B</div>
+      <div class="lv-info">
+        <div class="lv-name">M Shami</div>
+        <div class="lv-sub">GT · BOWL · <span class="lv-fixture">vs SRH · Sat</span></div>
+      </div>
+      <div class="lv-actions">
+        <button class="lv-act-btn cap-btn" onclick="event.stopPropagation()">C</button>
+        <button class="lv-act-btn vc-btn" onclick="event.stopPropagation()">VC</button>
+        <button class="lv-act-btn bench-btn" onclick="event.stopPropagation()">→ Bench</button>
+      </div>
+    </div>
+
+    <!-- Bench section -->
+    <div class="lv-section-label" style="margin-top:4px;">Bench — Auto-sub order</div>
+
+    <div class="lv-player lv-bench" onclick="openActionSheet('K Williamson','GT · BAT','bat',false,false,true)">
+      <div class="lv-priority">1</div>
+      <div class="lv-role-icon bat">B</div>
+      <div class="lv-info">
+        <div class="lv-name">K Williamson</div>
+        <div class="lv-sub">GT · BAT · <span class="lv-fixture">vs SRH · Sat</span></div>
+      </div>
+      <div class="lv-actions">
+        <button class="lv-act-btn xi-btn" onclick="event.stopPropagation()">→ XI</button>
+      </div>
+    </div>
+
+    <div class="lv-player lv-bench" onclick="openActionSheet('A Patel','MI · BOWL','bowl',false,false,true)">
+      <div class="lv-priority">2</div>
+      <div class="lv-role-icon bowl">B</div>
+      <div class="lv-info">
+        <div class="lv-name">A Patel</div>
+        <div class="lv-sub">MI · BOWL · <span class="lv-fixture">vs RCB · Tue</span></div>
+      </div>
+      <div class="lv-actions">
+        <button class="lv-act-btn xi-btn" onclick="event.stopPropagation()">→ XI</button>
+      </div>
+    </div>
+
+    <div class="lv-player lv-bench" onclick="openActionSheet('S Samson','RR · WK','wk',false,false,true)">
+      <div class="lv-priority">3</div>
+      <div class="lv-role-icon wk">W</div>
+      <div class="lv-info">
+        <div class="lv-name">S Samson</div>
+        <div class="lv-sub">RR · WK · <span class="lv-fixture">vs DC · Fri</span></div>
+      </div>
+      <div class="lv-actions">
+        <button class="lv-act-btn xi-btn" onclick="event.stopPropagation()">→ XI</button>
+      </div>
+    </div>
+
+    <div class="lv-player lv-bench" onclick="openActionSheet('W Sundar','SRH · ALL','all',false,false,true)">
+      <div class="lv-priority">4</div>
+      <div class="lv-role-icon all">A</div>
+      <div class="lv-info">
+        <div class="lv-name">W Sundar</div>
+        <div class="lv-sub">SRH · ALL · <span class="lv-fixture">vs GT · Sat</span></div>
+      </div>
+      <div class="lv-actions">
+        <button class="lv-act-btn xi-btn" onclick="event.stopPropagation()">→ XI</button>
+      </div>
+    </div>
+
+    <!-- Summary bar -->
+    <div class="lv-summary">
+      <div class="lv-sum-item">
+        <div class="lv-sum-val">11</div>
+        <div class="lv-sum-label">Playing XI</div>
+      </div>
+      <div class="lv-sum-item">
+        <div class="lv-sum-val">4</div>
+        <div class="lv-sum-label">Bench</div>
+      </div>
+      <div class="lv-sum-item">
+        <div class="lv-sum-val" style="color:#b58800;">V Kohli</div>
+        <div class="lv-sum-label">Captain</div>
+      </div>
+      <div class="lv-sum-item">
+        <div class="lv-sum-val" style="color:#666;">H Pandya</div>
+        <div class="lv-sum-label">Vice Captain</div>
+      </div>
+    </div>
+    <div class="lv-save-row">
+      <button class="btn-save">Save Lineup</button>
+    </div>
+  </div>
+
   <!-- PITCH -->
-  <div class="pitch">
+  <div class="pitch" id="pitchView">
     <div class="players-layout">
 
       <!-- Row 1 (4 players) -->
@@ -570,6 +976,60 @@
 
   <div class="save-area"><a href="/" class="btn-save">Save Lineup</a></div>
 
+  <!-- Player Action Sheet (List View) -->
+  <div class="lv-action-overlay" id="lvActionOverlay" onclick="closeActionSheet()">
+    <div class="lv-action-sheet" onclick="event.stopPropagation()">
+      <div class="lv-as-handle"></div>
+      <div class="lv-as-player">
+        <div class="lv-role-icon bat" id="asRoleIcon" style="width:34px;height:34px;border-radius:10px;">B</div>
+        <div>
+          <div class="lv-as-name" id="asName">Player</div>
+          <div class="lv-as-team" id="asTeam">Team</div>
+        </div>
+      </div>
+      <div id="asXiActions">
+        <button class="lv-as-btn as-cap" onclick="setRole('cap')">
+          <div class="lv-as-btn-icon">🏆</div>
+          <div>
+            <div style="font-weight:700;">Make Captain</div>
+            <div style="font-size:11px;color:#999;font-weight:500;">Earns 2× points this GW</div>
+          </div>
+        </button>
+        <button class="lv-as-btn as-vc" onclick="setRole('vc')">
+          <div class="lv-as-btn-icon">⭐</div>
+          <div>
+            <div style="font-weight:700;">Make Vice Captain</div>
+            <div style="font-size:11px;color:#999;font-weight:500;">2× only if Captain doesn't play</div>
+          </div>
+        </button>
+        <button class="lv-as-btn as-bench" onclick="setRole('bench')">
+          <div class="lv-as-btn-icon">🔄</div>
+          <div>
+            <div style="font-weight:700;">Move to Bench</div>
+            <div style="font-size:11px;color:#999;font-weight:500;">Swap with a bench player</div>
+          </div>
+        </button>
+      </div>
+      <div id="asBenchActions" style="display:none;">
+        <button class="lv-as-btn as-xi" onclick="setRole('xi')">
+          <div class="lv-as-btn-icon">✅</div>
+          <div>
+            <div style="font-weight:700;">Move to Playing XI</div>
+            <div style="font-size:11px;color:#999;font-weight:500;">Swap with an XI player</div>
+          </div>
+        </button>
+        <button class="lv-as-btn as-bench" onclick="setRole('priority')">
+          <div class="lv-as-btn-icon">🔢</div>
+          <div>
+            <div style="font-weight:700;">Change Auto-Sub Priority</div>
+            <div style="font-size:11px;color:#999;font-weight:500;">Reorder bench for auto-substitutions</div>
+          </div>
+        </button>
+      </div>
+      <button class="lv-as-btn as-cancel" onclick="closeActionSheet()">Cancel</button>
+    </div>
+  </div>
+
   <!-- Chip Confirmation Modal -->
   <div class="chip-overlay" id="chipOverlay">
     <div class="chip-sheet">
@@ -645,6 +1105,52 @@
 </div>
 
 <script>
+// ── View toggle ──
+function switchView(view) {
+  var pitch = document.getElementById('pitchView');
+  var bench = document.querySelector('.bench');
+  var saveArea = document.querySelector('.save-area');
+  var listView = document.getElementById('listView');
+  var btnPitch = document.getElementById('btnPitch');
+  var btnList = document.getElementById('btnList');
+
+  if (view === 'pitch') {
+    pitch.style.display = '';
+    if (bench) bench.style.display = '';
+    if (saveArea) saveArea.style.display = '';
+    listView.classList.remove('active');
+    btnPitch.classList.add('active');
+    btnList.classList.remove('active');
+  } else {
+    pitch.style.display = 'none';
+    if (bench) bench.style.display = 'none';
+    if (saveArea) saveArea.style.display = 'none';
+    listView.classList.add('active');
+    btnList.classList.add('active');
+    btnPitch.classList.remove('active');
+  }
+}
+
+// ── Action sheet (list view) ──
+function openActionSheet(name, team, role, isCap, isVC, isBench) {
+  var roleMap = { bat: 'B', bowl: 'B', all: 'A', wk: 'W' };
+  var icon = document.getElementById('asRoleIcon');
+  icon.textContent = roleMap[role] || 'B';
+  icon.className = 'lv-role-icon ' + (role || 'bat');
+  icon.style.cssText = 'width:34px;height:34px;border-radius:10px;';
+  document.getElementById('asName').textContent = name;
+  document.getElementById('asTeam').textContent = team;
+  document.getElementById('asXiActions').style.display = isBench ? 'none' : 'block';
+  document.getElementById('asBenchActions').style.display = isBench ? 'block' : 'none';
+  document.getElementById('lvActionOverlay').classList.add('open');
+}
+function closeActionSheet() {
+  document.getElementById('lvActionOverlay').classList.remove('open');
+}
+function setRole(role) {
+  closeActionSheet();
+}
+
 // ── Chip toggle logic ──
 var bowlingActive = false;
 function activateChip() {
