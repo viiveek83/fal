@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  # Job 1: Unit + integration tests (no deploy needed)
+  # Job 1: Unit tests only (no DB needed)
   unit-tests:
     runs-on: ubuntu-latest
     steps:
@@ -17,7 +17,7 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npm test
+      - run: npx vitest run tests/unit
 
   # Job 2: E2E tests against Vercel preview with Neon branch DB
   e2e-tests:
