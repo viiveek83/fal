@@ -12,3 +12,4 @@ tsconfig.tsbuildinfo
 next-env.d.ts
 tests/simulation/results/
 tests/simulation/playwright/.auth/
+test-results/
