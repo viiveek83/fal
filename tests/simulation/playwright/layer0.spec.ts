@@ -355,8 +355,14 @@ test('9. User views GW score detail — pitch view @user', async ({ page }) => {
   await sheetPitchBtn.click()
   await page.waitForTimeout(300)
 
-  // Pitch view shows "Coming soon" for now
-  await expect(page.getByText('Coming soon')).toBeVisible()
+  // Pitch view should show formation with player figures and scores
+  // Look for formation row labels or player score plates
+  const topOrder = page.getByText('Top Order')
+  const hasFormation = await topOrder.isVisible({ timeout: 3000 }).catch(() => false)
+  if (!hasFormation) {
+    // May show empty state if no scores
+    await expect(page.getByText(/No player scores|No lineup/i).first()).toBeVisible()
+  }
 
   await expect(page).toHaveScreenshot('gw-sheet-pitch.png')
 })
