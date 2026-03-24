@@ -220,6 +220,86 @@
   .bench-role.wk   { color: rgba(0,255,135,0.3); }
   .bench-role.all  { color: rgba(14,177,162,0.3); }
 
+  /* ═══ View Toggle ═══ */
+  .view-toggle {
+    background: #fff; padding: 6px 16px 8px;
+    display: flex; flex-shrink: 0; border-bottom: 1px solid #efefF3;
+  }
+  .view-toggle-pill {
+    display: flex; background: #f2f3f8; border-radius: 10px; padding: 3px; flex: 1;
+  }
+  .vt-btn {
+    flex: 1; padding: 6px 0; border: none; border-radius: 8px;
+    font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
+    background: transparent; color: #888; transition: all 0.2s ease;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+  }
+  .vt-btn.active { background: #fff; color: #1a1a2e; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+
+  /* ═══ List View (read-only) ═══ */
+  .list-view {
+    display: none; flex: 1; overflow-y: auto;
+    background: #f2f3f8; scrollbar-width: none;
+  }
+  .list-view::-webkit-scrollbar { display: none; }
+  .list-view.active { display: flex; flex-direction: column; }
+  .lv-section-label {
+    font-size: 9px; font-weight: 700; color: #aaa; text-transform: uppercase;
+    letter-spacing: 0.8px; padding: 10px 16px 4px;
+  }
+  .lv-player {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px; background: #fff;
+    border-bottom: 1px solid #f2f3f8; cursor: pointer; transition: background 0.12s;
+  }
+  .lv-player:active { background: #f7f8fb; }
+  .lv-player.lv-bench { background: #fafbfd; opacity: 0.75; }
+  .lv-role-icon {
+    width: 32px; height: 32px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800; flex-shrink: 0;
+  }
+  .lv-role-icon.bat  { background: linear-gradient(135deg, #F9CD05, #e0b800); color: #1a1a1a; }
+  .lv-role-icon.bowl { background: linear-gradient(135deg, #004BA0, #0066cc); color: #fff; }
+  .lv-role-icon.all  { background: linear-gradient(135deg, #0EB1A2, #089e90); color: #fff; }
+  .lv-role-icon.wk   { background: linear-gradient(135deg, #EA1A85, #c4166e); color: #fff; }
+  .lv-info { flex: 1; min-width: 0; }
+  .lv-name {
+    font-size: 13px; font-weight: 700; color: #1a1a2e;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .lv-badge {
+    font-size: 8px; font-weight: 800; padding: 1.5px 5px; border-radius: 4px; flex-shrink: 0;
+  }
+  .lv-badge.cap { background: #F9CD05; color: #1a1a1a; }
+  .lv-badge.vc  { background: #C0C7D0; color: #1a1a1a; }
+  .lv-sub { font-size: 11px; color: #999; font-weight: 500; margin-top: 1px; }
+  .lv-pts {
+    font-size: 15px; font-weight: 800; color: #1a1a2e;
+    font-variant-numeric: tabular-nums; flex-shrink: 0;
+  }
+  .lv-pts.cap-pts { color: #b58800; }
+  .lv-pts.muted { color: #ccc; }
+  .lv-multiplier {
+    font-size: 9px; font-weight: 700; color: var(--mi);
+    background: rgba(0,75,160,0.06); padding: 1px 4px; border-radius: 3px;
+    margin-left: 3px;
+  }
+  .lv-priority {
+    width: 22px; height: 22px; border-radius: 6px;
+    background: #e8eaf0; color: #888;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 800; flex-shrink: 0;
+  }
+  .lv-summary {
+    margin: 10px 16px 16px; padding: 12px 16px; border-radius: 14px;
+    background: #fff; border: 1px solid #eef0f5;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .lv-sum-item { text-align: center; }
+  .lv-sum-val { font-size: 13px; font-weight: 800; color: #333; }
+  .lv-sum-label { font-size: 9px; color: #aaa; font-weight: 500; margin-top: 1px; }
+
   /* ═══ Bottom Nav ═══ */
   .bottom-nav {
     display: flex; justify-content: space-around;
@@ -320,6 +400,173 @@
     </div>
   </div>
 
+  <!-- View Toggle -->
+  <div class="view-toggle">
+    <div class="view-toggle-pill">
+      <button class="vt-btn active" id="btnPitch" onclick="switchView('pitch')">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Pitch View
+      </button>
+      <button class="vt-btn" id="btnList" onclick="switchView('list')">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        List View
+      </button>
+    </div>
+  </div>
+
+  <!-- LIST VIEW (read-only) -->
+  <div class="list-view" id="listView">
+    <div class="lv-section-label">Playing XI</div>
+
+    <div class="lv-player" onclick="openPlayer('R Sharma','MI · Batsman','bat','RS',156)">
+      <div class="lv-role-icon bat">B</div>
+      <div class="lv-info">
+        <div class="lv-name">R Sharma <span class="lv-badge cap">C</span></div>
+        <div class="lv-sub">MI · BAT · vs RCB · Tue</div>
+      </div>
+      <div class="lv-pts cap-pts">156 <span style="font-size:10px;font-weight:500;color:#b58800;">2×</span></div>
+    </div>
+
+    <div class="lv-player" onclick="openPlayer('F du Plessis','RCB · Batsman','bat','FP',84)">
+      <div class="lv-role-icon bat">B</div>
+      <div class="lv-info">
+        <div class="lv-name">F du Plessis</div>
+        <div class="lv-sub">RCB · BAT · vs MI · Tue</div>
+      </div>
+      <div class="lv-pts">84</div>
+    </div>
+
+    <div class="lv-player" onclick="openPlayer('S Iyer','KKR · Batsman','bat','SI',72)">
+      <div class="lv-role-icon bat">B</div>
+      <div class="lv-info">
+        <div class="lv-name">S Iyer</div>
+        <div class="lv-sub">KKR · BAT · vs CSK · Thu</div>
+      </div>
+      <div class="lv-pts">72</div>
+    </div>
+
+    <div class="lv-player" onclick="openPlayer('Q de Kock','LSG · Wicket Keeper','wk','QK',91)">
+      <div class="lv-role-icon wk">W</div>
+      <div class="lv-info">
+        <div class="lv-name">Q de Kock</div>
+        <div class="lv-sub">LSG · WK · vs SRH · Wed</div>
+      </div>
+      <div class="lv-pts">91</div>
+    </div>
+
+    <div class="lv-player" onclick="openPlayer('S Dube','CSK · All Rounder','all','SD',68)">
+      <div class="lv-role-icon all">A</div>
+      <div class="lv-info">
+        <div class="lv-name">S Dube <span class="lv-badge vc">VC</span></div>
+        <div class="lv-sub">CSK · ALL · vs KKR · Thu</div>
+      </div>
+      <div class="lv-pts">68</div>
+    </div>
+
+    <div class="lv-player" onclick="openPlayer('M Stoinis','LSG · All Rounder','all','MS',55)">
+      <div class="lv-role-icon all">A</div>
+      <div class="lv-info">
+        <div class="lv-name">M Stoinis</div>
+        <div class="lv-sub">LSG · ALL · vs SRH · Wed</div>
+      </div>
+      <div class="lv-pts">55</div>
+    </div>
+
+    <div class="lv-player" onclick="openPlayer('R Ashwin','RR · Bowler','bowl','RA',88)">
+      <div class="lv-role-icon bowl">B</div>
+      <div class="lv-info">
+        <div class="lv-name">R Ashwin</div>
+        <div class="lv-sub">RR · BOWL · vs DC · Fri</div>
+      </div>
+      <div class="lv-pts">88</div>
+    </div>
+
+    <div class="lv-player" onclick="openPlayer('Y Chahal','RR · Bowler','bowl','YC',62)">
+      <div class="lv-role-icon bowl">B</div>
+      <div class="lv-info">
+        <div class="lv-name">Y Chahal</div>
+        <div class="lv-sub">RR · BOWL · vs DC · Fri</div>
+      </div>
+      <div class="lv-pts">62</div>
+    </div>
+
+    <div class="lv-player" onclick="openPlayer('M Siraj','RCB · Bowler','bowl','MS',48)">
+      <div class="lv-role-icon bowl">B</div>
+      <div class="lv-info">
+        <div class="lv-name">M Siraj</div>
+        <div class="lv-sub">RCB · BOWL · vs MI · Tue</div>
+      </div>
+      <div class="lv-pts">48</div>
+    </div>
+
+    <div class="lv-player" onclick="openPlayer('P Krishna','RR · Bowler','bowl','PK',41)">
+      <div class="lv-role-icon bowl">B</div>
+      <div class="lv-info">
+        <div class="lv-name">P Krishna</div>
+        <div class="lv-sub">RR · BOWL · vs DC · Fri</div>
+      </div>
+      <div class="lv-pts">41</div>
+    </div>
+
+    <div class="lv-player" onclick="openPlayer('U Malik','KKR · Bowler','bowl','UM',23)">
+      <div class="lv-role-icon bowl">B</div>
+      <div class="lv-info">
+        <div class="lv-name">U Malik</div>
+        <div class="lv-sub">KKR · BOWL · vs CSK · Thu</div>
+      </div>
+      <div class="lv-pts">23</div>
+    </div>
+
+    <div class="lv-section-label" style="margin-top:4px;">Bench</div>
+
+    <div class="lv-player lv-bench" onclick="openPlayer('D Warner','DC · Batsman','bat','DW',0)">
+      <div class="lv-priority">1</div>
+      <div class="lv-role-icon bat">B</div>
+      <div class="lv-info">
+        <div class="lv-name">D Warner</div>
+        <div class="lv-sub">DC · BAT · DNP</div>
+      </div>
+      <div class="lv-pts muted">—</div>
+    </div>
+
+    <div class="lv-player lv-bench" onclick="openPlayer('A Zampa','RR · Bowler','bowl','AZ',0)">
+      <div class="lv-priority">2</div>
+      <div class="lv-role-icon bowl">B</div>
+      <div class="lv-info">
+        <div class="lv-name">A Zampa</div>
+        <div class="lv-sub">RR · BOWL · DNP</div>
+      </div>
+      <div class="lv-pts muted">—</div>
+    </div>
+
+    <div class="lv-player lv-bench" onclick="openPlayer('D Karthik','RCB · Wicket Keeper','wk','DK',0)">
+      <div class="lv-priority">3</div>
+      <div class="lv-role-icon wk">W</div>
+      <div class="lv-info">
+        <div class="lv-name">D Karthik</div>
+        <div class="lv-sub">RCB · WK · DNP</div>
+      </div>
+      <div class="lv-pts muted">—</div>
+    </div>
+
+    <div class="lv-player lv-bench" onclick="openPlayer('S Thakur','CSK · All Rounder','all','ST',0)">
+      <div class="lv-priority">4</div>
+      <div class="lv-role-icon all">A</div>
+      <div class="lv-info">
+        <div class="lv-name">S Thakur</div>
+        <div class="lv-sub">CSK · ALL · DNP</div>
+      </div>
+      <div class="lv-pts muted">—</div>
+    </div>
+
+    <div class="lv-summary">
+      <div class="lv-sum-item"><div class="lv-sum-val">788</div><div class="lv-sum-label">GW7 Total</div></div>
+      <div class="lv-sum-item"><div class="lv-sum-val" style="color:#b58800;">R Sharma</div><div class="lv-sum-label">Captain (2×)</div></div>
+      <div class="lv-sum-item"><div class="lv-sum-val" style="color:#666;">S Dube</div><div class="lv-sum-label">Vice Captain</div></div>
+    </div>
+  </div>
+
+  <div id="pitchWrap" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
   <!-- PITCH -->
   <div class="pitch">
     <div class="players-layout">
@@ -489,6 +736,8 @@
     </div>
   </div>
 
+  </div><!-- /pitchWrap -->
+
   <!-- Bottom Nav -->
   <div class="bottom-nav">
     <a href="01-dashboard.html" class="nav-item">
@@ -550,6 +799,24 @@
 </div>
 
 <script>
+function switchView(view) {
+  var pitchWrap = document.getElementById('pitchWrap');
+  var listView  = document.getElementById('listView');
+  var btnPitch  = document.getElementById('btnPitch');
+  var btnList   = document.getElementById('btnList');
+  if (view === 'pitch') {
+    pitchWrap.style.display = 'flex';
+    listView.classList.remove('active');
+    btnPitch.classList.add('active');
+    btnList.classList.remove('active');
+  } else {
+    pitchWrap.style.display = 'none';
+    listView.classList.add('active');
+    btnList.classList.add('active');
+    btnPitch.classList.remove('active');
+  }
+}
+
 function openPlayer(name, team, role, initials, pts) {
   var roleMap = { bat: 'BA', bowl: 'BO', all: 'AL', wk: 'WK' };
   var icon = document.getElementById('pmRoleIcon');

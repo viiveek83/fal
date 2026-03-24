@@ -402,6 +402,93 @@
     font-size: 15px; color: #999;
   }
 
+  /* Sheet view toggle */
+  .sheet-toggle {
+    display: flex; padding: 8px 16px 6px;
+  }
+  .sheet-toggle-pill {
+    display: flex; background: #f2f3f8; border-radius: 10px; padding: 3px; flex: 1;
+  }
+  .st-btn {
+    flex: 1; padding: 5px 0; border: none; border-radius: 8px;
+    font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
+    background: transparent; color: #888; transition: all 0.2s ease;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+  }
+  .st-btn.active { background: #fff; color: #1a1a2e; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+
+  /* In-sheet pitch view */
+  .sheet-pitch-view { display: none; }
+  .sheet-pitch-view.active { display: flex; flex-direction: column; }
+  .sph-pitch {
+    flex: 1; min-height: 340px; position: relative; overflow: hidden;
+    background: linear-gradient(180deg,
+      #3aad5c 0%, #35a254 15%, #30964c 30%, #34a058 45%,
+      #3aad5c 50%, #30964c 65%, #2b8a45 80%, #267f3e 100%);
+  }
+  .sph-pitch::before {
+    content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 220px; height: 220px; border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,0.07);
+  }
+  .sph-layout {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    justify-content: space-evenly; padding: 10px 0 8px; z-index: 3;
+  }
+  .sph-row { display: flex; justify-content: center; }
+  .sph-row.evenly { justify-content: space-evenly; width: 100%; }
+  .sph-player {
+    display: flex; flex-direction: column; align-items: center; width: 78px;
+  }
+  .sph-figure { width: 44px; height: 46px; position: relative; margin-bottom: 2px; }
+  .sph-head {
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 26px; height: 26px; border-radius: 50%; z-index: 3;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 800; color: #fff;
+    border: 2px solid rgba(255,255,255,0.3);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  }
+  .sph-body {
+    position: absolute; top: 17px; left: 50%; transform: translateX(-50%);
+    width: 40px; height: 28px; z-index: 2;
+    border-radius: 10px 10px 4px 4px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .sph-badge {
+    position: absolute; top: -2px; right: 0; z-index: 5;
+    width: 14px; height: 14px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 7px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+  .sph-badge.cap { background: #F9CD05; color: #1a1a1a; }
+  .sph-badge.vc  { background: #C0C7D0; color: #1a1a1a; }
+  .sph-plate {
+    min-width: 68px; max-width: 76px; padding: 3px 5px; border-radius: 4px;
+    text-align: center;
+  }
+  .sph-plate .pname { font-size: 10px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sph-plate .ppts  { font-size: 11px; font-weight: 800; color: #fff; line-height: 1.2; }
+  .sph-plate .ppts.cap-pts { color: #FFE066; }
+  /* reuse plate colors */
+  .sph-bench {
+    flex-shrink: 0; padding: 5px 6px 6px;
+    background: linear-gradient(180deg, #1a5c32, #16502c);
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+  .sph-bench-row { display: flex; justify-content: space-around; }
+  .sph-bench-player {
+    display: flex; flex-direction: column; align-items: center; width: 66px;
+  }
+  .sph-bench-role {
+    font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1px;
+  }
+  .sph-bench-role.bat  { color: rgba(249,205,5,0.5); }
+  .sph-bench-role.bowl { color: rgba(160,196,255,0.5); }
+  .sph-bench-role.wk   { color: rgba(0,255,135,0.4); }
+  .sph-bench-role.all  { color: rgba(14,177,162,0.4); }
+
   .sheet-chip-badge {
     display: inline-flex; align-items: center; gap: 5px;
     padding: 4px 10px; border-radius: 8px;
@@ -770,9 +857,154 @@
     <div class="sheet-chip-badge">🎯 Bowling Boost Active — 2× bowling pts</div>
     <button class="sheet-close" onclick="closeSheet()">✕</button>
   </div>
+  <div class="sheet-toggle">
+    <div class="sheet-toggle-pill">
+      <button class="st-btn active" id="stBtnList" onclick="switchSheetView('list')">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        List View
+      </button>
+      <button class="st-btn" id="stBtnPitch" onclick="switchSheetView('pitch')">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Pitch View
+      </button>
+    </div>
+  </div>
   <div class="sheet-divider"></div>
 
-  <div class="sheet-scroll">
+  <!-- PITCH VIEW inside sheet -->
+  <div class="sheet-pitch-view" id="sheetPitchView">
+    <div class="sph-pitch">
+      <div class="sph-layout">
+        <!-- Row 1 (4) -->
+        <div class="sph-row">
+          <div class="sph-player">
+            <div class="sph-figure" style="position:relative;">
+              <div class="sph-badge cap">C</div>
+              <div class="sph-head" style="background:linear-gradient(180deg,#E8222B,#B81820);">VK</div>
+              <div class="sph-body" style="background:linear-gradient(180deg,#E8222B,#B81820);"></div>
+            </div>
+            <div class="sph-plate plate-rcb"><div class="pname">V Kohli</div><div class="ppts cap-pts">166</div></div>
+          </div>
+          <div class="sph-player">
+            <div class="sph-figure">
+              <div class="sph-head" style="background:linear-gradient(180deg,#FFDA2B,#E8B800);color:#1a1a1a;">RG</div>
+              <div class="sph-body" style="background:linear-gradient(180deg,#FFDA2B,#E8B800);"></div>
+            </div>
+            <div class="sph-plate plate-csk"><div class="pname">R Gaikwad</div><div class="ppts" style="color:#1a1a1a;">72</div></div>
+          </div>
+          <div class="sph-player">
+            <div class="sph-figure">
+              <div class="sph-head" style="background:linear-gradient(180deg,#F03C96,#C4166E);">RP</div>
+              <div class="sph-body" style="background:linear-gradient(180deg,#F03C96,#C4166E);"></div>
+            </div>
+            <div class="sph-plate plate-dc"><div class="pname">R Pant</div><div class="ppts">54</div></div>
+          </div>
+          <div class="sph-player">
+            <div class="sph-figure">
+              <div class="sph-head" style="background:linear-gradient(180deg,#1AD4BF,#0EB1A2);">SG</div>
+              <div class="sph-body" style="background:linear-gradient(180deg,#1AD4BF,#0EB1A2);"></div>
+            </div>
+            <div class="sph-plate plate-gt"><div class="pname">S Gill</div><div class="ppts">48</div></div>
+          </div>
+        </div>
+        <!-- Row 2 (4) -->
+        <div class="sph-row">
+          <div class="sph-player">
+            <div class="sph-figure">
+              <div class="sph-head" style="background:linear-gradient(180deg,#FFDA2B,#E8B800);color:#1a1a1a;">RJ</div>
+              <div class="sph-body" style="background:linear-gradient(180deg,#FFDA2B,#E8B800);"></div>
+            </div>
+            <div class="sph-plate plate-csk"><div class="pname">R Jadeja</div><div class="ppts" style="color:#1a1a1a;">25</div></div>
+          </div>
+          <div class="sph-player">
+            <div class="sph-figure" style="position:relative;">
+              <div class="sph-badge vc">V</div>
+              <div class="sph-head" style="background:linear-gradient(180deg,#0066CC,#004BA0);">HP</div>
+              <div class="sph-body" style="background:linear-gradient(180deg,#0066CC,#004BA0);"></div>
+            </div>
+            <div class="sph-plate plate-mi"><div class="pname">H Pandya</div><div class="ppts">90</div></div>
+          </div>
+          <div class="sph-player">
+            <div class="sph-figure">
+              <div class="sph-head" style="background:linear-gradient(180deg,#6B4F9E,#3A225D);">AR</div>
+              <div class="sph-body" style="background:linear-gradient(180deg,#6B4F9E,#3A225D);"></div>
+            </div>
+            <div class="sph-plate plate-kkr"><div class="pname">A Russell</div><div class="ppts">87</div></div>
+          </div>
+          <div class="sph-player">
+            <div class="sph-figure">
+              <div class="sph-head" style="background:linear-gradient(180deg,#FFDA2B,#E8B800);color:#1a1a1a;">KY</div>
+              <div class="sph-body" style="background:linear-gradient(180deg,#FFDA2B,#E8B800);"></div>
+            </div>
+            <div class="sph-plate plate-csk"><div class="pname">Kuldeep</div><div class="ppts" style="color:#1a1a1a;">60</div></div>
+          </div>
+        </div>
+        <!-- Row 3 (3) -->
+        <div class="sph-row evenly">
+          <div class="sph-player">
+            <div class="sph-figure">
+              <div class="sph-head" style="background:linear-gradient(180deg,#0066CC,#004BA0);">JB</div>
+              <div class="sph-body" style="background:linear-gradient(180deg,#0066CC,#004BA0);"></div>
+            </div>
+            <div class="sph-plate plate-mi"><div class="pname">J Bumrah</div><div class="ppts">103</div></div>
+          </div>
+          <div class="sph-player">
+            <div class="sph-figure">
+              <div class="sph-head" style="background:linear-gradient(180deg,#F03C96,#C4166E);">TB</div>
+              <div class="sph-body" style="background:linear-gradient(180deg,#F03C96,#C4166E);"></div>
+            </div>
+            <div class="sph-plate plate-rr"><div class="pname">T Boult</div><div class="ppts">45</div></div>
+          </div>
+          <div class="sph-player">
+            <div class="sph-figure">
+              <div class="sph-head" style="background:linear-gradient(180deg,#1AD4BF,#0EB1A2);">MS</div>
+              <div class="sph-body" style="background:linear-gradient(180deg,#1AD4BF,#0EB1A2);"></div>
+            </div>
+            <div class="sph-plate plate-gt"><div class="pname">M Shami</div><div class="ppts">38</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Bench in pitch view -->
+    <div class="sph-bench">
+      <div class="sph-bench-row">
+        <div class="sph-bench-player">
+          <div class="sph-bench-role bat">BAT</div>
+          <div class="sph-figure" style="width:36px;height:38px;">
+            <div class="sph-head" style="width:22px;height:22px;font-size:8px;background:linear-gradient(180deg,#1AD4BF,#0EB1A2);">KW</div>
+            <div class="sph-body" style="width:34px;height:22px;top:14px;background:linear-gradient(180deg,#1AD4BF,#0EB1A2);"></div>
+          </div>
+          <div class="sph-plate plate-gt" style="min-width:54px;"><div class="pname" style="font-size:9px;">Williamson</div><div class="ppts" style="font-size:9px;color:#ccc;">DNP</div></div>
+        </div>
+        <div class="sph-bench-player">
+          <div class="sph-bench-role bowl">BOWL</div>
+          <div class="sph-figure" style="width:36px;height:38px;">
+            <div class="sph-head" style="width:22px;height:22px;font-size:8px;background:linear-gradient(180deg,#0066CC,#004BA0);">AP</div>
+            <div class="sph-body" style="width:34px;height:22px;top:14px;background:linear-gradient(180deg,#0066CC,#004BA0);"></div>
+          </div>
+          <div class="sph-plate plate-mi" style="min-width:54px;"><div class="pname" style="font-size:9px;">A Patel</div><div class="ppts" style="font-size:9px;color:#ccc;">12</div></div>
+        </div>
+        <div class="sph-bench-player">
+          <div class="sph-bench-role wk">WK</div>
+          <div class="sph-figure" style="width:36px;height:38px;">
+            <div class="sph-head" style="width:22px;height:22px;font-size:8px;background:linear-gradient(180deg,#E8222B,#B81820);">DK</div>
+            <div class="sph-body" style="width:34px;height:22px;top:14px;background:linear-gradient(180deg,#E8222B,#B81820);"></div>
+          </div>
+          <div class="sph-plate plate-rcb" style="min-width:54px;"><div class="pname" style="font-size:9px;">D Karthik</div><div class="ppts" style="font-size:9px;color:#ccc;">DNP</div></div>
+        </div>
+        <div class="sph-bench-player">
+          <div class="sph-bench-role all">ALL</div>
+          <div class="sph-figure" style="width:36px;height:38px;">
+            <div class="sph-head" style="width:22px;height:22px;font-size:8px;background:linear-gradient(180deg,#FFDA2B,#E8B800);color:#1a1a1a;">ST</div>
+            <div class="sph-body" style="width:34px;height:22px;top:14px;background:linear-gradient(180deg,#FFDA2B,#E8B800);"></div>
+          </div>
+          <div class="sph-plate plate-csk" style="min-width:54px;"><div class="pname" style="font-size:9px;color:#1a1a1a;">S Thakur</div><div class="ppts" style="font-size:9px;color:rgba(0,0,0,0.4);">DNP</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sheet-scroll" id="sheetListView">
     <!-- Match 1 -->
     <div class="sheet-match-header">
       <div class="sheet-match-dot" style="background: var(--mi);"></div>
@@ -1032,6 +1264,25 @@ function closeSheet() {
 }
 // Wire up points tap → GW sheet
 document.querySelector('.score-center .val').addEventListener('click', openSheet);
+
+// Sheet pitch/list toggle
+function switchSheetView(view) {
+  var listView  = document.getElementById('sheetListView');
+  var pitchView = document.getElementById('sheetPitchView');
+  var btnList   = document.getElementById('stBtnList');
+  var btnPitch  = document.getElementById('stBtnPitch');
+  if (view === 'list') {
+    listView.style.display  = '';
+    pitchView.classList.remove('active');
+    btnList.classList.add('active');
+    btnPitch.classList.remove('active');
+  } else {
+    listView.style.display  = 'none';
+    pitchView.classList.add('active');
+    btnPitch.classList.add('active');
+    btnList.classList.remove('active');
+  }
+}
 
 // League switcher
 function openLeagueSheet() {
