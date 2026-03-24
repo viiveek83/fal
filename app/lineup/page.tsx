@@ -606,63 +606,116 @@ export default function LineupPage() {
           margin: '0 -20px',
         }}>
           {/* Bowling Boost */}
-          <div style={{
-            flex: 1, display: 'flex', flexDirection: 'column',
-            alignItems: 'center', textAlign: 'center',
-            padding: '7px 10px 6px', gap: 4,
-            borderRight: '1px solid #efeff3',
-          }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: 9,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'linear-gradient(135deg, #0d9e5f, #07c472)',
-            }}>
-              <BowlingBoostIcon color="white" />
-            </div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e', lineHeight: 1.2 }}>Bowling Boost</div>
-            <div style={{ fontSize: 11, fontWeight: 500, color: '#888', lineHeight: 1.35 }}>Doubles all bowling points this GW</div>
-            <div
-              onClick={handleChipToggle}
-              style={{
-                width: 48, height: 28, borderRadius: 14,
-                position: 'relative', cursor: 'pointer',
-                transition: 'background 0.25s ease',
-                background: bowlingBoostOn ? '#0d9e5f' : '#dde0e8',
-                flexShrink: 0,
-              }}
-            >
+          {(() => {
+            const bbUsedGW = usedChips['BOWLING_BOOST']
+            const bbActive = activeChip === 'BOWLING_BOOST'
+            const bbUnavailable = !!bbUsedGW || (!!activeChip && activeChip !== 'BOWLING_BOOST')
+            const bbDisabled = bbUnavailable || isLocked
+            return (
               <div style={{
-                position: 'absolute', top: 3,
-                left: bowlingBoostOn ? 23 : 3,
-                width: 22, height: 22, borderRadius: '50%', background: '#fff',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.22)',
-                transition: 'left 0.22s ease',
-              }} />
-            </div>
-          </div>
-          {/* Power Play Bat — already used */}
-          <div style={{
-            flex: 1, display: 'flex', flexDirection: 'column',
-            alignItems: 'center', textAlign: 'center',
-            padding: '7px 10px 6px', gap: 4,
-          }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: 9,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: '#e8e8ee',
-            }}>
-              <PowerPlayBatIcon color="grey" />
-            </div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#bbb', lineHeight: 1.2 }}>Power Play Bat</div>
-            <div style={{ fontSize: 11, fontWeight: 500, color: '#ccc', lineHeight: 1.35 }}>Doubles all batting points this GW</div>
-            <div style={{
-              fontSize: 11, fontWeight: 700,
-              background: '#f0f0f5', color: '#999', padding: '4px 10px',
-              borderRadius: 8, whiteSpace: 'nowrap',
-            }}>
-              Used GW 3
-            </div>
-          </div>
+                flex: 1, display: 'flex', flexDirection: 'column',
+                alignItems: 'center', textAlign: 'center',
+                padding: '7px 10px 6px', gap: 4,
+                borderRight: '1px solid #efeff3',
+                opacity: bbUnavailable && !bbActive ? 0.45 : 1,
+                transition: 'opacity 0.25s ease',
+              }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: 9,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: bbUnavailable && !bbActive ? '#e8e8ee' : 'linear-gradient(135deg, #0d9e5f, #07c472)',
+                }}>
+                  <BowlingBoostIcon color={bbUnavailable && !bbActive ? 'grey' : 'white'} />
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: bbUnavailable && !bbActive ? '#bbb' : '#1a1a2e', lineHeight: 1.2 }}>Bowling Boost</div>
+                <div style={{ fontSize: 11, fontWeight: 500, color: bbUnavailable && !bbActive ? '#ccc' : '#888', lineHeight: 1.35 }}>Doubles all bowling points this GW</div>
+                {bbUsedGW ? (
+                  <div style={{
+                    fontSize: 11, fontWeight: 700,
+                    background: '#f0f0f5', color: '#999', padding: '4px 10px',
+                    borderRadius: 8, whiteSpace: 'nowrap',
+                  }}>
+                    Used GW {bbUsedGW}
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => { if (!bbDisabled) handleChipToggle('BOWLING_BOOST') }}
+                    style={{
+                      width: 48, height: 28, borderRadius: 14,
+                      position: 'relative', cursor: bbDisabled ? 'not-allowed' : 'pointer',
+                      transition: 'background 0.25s ease',
+                      background: bbActive ? '#0d9e5f' : '#dde0e8',
+                      flexShrink: 0,
+                      opacity: bbDisabled && !bbActive ? 0.5 : 1,
+                    }}
+                  >
+                    <div style={{
+                      position: 'absolute', top: 3,
+                      left: bbActive ? 23 : 3,
+                      width: 22, height: 22, borderRadius: '50%', background: '#fff',
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.22)',
+                      transition: 'left 0.22s ease',
+                    }} />
+                  </div>
+                )}
+              </div>
+            )
+          })()}
+          {/* Power Play Bat */}
+          {(() => {
+            const ppUsedGW = usedChips['POWER_PLAY_BAT']
+            const ppActive = activeChip === 'POWER_PLAY_BAT'
+            const ppUnavailable = !!ppUsedGW || (!!activeChip && activeChip !== 'POWER_PLAY_BAT')
+            const ppDisabled = ppUnavailable || isLocked
+            return (
+              <div style={{
+                flex: 1, display: 'flex', flexDirection: 'column',
+                alignItems: 'center', textAlign: 'center',
+                padding: '7px 10px 6px', gap: 4,
+                opacity: ppUnavailable && !ppActive ? 0.45 : 1,
+                transition: 'opacity 0.25s ease',
+              }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: 9,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: ppUnavailable && !ppActive ? '#e8e8ee' : 'linear-gradient(135deg, #d4340f, #f05a28)',
+                }}>
+                  <PowerPlayBatIcon color={ppUnavailable && !ppActive ? 'grey' : 'white'} />
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: ppUnavailable && !ppActive ? '#bbb' : '#1a1a2e', lineHeight: 1.2 }}>Power Play Bat</div>
+                <div style={{ fontSize: 11, fontWeight: 500, color: ppUnavailable && !ppActive ? '#ccc' : '#888', lineHeight: 1.35 }}>Doubles all batting points this GW</div>
+                {ppUsedGW ? (
+                  <div style={{
+                    fontSize: 11, fontWeight: 700,
+                    background: '#f0f0f5', color: '#999', padding: '4px 10px',
+                    borderRadius: 8, whiteSpace: 'nowrap',
+                  }}>
+                    Used GW {ppUsedGW}
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => { if (!ppDisabled) handleChipToggle('POWER_PLAY_BAT') }}
+                    style={{
+                      width: 48, height: 28, borderRadius: 14,
+                      position: 'relative', cursor: ppDisabled ? 'not-allowed' : 'pointer',
+                      transition: 'background 0.25s ease',
+                      background: ppActive ? '#d4340f' : '#dde0e8',
+                      flexShrink: 0,
+                      opacity: ppDisabled && !ppActive ? 0.5 : 1,
+                    }}
+                  >
+                    <div style={{
+                      position: 'absolute', top: 3,
+                      left: ppActive ? 23 : 3,
+                      width: 22, height: 22, borderRadius: '50%', background: '#fff',
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.22)',
+                      transition: 'left 0.22s ease',
+                    }} />
+                  </div>
+                )}
+              </div>
+            )
+          })()}
         </div>
       </div>
 
@@ -871,73 +924,80 @@ export default function LineupPage() {
       )}
 
       {/* ── Chip Confirmation Modal ── */}
-      {chipModalOpen && (
-        <>
-          <div
-            onClick={() => setChipModalOpen(false)}
-            style={{
-              position: 'fixed', inset: 0,
-              background: 'rgba(0,0,0,0.45)',
-              backdropFilter: 'blur(4px)',
-              WebkitBackdropFilter: 'blur(4px)',
-              zIndex: 200,
-            }}
-          />
-          <div style={{
-            position: 'fixed', left: '50%', transform: 'translateX(-50%)',
-            bottom: 0, width: '100%', maxWidth: 480,
-            background: '#fff', borderRadius: '24px 24px 0 0',
-            padding: '0 0 40px', zIndex: 210,
-          }}>
-            <div style={{ width: 36, height: 4, background: '#ddd', borderRadius: 2, margin: '12px auto 20px' }} />
+      {chipModalType && (() => {
+        const isBB = chipModalType === 'BOWLING_BOOST'
+        const chipLabel = isBB ? 'Bowling Boost' : 'Power Play Bat'
+        const chipDesc = isBB ? 'bowling' : 'batting'
+        const chipGrad = isBB ? 'linear-gradient(135deg, #0d9e5f, #07c472)' : 'linear-gradient(135deg, #d4340f, #f05a28)'
+        const ChipIcon = isBB ? BowlingBoostIcon : PowerPlayBatIcon
+        return (
+          <>
+            <div
+              onClick={() => setChipModalType(null)}
+              style={{
+                position: 'fixed', inset: 0,
+                background: 'rgba(0,0,0,0.45)',
+                backdropFilter: 'blur(4px)',
+                WebkitBackdropFilter: 'blur(4px)',
+                zIndex: 200,
+              }}
+            />
             <div style={{
-              width: 64, height: 64, borderRadius: 18, margin: '0 auto 14px',
-              background: 'linear-gradient(135deg, #0d9e5f, #07c472)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              position: 'fixed', left: '50%', transform: 'translateX(-50%)',
+              bottom: 0, width: '100%', maxWidth: 480,
+              background: '#fff', borderRadius: '24px 24px 0 0',
+              padding: '0 0 40px', zIndex: 210,
             }}>
-              <BowlingBoostIcon color="white" />
-            </div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: '#1a1a2e', textAlign: 'center', padding: '0 24px' }}>
-              Play Bowling Boost?
-            </div>
-            <div style={{ fontSize: 14, color: '#666', textAlign: 'center', marginTop: 6, padding: '0 28px', lineHeight: 1.5 }}>
-              All bowling points for your squad will be doubled for {currentGW ? `Gameweek ${currentGW.number}` : 'this Gameweek'}.
-            </div>
-            <div style={{
-              margin: '16px 20px 0', padding: '12px 14px', borderRadius: 12,
-              background: '#fff8ec', border: '1px solid rgba(255,160,0,0.3)',
-              display: 'flex', alignItems: 'flex-start', gap: 10,
-            }}>
-              <div style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>&#9888;&#65039;</div>
-              <div style={{ fontSize: 13, color: '#7a5500', fontWeight: 500, lineHeight: 1.45 }}>
-                This chip <strong>cannot be changed</strong> once {currentGW ? `Gameweek ${currentGW.number}` : 'the Gameweek'} has started. You only get one Bowling Boost per season — use it wisely.
+              <div style={{ width: 36, height: 4, background: '#ddd', borderRadius: 2, margin: '12px auto 20px' }} />
+              <div style={{
+                width: 64, height: 64, borderRadius: 18, margin: '0 auto 14px',
+                background: chipGrad,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <ChipIcon color="white" />
+              </div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: '#1a1a2e', textAlign: 'center', padding: '0 24px' }}>
+                Play {chipLabel}?
+              </div>
+              <div style={{ fontSize: 14, color: '#666', textAlign: 'center', marginTop: 6, padding: '0 28px', lineHeight: 1.5 }}>
+                All {chipDesc} points for your squad will be doubled for {currentGW ? `Gameweek ${currentGW.number}` : 'this Gameweek'}.
+              </div>
+              <div style={{
+                margin: '16px 20px 0', padding: '12px 14px', borderRadius: 12,
+                background: '#fff8ec', border: '1px solid rgba(255,160,0,0.3)',
+                display: 'flex', alignItems: 'flex-start', gap: 10,
+              }}>
+                <div style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>&#9888;&#65039;</div>
+                <div style={{ fontSize: 13, color: '#7a5500', fontWeight: 500, lineHeight: 1.45 }}>
+                  This chip <strong>cannot be changed</strong> once {currentGW ? `Gameweek ${currentGW.number}` : 'the Gameweek'} has started. You only get one {chipLabel} per season — use it wisely.
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '20px 20px 0' }}>
+                <button
+                  onClick={confirmChip}
+                  style={{
+                    display: 'block', width: '100%', padding: 15, border: 'none', borderRadius: 14,
+                    background: chipGrad,
+                    color: '#fff', fontSize: 16, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
+                  }}
+                >
+                  Yes, Play {chipLabel}
+                </button>
+                <button
+                  onClick={() => setChipModalType(null)}
+                  style={{
+                    display: 'block', width: '100%', padding: 14, border: 'none', borderRadius: 14,
+                    background: '#f2f3f8', color: '#555', fontSize: 15, fontWeight: 600,
+                    cursor: 'pointer', fontFamily: 'inherit',
+                  }}
+                >
+                  Cancel
+                </button>
               </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '20px 20px 0' }}>
-              <button
-                onClick={confirmChip}
-                style={{
-                  display: 'block', width: '100%', padding: 15, border: 'none', borderRadius: 14,
-                  background: 'linear-gradient(135deg, #0d9e5f, #07c472)',
-                  color: '#fff', fontSize: 16, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
-                }}
-              >
-                Yes, Play Bowling Boost
-              </button>
-              <button
-                onClick={() => setChipModalOpen(false)}
-                style={{
-                  display: 'block', width: '100%', padding: 14, border: 'none', borderRadius: 14,
-                  background: '#f2f3f8', color: '#555', fontSize: 15, fontWeight: 600,
-                  cursor: 'pointer', fontFamily: 'inherit',
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+          </>
+        )
+      })()}
 
       {/* ── Bottom Navigation ── */}
       <nav className="bottom-nav-fixed" style={{

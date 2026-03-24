@@ -5,6 +5,58 @@ import { isGameweekLocked } from '@/lib/lineup/lock'
 type ChipType = 'POWER_PLAY_BAT' | 'BOWLING_BOOST'
 const VALID_CHIPS: ChipType[] = ['POWER_PLAY_BAT', 'BOWLING_BOOST']
 
+// GET /api/teams/[teamId]/lineups/[gameweekId]/chip — Fetch chip usage for this team
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ teamId: string; gameweekId: string }> }
+) {
+  try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { teamId } = await params
+
+    // Verify team exists and user has access
+    const team = await prisma.team.findUnique({
+      where: { id: teamId },
+      select: { id: true, leagueId: true, userId: true },
+    })
+    if (!team) return Response.json({ error: 'Team not found' }, { status: 404 })
+
+    // Check league membership
+    const isMember = await prisma.team.findFirst({
+      where: { leagueId: team.leagueId, userId: session.user.id },
+      select: { id: true },
+    })
+    if (!isMember) return Response.json({ error: 'Not a league member' }, { status: 403 })
+
+    // Fetch all chip usages for this team
+    const chipUsages = await prisma.chipUsage.findMany({
+      where: { teamId },
+    })
+
+    // Enrich with gameweek numbers
+    const gameweekIds = [...new Set(chipUsages.map(c => c.gameweekId))]
+    const gameweeks = await prisma.gameweek.findMany({
+      where: { id: { in: gameweekIds } },
+      select: { id: true, number: true },
+    })
+    const gwMap = Object.fromEntries(gameweeks.map(g => [g.id, g.number]))
+
+    const enriched = chipUsages.map(c => ({
+      ...c,
+      gameweekNumber: gwMap[c.gameweekId] ?? null,
+    }))
+
+    return Response.json({ chipUsages: enriched })
+  } catch (error) {
+    console.error('GET /api/teams/[teamId]/lineups/[gameweekId]/chip error:', error)
+    return Response.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
 // POST /api/teams/[teamId]/lineups/[gameweekId]/chip — Activate a chip
 export async function POST(
   req: Request,
