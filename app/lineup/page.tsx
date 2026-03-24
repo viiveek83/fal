@@ -743,11 +743,11 @@ export default function LineupPage() {
               textTransform: 'uppercase' as const, color: 'rgba(255,255,255,0.25)',
               textAlign: 'center', marginBottom: -2,
             }}>Top Order</div>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-evenly', width: '100%' }}>
               {row1.map(p => (
                 <div key={p.id} onClick={() => handlePlayerTap(p.id)}
                   style={{
-                    width: 92, cursor: 'pointer',
+                    width: 86, cursor: 'pointer',
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
                     opacity: swapMode ? 0.7 : 1,
                     transition: 'opacity 0.2s',
@@ -763,11 +763,11 @@ export default function LineupPage() {
               textTransform: 'uppercase' as const, color: 'rgba(255,255,255,0.25)',
               textAlign: 'center', marginBottom: -2,
             }}>Middle Order</div>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-evenly', width: '100%' }}>
               {row2.map(p => (
                 <div key={p.id} onClick={() => handlePlayerTap(p.id)}
                   style={{
-                    width: 92, cursor: 'pointer',
+                    width: 86, cursor: 'pointer',
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
                     opacity: swapMode ? 0.7 : 1,
                     transition: 'opacity 0.2s',
@@ -787,7 +787,7 @@ export default function LineupPage() {
               {row3.map(p => (
                 <div key={p.id} onClick={() => handlePlayerTap(p.id)}
                   style={{
-                    width: 92, cursor: 'pointer',
+                    width: 86, cursor: 'pointer',
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
                     opacity: swapMode ? 0.7 : 1,
                     transition: 'opacity 0.2s',
