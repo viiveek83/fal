@@ -31,13 +31,21 @@ export async function POST(req: NextRequest) {
 
     const user = await prisma.user.upsert({
       where: { email },
-      update: { name: name || undefined },
-      create: { email, name: name || email.split('@')[0], role: 'USER' },
+      update: {
+        name: name || undefined,
+        activeLeagueId: undefined, // preserve existing value on update
+      },
+      create: { email, name: name || email.split('@')[0], role: 'USER', activeLeagueId: league.id },
     })
 
-    // Check if user already has a team in this league — if not, that's fine.
-    // Admin will create their team via roster CSV upload.
-    // No team creation needed here.
+    // Auto-set activeLeagueId if existing user doesn't have one yet
+    if (!user.activeLeagueId) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { activeLeagueId: league.id },
+      })
+      user.activeLeagueId = league.id
+    }
 
     return Response.json(user)
   }

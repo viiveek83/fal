@@ -138,14 +138,21 @@ export default function AdminPage() {
   const fileRef = useRef<HTMLInputElement>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
 
+  /* ─── All leagues for switcher ─── */
+  const [allLeagues, setAllLeagues] = useState<{ id: string; name: string }[]>([])
+  const [switchingLeague, setSwitchingLeague] = useState(false)
+  const activeLeagueId = session?.user?.activeLeagueId
+
   /* ─── Fetch existing league on mount ─── */
   const fetchLeagues = useCallback(async () => {
     try {
       const res = await fetch('/api/leagues')
       if (!res.ok) return
       const leagues: League[] = await res.json()
+      setAllLeagues(leagues.map(l => ({ id: l.id, name: l.name })))
       if (leagues.length > 0) {
-        const detail = await fetch(`/api/leagues/${leagues[0].id}`)
+        const targetLeague = leagues.find(l => l.id === activeLeagueId) || leagues[0]
+        const detail = await fetch(`/api/leagues/${targetLeague.id}`)
         if (detail.ok) {
           const full = await detail.json()
           setLeague(full)
@@ -156,7 +163,7 @@ export default function AdminPage() {
     } finally {
       setInitialLoad(false)
     }
-  }, [])
+  }, [activeLeagueId])
 
   useEffect(() => {
     if (sessionStatus === 'authenticated') fetchLeagues()
@@ -463,6 +470,68 @@ export default function AdminPage() {
 
       {/* ── Content Area ── */}
       <div style={styles.content}>
+
+        {/* ── League Switcher ── */}
+        {allLeagues.length > 1 && (
+          <div style={styles.card}>
+            <div style={styles.cardTitle}>Your Leagues</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {allLeagues.map((l) => {
+                const isActive = league?.id === l.id
+                return (
+                  <button
+                    key={l.id}
+                    disabled={switchingLeague}
+                    onClick={async () => {
+                      if (isActive) return
+                      setSwitchingLeague(true)
+                      try {
+                        const res = await fetch('/api/user/preferences', {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ activeLeagueId: l.id }),
+                        })
+                        if (res.ok) {
+                          window.location.reload()
+                        }
+                      } catch {
+                        // silent
+                      } finally {
+                        setSwitchingLeague(false)
+                      }
+                    }}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      background: isActive ? 'rgba(0,75,160,0.06)' : '#f8f9fc',
+                      border: isActive ? '2px solid #004BA0' : '1px solid rgba(0,0,0,0.04)',
+                      borderRadius: 10,
+                      padding: '10px 14px',
+                      cursor: isActive ? 'default' : 'pointer',
+                      textAlign: 'left' as const,
+                      opacity: switchingLeague ? 0.6 : 1,
+                    }}
+                  >
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, fontWeight: isActive ? 700 : 500, color: isActive ? '#004BA0' : '#1a1a2e' }}>
+                        {l.name}
+                      </div>
+                    </div>
+                    {isActive && (
+                      <div style={{
+                        fontSize: 16,
+                        color: '#004BA0',
+                        fontWeight: 700,
+                      }}>&#10003;</div>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Messages */}
         {error && (

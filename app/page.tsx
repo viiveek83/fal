@@ -160,6 +160,7 @@ export default function DashboardPage() {
   const [currentGw, setCurrentGw] = useState<CurrentGameweek | null>(null)
   const [gwNotFound, setGwNotFound] = useState(false)
   const [standings, setStandings] = useState<Standing[]>([])
+  const activeLeagueId = session?.user?.activeLeagueId
 
   /* ─── Fetch league on mount ─── */
   const fetchLeague = useCallback(async () => {
@@ -168,7 +169,8 @@ export default function DashboardPage() {
       if (!res.ok) return
       const leagues: League[] = await res.json()
       if (leagues.length > 0) {
-        const detail = await fetch(`/api/leagues/${leagues[0].id}`)
+        const targetLeague = leagues.find(l => l.id === activeLeagueId) || leagues[0]
+        const detail = await fetch(`/api/leagues/${targetLeague.id}`)
         if (detail.ok) {
           const full = await detail.json()
           setLeague(full)
@@ -179,7 +181,7 @@ export default function DashboardPage() {
     } catch {
       return null
     }
-  }, [])
+  }, [activeLeagueId])
 
   const fetchCurrentGw = useCallback(async () => {
     try {

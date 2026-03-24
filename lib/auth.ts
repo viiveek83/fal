@@ -22,7 +22,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           create: { email, name: email.split('@')[0], role: 'USER' },
         })
 
-        return { id: user.id, email: user.email, name: user.name, role: user.role }
+        return { id: user.id, email: user.email, name: user.name, role: user.role, activeLeagueId: user.activeLeagueId }
       },
     }),
   ],
@@ -32,14 +32,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     session({ session, token }) {
       if (token?.sub) session.user.id = token.sub
-      if (token?.role) (session.user as any).role = token.role
+      session.user.role = token.role
+      session.user.activeLeagueId = token.activeLeagueId ?? null
       return session
     },
     async jwt({ token, user }) {
       if (user) {
         token.sub = user.id
         token.email = user.email
-        token.role = (user as any).role
+        token.role = user.role
+        token.activeLeagueId = user.activeLeagueId ?? null
         token.lastVerified = Date.now()
       }
 
@@ -57,11 +59,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               token.sub = dbUser.id
               token.role = dbUser.role
             }
+            token.activeLeagueId = dbUser.activeLeagueId || null
             token.lastVerified = Date.now()
           } else {
             // User no longer exists in DB — invalidate token
             token.sub = undefined
-            token.role = undefined
+            token.role = 'USER' as const
           }
         } catch {
           // DB unreachable — keep existing token, try again next cycle

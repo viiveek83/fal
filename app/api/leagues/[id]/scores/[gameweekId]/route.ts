@@ -1,10 +1,10 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
-// GET /api/leagues/[leagueId]/scores/[gameweekId] — GW scores for all teams in a league
+// GET /api/leagues/[id]/scores/[gameweekId] — GW scores for all teams in a league
 export async function GET(
   _req: Request,
-  { params }: { params: Promise<{ leagueId: string; gameweekId: string }> }
+  { params }: { params: Promise<{ id: string; gameweekId: string }> }
 ) {
   try {
     const session = await auth()
@@ -12,7 +12,7 @@ export async function GET(
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { leagueId, gameweekId } = await params
+    const { id: leagueId, gameweekId } = await params
 
     const league = await prisma.league.findUnique({
       where: { id: leagueId },
@@ -46,7 +46,7 @@ export async function GET(
 
     return Response.json({ scores, gameweekId, leagueId })
   } catch (error) {
-    console.error('GET /api/leagues/[leagueId]/scores/[gameweekId] error:', error)
+    console.error('GET /api/leagues/[id]/scores/[gameweekId] error:', error)
     return Response.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

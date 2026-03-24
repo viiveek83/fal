@@ -81,6 +81,7 @@ export default function LeaderboardPage() {
   const [loading, setLoading] = useState(true)
 
   const userId = session?.user?.id
+  const activeLeagueId = session?.user?.activeLeagueId
 
   useEffect(() => {
     async function fetchData() {
@@ -90,8 +91,9 @@ export default function LeaderboardPage() {
         const leagues = await leaguesRes.json()
         if (leagues.length === 0) return
 
-        const leagueId = leagues[0].id
-        setLeagueName(leagues[0].name || '')
+        const targetLeague = leagues.find((l: any) => l.id === activeLeagueId) || leagues[0]
+        const leagueId = targetLeague.id
+        setLeagueName(targetLeague.name || '')
 
         const [standingsRes, historyRes] = await Promise.all([
           fetch(`/api/leaderboard/${leagueId}`),
@@ -113,7 +115,7 @@ export default function LeaderboardPage() {
       }
     }
     fetchData()
-  }, [])
+  }, [activeLeagueId])
 
   // Derive data
   const first = standings[0]

@@ -162,6 +162,8 @@ export default function LineupPage() {
       .catch(() => {})
   }, [])
 
+  const activeLeagueId = session?.user?.activeLeagueId
+
   /* ─── Fetch squad ─── */
   const fetchSquad = useCallback(async () => {
     try {
@@ -171,8 +173,10 @@ export default function LineupPage() {
       const leagues: League[] = await leaguesRes.json()
       if (leagues.length === 0) return
 
+      const targetLeague = leagues.find(l => l.id === activeLeagueId) || leagues[0]
+
       // Fetch full league detail to get teams with userId
-      const detailRes = await fetch(`/api/leagues/${leagues[0].id}`)
+      const detailRes = await fetch(`/api/leagues/${targetLeague.id}`)
       if (!detailRes.ok) return
       const leagueDetail = await detailRes.json()
 
@@ -210,7 +214,7 @@ export default function LineupPage() {
     } finally {
       setLoading(false)
     }
-  }, [session?.user?.id])
+  }, [activeLeagueId, session?.user?.id])
 
   useEffect(() => {
     if (sessionStatus === 'authenticated') fetchSquad()
