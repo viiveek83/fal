@@ -59,47 +59,81 @@ Browser-based E2E tests running at 393px viewport (mobile-first per PRD). Tests 
 |---|----------|------|----------------|
 | 1 | Admin uploads roster | Login as sim-admin (email + password) -> admin page -> upload CSV -> verify 10 teams | Teams populated with correct player counts |
 | 2 | User views squad | Login as sim-user-1 -> squad page -> verify 15 players | Player names, roles, images, IPL team badges visible |
-| 3 | User sets lineup | Pick XI (11) + bench (4) -> assign captain & VC -> set bench priorities -> submit | Pitch-style layout, captain badge shows 2x, bench priorities sequential |
-| 4 | User edits lineup | Load existing lineup -> swap player -> change captain -> save -> refresh | Changes persisted correctly after reload |
-| 5 | User activates chip | Navigate to lineup -> activate POWER_PLAY_BAT -> confirm -> deactivate before GW start -> reactivate | Confirmation modal shown on activate; chip can be toggled off before GW lock; once GW starts chip is locked in |
-| 6 | User views dashboard | Navigate to home (`/`) after GW1 scored | GW score, standings snapshot, deadline, match schedule visible |
-| 7 | User views leaderboard | Navigate to leaderboard (after GW1 scored) | Rank movement indicators, GW/Total columns, tappable rows |
-| 8 | User views standings | Navigate to standings page -> use GW selector | Full season table with GW selector tabs working |
-| 9 | User views player stats | Players page -> click a player | Batting/bowling/fielding stat breakdown, role-specific tables |
-| 10 | User views another manager's lineup | Tap a manager on leaderboard -> view their lineup | Read-only pitch view, correct XI/bench/captain shown |
-| 11 | New user signs up | Go to login -> enter email + invite code + password -> submit | Account created, league visible on dashboard |
-| 12 | Returning user logs in | Go to login -> enter email + password (no invite code) -> submit | Logged in, sees last active league |
-| 13 | User joins second league from admin page | Login -> admin page -> "Join a League" card -> enter invite code -> join | Joined league, auto-switched to new league, league switcher shows both |
-| 14 | Admin switches league | Login as sim-admin -> admin page -> league switcher -> tap different league -> verify dashboard updates | League switcher shows both leagues, active league highlighted, dashboard data updates |
-| 15 | League switch persists | After switching league, navigate to lineup/leaderboard/standings -> verify all pages show data from the switched league | All pages respect activeLeagueId from DB |
-| 16 | Invalid password rejected | Enter correct email + wrong password -> submit | Error message "Invalid password" shown |
-| 17 | Password too short rejected | Enter email + invite code + 3-char password -> submit | Error message "Password must be at least 6 characters" |
+| 3 | User sets lineup — pitch view | Pick XI (11) + bench (4) -> assign captain & VC -> set bench priorities -> submit | Pitch view default; 4-3-3 formation; team-coloured player figures with head/body; C/VC badges on figures; team-coloured name plates; bench section below pitch |
+| 4 | User sets lineup — list view | On lineup screen -> tap List View toggle -> assign captain via row action sheet -> move player to bench -> save | List view shows all 15 players; XI rows show C / VC / → Bench buttons; bench rows show priority number + → XI button; tapping a row opens action sheet with Make Captain, Make VC, Move to Bench options |
+| 5 | User edits lineup | Load existing lineup -> swap player -> change captain -> save -> refresh | Changes persisted correctly after reload; pitch and list views both reflect saved state |
+| 6 | User activates chip | Navigate to lineup -> tap Play on BOWLING_BOOST chip -> confirm in modal -> verify button shows Active -> tap Active to deactivate -> reactivate | Chip bar is compact single row (icon + name + Play button, no description); Play tapped → confirmation modal with description and warning; confirmed → button changes to Active (green); tap Active before GW lock → deactivates; once GW starts chip is locked |
+| 7 | User views dashboard | Navigate to home (`/`) after GW1 scored | GW score, standings snapshot, deadline, match schedule visible; team name in hero top-right; league switcher pill visible top-left |
+| 8 | User views GW score detail — list view | Tap GW score on dashboard -> sheet opens in list view (default) | Player breakdown with role icon, name, team, stats, points; captain shows 2× multiplier; bench section faded; summary bar shows base pts, C/VC bonus, chip bonus, total |
+| 9 | User views GW score detail — pitch view | GW sheet open -> tap Pitch View toggle | Full 4-3-3 formation with team-coloured figures; GW points on name plates; captain plate highlighted; bench row below pitch |
+| 10 | User views leaderboard | Navigate to leaderboard (after GW1 scored) | Rank movement indicators, GW/Total columns, tappable rows |
+| 11 | User views standings | Navigate to standings page -> use GW selector | Full season table with GW selector tabs working |
+| 12 | User views player stats | Players page -> click a player | Batting/bowling/fielding stat breakdown, role-specific tables |
+| 13 | User views another manager's lineup — pitch view | Tap a manager on leaderboard -> view their lineup | Pitch view default; same design as own lineup screen (team-coloured figures, name plates showing GW points); Read Only badge in header; C/VC badges visible; no edit controls |
+| 14 | User views another manager's lineup — list view | On view-lineup screen -> tap List View toggle | Read-only list: role icon, name, team, GW points per row; captain row shows 2× label; bench rows show priority numbers and are faded; summary bar shows total, captain, VC |
+| 15 | League switcher — switch active league | Dashboard -> tap league pill (top left) -> sheet opens showing all leagues with active checkmark -> tap a different league | Sheet lists all user leagues; active league has checkmark; tapping another league updates pill label and dashboard data; sheet dismisses |
+| 16 | League switcher — join a new league | Dashboard -> tap league pill -> tap Join a League -> enter invite code -> submit | Invite code input expands inline; on submit user joins league and it becomes active; league appears in switcher list |
+| 17 | New user signs up | Go to login -> enter email + invite code + password -> submit | Account created, league visible on dashboard |
+| 18 | Returning user logs in | Go to login -> enter email + password (no invite code) -> submit | Logged in, sees last active league |
+| 19 | League switch persists | After switching league, navigate to lineup/leaderboard/standings -> verify all pages show data from the switched league | All pages respect activeLeagueId from DB |
+| 20 | Invalid password rejected | Enter correct email + wrong password -> submit | Error message "Invalid password" shown |
+| 21 | Password too short rejected | Enter email + invite code + 3-char password -> submit | Error message "Password must be at least 6 characters" |
 
 ### PRD Design Assertions
 
 | PRD Requirement | Assertion |
 |---|---|
 | Pitch-style layout (4-3-3 formation) | XI slots rendered in correct formation, bench section separate |
-| Captain badge shows 2x | `[data-role="CAPTAIN"]` badge visible |
-| Vice Captain badge shows VC | `[data-role="VC"]` badge visible on VC player |
-| Chip confirmation modal — chip can be reverted until GW starts | Modal text contains warning; chip toggle reverses until lock time; confirmed chip shows as active |
-| Used chip shows "Used GW N" badge | Badge text present, chip button disabled |
+| Team-coloured player figures | Each player card shows head circle + body/torso in IPL team gradient colours |
+| Captain badge shows 2x | `[data-role="CAPTAIN"]` badge visible on figure; name plate highlighted |
+| Vice Captain badge shows VC | `[data-role="VC"]` badge visible on VC player figure |
+| Team-coloured name plates | Each name plate background matches player's IPL team colour |
+| Lineup pitch/list toggle | Toggle pill (Pitch View / List View) visible on lineup screen; both views render correctly |
+| List view — XI edit actions | Each XI row shows C / VC / → Bench inline buttons; tapping row opens action sheet |
+| List view — bench rows | Priority number badge (1–4) visible; → XI button present; bench section labelled "Bench — Auto-sub order" |
+| List view — action sheet | Make Captain / Make VC / Move to Bench (or Move to XI / Change Priority for bench) options present |
+| Chip bar compact design | Chips bar is single horizontal row per chip: icon + name + Play button; no description text visible in bar |
+| Chip Play button flow | Play tapped → confirmation modal; confirmed → button shows "Active" in green; tap Active before lock → deactivates |
+| Chip confirmation modal — chip can be reverted until GW starts | Modal text contains description and warning; chip reverts on tap until GW lock |
+| Used chip shows "Used GW N" badge | Badge text present, chip row greyed out |
+| GW score sheet — list/pitch toggle | Toggle pill (List View / Pitch View) visible inside GW score sheet; list view is default |
+| GW score sheet — pitch view | Full 4-3-3 formation with team-coloured figures; GW points on name plates; bench row below |
+| View-lineup matches lineup design | Read-only view uses identical player figure design (team-coloured head/body, name plates with GW points) |
+| View-lineup pitch/list toggle | Toggle pill visible on view-lineup screen; list view shows GW points, read-only |
+| Dashboard league switcher pill | Pill button (top-left of hero) shows active league name; tapping opens bottom sheet |
+| League sheet — multi-league list | Sheet lists all user leagues with active checkmark; tapping a league switches active league |
+| League sheet — join a league | "Join a League" row expands inline invite code input + Join button |
 | Lock time prevents edits | Submit button disabled / 423 after lock |
 | Role badge colors (BAT=#F9CD05, BOWL=#a0c4ff, ALL=#0EB1A2, WK=#EA1A85) | CSS color values on role badges |
 | Leaderboard rank movement indicators | Movement arrows present after GW2 |
 | Bottom nav: Home, Lineup, Players, League | 4 nav tabs with correct labels |
 | Light theme (#f2f3f8 base) per PRD | Background color assertion |
 | Mobile-first (393px) | All tests run at 393px viewport |
-| League selector in admin/settings | Switcher visible when user has multiple leagues, active league highlighted |
 | Active league persists across pages | All pages (dashboard, lineup, leaderboard, standings) show data from `activeLeagueId` stored in DB |
 | Default league fallback | Single-league users see their league without needing to select (null activeLeagueId = first league) |
 | Login requires password | Password field visible, required on all login modes |
 | Join league from admin page | "Join a League" card with invite code input visible on admin page |
-| Dashboard league switcher | "Your Leagues" card visible on dashboard when user has 2+ leagues |
 
 ### Screenshot Baselines
 
-Playwright's `toHaveScreenshot()` captures baseline screenshots on first run, flags pixel-level regressions on subsequent runs. Covers: login page (with password field), dashboard (with league switcher), admin page (with join league card), lineup builder, leaderboard, standings, player detail, view lineup.
+Playwright's `toHaveScreenshot()` captures baseline screenshots on first run, flags pixel-level regressions on subsequent runs. Covers:
+
+| Screen | State captured |
+|---|---|
+| Login page | Password field visible |
+| Dashboard | League switcher pill (top-left), team name (top-right), GW score, standings |
+| Dashboard — GW sheet (list view) | Player breakdown open, list view active (default) |
+| Dashboard — GW sheet (pitch view) | Pitch toggle active, formation with GW points on plates |
+| Dashboard — league switcher sheet | Sheet open with 2 leagues, active checkmark, Join a League row |
+| Lineup — pitch view | Formation with team-coloured figures, compact chips bar |
+| Lineup — list view | Player rows with C/VC/bench buttons visible |
+| Lineup — chip active | Play button shows "Active" in green |
+| View lineup — pitch view | Read-only pitch with GW points on name plates |
+| View lineup — list view | Read-only player list with GW points and priority numbers |
+| Leaderboard | Rank movement arrows, GW/Total columns |
+| Standings | Full season table with GW selector |
+| Player detail | Stat breakdown modal |
+| Admin page | Join a League card with invite code input |
 
 ### Additional PRD Flow Tests
 
@@ -316,7 +350,7 @@ Each run produces two files in `tests/simulation/results/`:
   "duration": "38m 42s",
   "targetUrl": "http://localhost:3000",
   "layers": {
-    "layer0_ux": { "status": "passed", "tests": 17, "passed": 17, "failed": 0, "screenshots": 24 },
+    "layer0_ux": { "status": "passed", "tests": 21, "passed": 21, "failed": 0, "screenshots": 28 },
     "layer1_roster": { "status": "passed", "tests": 6, "passed": 6, "failed": 0 },
     "layer2_lineups": { "status": "passed", "tests": 22, "passed": 22, "failed": 0 },
     "layer3_scoring": { "status": "passed", "matches": 70, "scored": 67, "abandoned": 3, "golden_players_verified": 9 },
@@ -383,7 +417,7 @@ Deletes all simulation data in FK order:
 | Layer | Estimated Time | What It Validates |
 |---|---|---|
 | Setup | ~2 min | Data seeding, fixture import |
-| Layer 0 | ~10 min | UX flows (17 scenarios), PRD compliance, visual regression, auth, league switching |
+| Layer 0 | ~12 min | UX flows (21 scenarios), PRD compliance, visual regression, auth, league switching, pitch/list toggles, chip flow |
 | Layer 1 | ~2 min | Roster upload, squad integrity, season start gate |
 | Layer 2 | ~4 min | Lineup rules, carry-forward, lock enforcement, chip constraints |
 | Layer 3 | ~15 min | Scoring accuracy for all 70 league matches + golden player verification |
