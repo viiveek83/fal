@@ -127,6 +127,7 @@ jobs:
 
           # Deploy with test branch DB URL overrides
           URL=$(vercel deploy \
+            --yes \
             --token $VERCEL_TOKEN \
             -e DATABASE_URL="${{ steps.neon.outputs.database_url }}" \
             -e DIRECT_URL="${{ steps.neon.outputs.direct_url }}" \
@@ -135,7 +136,7 @@ jobs:
             -e SPORTMONKS_SEASON_ID="1795" \
             -e SPORTMONKS_LEAGUE_ID="1" \
             -e ADMIN_SECRET="fal-ci-test" \
-            2>&1 | tail -1)
+            2>&1 | grep -o 'https://[^ ]*\.vercel\.app' | head -1)
 
           echo "url=$URL" >> $GITHUB_OUTPUT
           echo "Preview deployed: $URL"
