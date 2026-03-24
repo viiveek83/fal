@@ -45,6 +45,7 @@ jobs:
           URL=$(vercel deploy \
             --yes \
             --token $VERCEL_TOKEN \
+            --public \
             2>&1 | grep -o 'https://[^ ]*\.vercel\.app' | head -1)
 
           echo "url=$URL" >> $GITHUB_OUTPUT
