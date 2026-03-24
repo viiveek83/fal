@@ -36,6 +36,12 @@ function getShortName(name: string): string {
   return name
 }
 
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/)
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  return name.slice(0, 2).toUpperCase()
+}
+
 function normalizeRole(role: string): string {
   const r = role?.toUpperCase() || 'BAT'
   if (r.includes('WK')) return 'WK'
@@ -44,25 +50,47 @@ function normalizeRole(role: string): string {
   return 'BAT'
 }
 
-function roleLabel(role: string): string {
-  switch (role) {
-    case 'BAT': return 'B'
-    case 'BOWL': return 'B'
-    case 'ALL': return 'A'
-    case 'WK': return 'W'
-    default: return 'B'
-  }
+function isLightTeam(code: string): boolean {
+  return ['CSK', 'PBKS', 'LSG'].includes(code)
 }
 
-function roleClass(role: string): { bg: string; color: string } {
-  switch (role) {
-    case 'BAT': return { bg: 'linear-gradient(135deg, #F9CD05, #e0b800)', color: '#1a1a1a' }
-    case 'BOWL': return { bg: 'linear-gradient(135deg, #004BA0, #0060cc)', color: '#fff' }
-    case 'ALL': return { bg: 'linear-gradient(135deg, #0EB1A2, #089e90)', color: '#fff' }
-    case 'WK': return { bg: 'linear-gradient(135deg, #EA1A85, #c4166e)', color: '#fff' }
-    default: return { bg: 'linear-gradient(135deg, #666, #444)', color: '#fff' }
-  }
+/* ─── Team gradients (jersey colors) ─── */
+const teamGradients: Record<string, { primary: string; secondary: string; gradient: string }> = {
+  MI:   { primary: '#004BA0', secondary: '#0078d4', gradient: 'linear-gradient(180deg, #004BA0 0%, #0068c8 100%)' },
+  CSK:  { primary: '#F9CD05', secondary: '#e0b800', gradient: 'linear-gradient(180deg, #F9CD05 0%, #e0b800 100%)' },
+  KKR:  { primary: '#3A225D', secondary: '#6a3fa0', gradient: 'linear-gradient(180deg, #3A225D 0%, #6a3fa0 100%)' },
+  RR:   { primary: '#EA1A85', secondary: '#c4166e', gradient: 'linear-gradient(180deg, #EA1A85 0%, #c4166e 100%)' },
+  RCB:  { primary: '#D4171E', secondary: '#a01218', gradient: 'linear-gradient(180deg, #D4171E 0%, #a01218 100%)' },
+  PBKS: { primary: '#ED1B24', secondary: '#c4161d', gradient: 'linear-gradient(180deg, #ED1B24 0%, #c4161d 100%)' },
+  GT:   { primary: '#1C3A6A', secondary: '#0f2a50', gradient: 'linear-gradient(180deg, #1C3A6A 0%, #2a5090 100%)' },
+  SRH:  { primary: '#F26522', secondary: '#d05010', gradient: 'linear-gradient(180deg, #F26522 0%, #d05010 100%)' },
+  DC:   { primary: '#004C93', secondary: '#0068c8', gradient: 'linear-gradient(180deg, #004C93 0%, #1a6ad0 100%)' },
+  LSG:  { primary: '#A4D4F2', secondary: '#6ab0e0', gradient: 'linear-gradient(180deg, #A4D4F2 0%, #6ab0e0 100%)' },
 }
+
+/* ─── IPL team logos ─── */
+const teamLogos: Record<string, string> = {
+  MI:   'https://scores.iplt20.com/ipl/teamlogos/MI.png',
+  CSK:  'https://scores.iplt20.com/ipl/teamlogos/CSK.png',
+  KKR:  'https://scores.iplt20.com/ipl/teamlogos/KKR.png',
+  RR:   'https://scores.iplt20.com/ipl/teamlogos/RR.png',
+  RCB:  'https://scores.iplt20.com/ipl/teamlogos/RCB.png',
+  PBKS: 'https://scores.iplt20.com/ipl/teamlogos/PBKS.png',
+  GT:   'https://scores.iplt20.com/ipl/teamlogos/GT.png',
+  SRH:  'https://scores.iplt20.com/ipl/teamlogos/SRH.png',
+  DC:   'https://scores.iplt20.com/ipl/teamlogos/DC.png',
+  LSG:  'https://scores.iplt20.com/ipl/teamlogos/LSG.png',
+}
+
+/* ─── Bench role badge colors ─── */
+const benchRoleColors: Record<string, { bg: string; color: string }> = {
+  BAT:  { bg: '#F9CD05', color: '#1a1a1a' },
+  BOWL: { bg: '#004BA0', color: '#fff' },
+  ALL:  { bg: '#0EB1A2', color: '#fff' },
+  WK:   { bg: '#EA1A85', color: '#fff' },
+}
+
+const defaultGradient = { primary: '#555', secondary: '#333', gradient: 'linear-gradient(180deg, #555 0%, #333 100%)' }
 
 /* ─── Nav Icons ─── */
 const IconHome = () => (
@@ -93,35 +121,65 @@ const LockIcon = () => (
   </svg>
 )
 
-/* ─── Player on Pitch ─── */
-function PitchPlayer({ player, isCaptain, isVC }: {
+/* ─── Player Figure (jersey style) ─── */
+function PlayerFigure({ player, isCaptain, isVC }: {
   player: SquadPlayer; isCaptain: boolean; isVC: boolean
 }) {
-  const role = normalizeRole(player.role)
-  const rc = roleClass(role)
   const code = player.iplTeamCode || ''
+  const tg = teamGradients[code] || defaultGradient
+  const logo = teamLogos[code]
+  const light = isLightTeam(code)
+  const textColor = light ? '#1a1a1a' : '#fff'
 
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center',
       width: 66, textAlign: 'center',
     }}>
-      {/* Role icon circle */}
-      <div style={{
-        position: 'relative',
-        width: 36, height: 36, borderRadius: '50%',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 11, fontWeight: 800, color: rc.color,
-        marginBottom: 3,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
-        border: '2px solid rgba(255,255,255,0.2)',
-        background: rc.bg,
-      }}>
-        {roleLabel(role)}
-        {/* C / VC badge */}
+      {/* Figure container */}
+      <div style={{ position: 'relative', marginBottom: 2 }}>
+        {/* Head */}
+        <div style={{
+          width: 18, height: 18, borderRadius: '50%',
+          background: tg.gradient,
+          border: `1.5px solid ${light ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.25)'}`,
+          margin: '0 auto 1px',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
+        }} />
+        {/* Body / jersey */}
+        <div style={{
+          width: 34, height: 28, borderRadius: '6px 6px 4px 4px',
+          background: tg.gradient,
+          border: `1.5px solid ${light ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.15)'}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          position: 'relative',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+          margin: '0 auto',
+        }}>
+          {/* Team logo on jersey */}
+          {logo ? (
+            <img
+              src={logo}
+              alt={code}
+              style={{
+                width: 16, height: 16,
+                objectFit: 'contain',
+                opacity: light ? 0.7 : 0.85,
+                filter: light ? 'none' : 'brightness(1.8) contrast(0.8)',
+              }}
+            />
+          ) : (
+            <span style={{
+              fontSize: 9, fontWeight: 800, color: textColor, opacity: 0.6,
+              letterSpacing: -0.3,
+            }}>{getInitials(player.fullname)}</span>
+          )}
+        </div>
+
+        {/* Captain badge */}
         {isCaptain && (
           <div style={{
-            position: 'absolute', top: -4, right: -4,
+            position: 'absolute', top: -2, right: -2,
             width: 16, height: 16, borderRadius: '50%',
             fontSize: 7.5, fontWeight: 800,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -130,9 +188,10 @@ function PitchPlayer({ player, isCaptain, isVC }: {
             background: '#F9CD05', color: '#1a1a1a',
           }}>C</div>
         )}
+        {/* VC badge */}
         {isVC && (
           <div style={{
-            position: 'absolute', top: -4, right: -4,
+            position: 'absolute', top: -2, right: -2,
             width: 16, height: 16, borderRadius: '50%',
             fontSize: 7.5, fontWeight: 800,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -142,20 +201,21 @@ function PitchPlayer({ player, isCaptain, isVC }: {
           }}>V</div>
         )}
       </div>
-      {/* Name pill */}
+
+      {/* Name plate */}
       <div style={{
-        background: 'rgba(0, 0, 0, 0.55)',
+        background: `linear-gradient(135deg, ${tg.primary}ee, ${tg.secondary}dd)`,
         backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
-        borderRadius: 6, padding: '2px 6px 1.5px',
-        minWidth: 44,
-        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 5, padding: '2px 6px 1.5px',
+        minWidth: 46,
+        border: `1px solid ${light ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.15)'}`,
       }}>
         <span style={{
-          fontSize: 10, fontWeight: 700, color: '#fff',
+          fontSize: 9.5, fontWeight: 700, color: textColor,
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          maxWidth: 64, display: 'block', textAlign: 'center',
+          maxWidth: 62, display: 'block', textAlign: 'center',
           letterSpacing: -0.1, lineHeight: '1.35',
-          textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+          textShadow: light ? 'none' : '0 1px 2px rgba(0,0,0,0.3)',
         }}>
           {getShortName(player.fullname)}
           {isCaptain && (
@@ -174,7 +234,7 @@ function PitchPlayer({ player, isCaptain, isVC }: {
               background: '#C0C7D0', color: '#1a1a1a',
             }}>VC</span>
           )}
-          {role === 'WK' && (
+          {normalizeRole(player.role) === 'WK' && (
             <span style={{
               display: 'inline-block', fontSize: 6.5, fontWeight: 800,
               padding: '0.5px 3px', borderRadius: 2.5,
@@ -184,7 +244,7 @@ function PitchPlayer({ player, isCaptain, isVC }: {
           )}
         </span>
         <span style={{
-          fontSize: 8, fontWeight: 500, color: 'rgba(255,255,255,0.5)',
+          fontSize: 7.5, fontWeight: 600, color: light ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.5)',
           textAlign: 'center', display: 'block', letterSpacing: 0.3, lineHeight: '1.2',
         }}>{code || 'IPL'}</span>
       </div>
@@ -192,11 +252,13 @@ function PitchPlayer({ player, isCaptain, isVC }: {
   )
 }
 
-/* ─── Bench Player ─── */
+/* ─── Bench Player (jersey style) ─── */
 function BenchPlayer({ player }: { player: SquadPlayer }) {
   const role = normalizeRole(player.role)
-  const rc = roleClass(role)
   const code = player.iplTeamCode || ''
+  const tg = teamGradients[code] || defaultGradient
+  const logo = teamLogos[code]
+  const rc = benchRoleColors[role] || { bg: '#666', color: '#fff' }
 
   return (
     <div style={{
@@ -206,15 +268,34 @@ function BenchPlayer({ player }: { player: SquadPlayer }) {
       background: '#fff', border: '1px solid rgba(0,0,0,0.06)',
       boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
     }}>
-      <div style={{
-        width: 28, height: 28, borderRadius: '50%',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 9, fontWeight: 800, color: rc.color,
-        marginBottom: 3,
-        boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
-        background: rc.bg,
-      }}>
-        {roleLabel(role)}
+      {/* Mini jersey */}
+      <div style={{ position: 'relative', marginBottom: 3 }}>
+        <div style={{
+          width: 12, height: 12, borderRadius: '50%',
+          background: tg.gradient, margin: '0 auto 0.5px',
+        }} />
+        <div style={{
+          width: 24, height: 18, borderRadius: '4px 4px 3px 3px',
+          background: tg.gradient,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          margin: '0 auto',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+        }}>
+          {logo ? (
+            <img src={logo} alt={code} style={{ width: 11, height: 11, objectFit: 'contain', opacity: 0.8 }} />
+          ) : (
+            <span style={{ fontSize: 7, fontWeight: 800, color: '#fff', opacity: 0.6 }}>{getInitials(player.fullname)}</span>
+          )}
+        </div>
+        {/* Role badge */}
+        <div style={{
+          position: 'absolute', bottom: -2, right: -2,
+          width: 13, height: 13, borderRadius: '50%',
+          background: rc.bg, color: rc.color,
+          fontSize: 7, fontWeight: 800,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          border: '1.5px solid #fff',
+        }}>{role === 'WK' ? 'W' : role === 'ALL' ? 'A' : 'B'}</div>
       </div>
       <div style={{
         fontSize: 10, fontWeight: 700, color: '#333',
@@ -474,15 +555,15 @@ export default function ViewLineupPage() {
             padding: '6px 0 4px',
             gap: 6,
           }}>
-            {/* Row 1: Openers */}
+            {/* Row 1: Top Order */}
             <div style={{
               fontSize: 8, fontWeight: 700, letterSpacing: 1.2,
               textTransform: 'uppercase' as const, color: 'rgba(255,255,255,0.25)',
               textAlign: 'center', marginBottom: -2,
-            }}>Openers</div>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 4, width: '100%' }}>
+            }}>Top Order</div>
+            <div style={{ display: 'flex', justifyContent: 'space-evenly', width: '100%' }}>
               {row1.map(p => (
-                <PitchPlayer key={p.id} player={p} isCaptain={captainId === p.id} isVC={vcId === p.id} />
+                <PlayerFigure key={p.id} player={p} isCaptain={captainId === p.id} isVC={vcId === p.id} />
               ))}
             </div>
 
@@ -492,9 +573,9 @@ export default function ViewLineupPage() {
               textTransform: 'uppercase' as const, color: 'rgba(255,255,255,0.25)',
               textAlign: 'center', marginBottom: -2,
             }}>Middle Order</div>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 4, width: '100%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-evenly', width: '100%' }}>
               {row2.map(p => (
-                <PitchPlayer key={p.id} player={p} isCaptain={captainId === p.id} isVC={vcId === p.id} />
+                <PlayerFigure key={p.id} player={p} isCaptain={captainId === p.id} isVC={vcId === p.id} />
               ))}
             </div>
 
@@ -504,9 +585,9 @@ export default function ViewLineupPage() {
               textTransform: 'uppercase' as const, color: 'rgba(255,255,255,0.25)',
               textAlign: 'center', marginBottom: -2,
             }}>Lower Order</div>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 4, width: '100%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-evenly', width: '100%' }}>
               {row3.map(p => (
-                <PitchPlayer key={p.id} player={p} isCaptain={captainId === p.id} isVC={vcId === p.id} />
+                <PlayerFigure key={p.id} player={p} isCaptain={captainId === p.id} isVC={vcId === p.id} />
               ))}
             </div>
           </div>
