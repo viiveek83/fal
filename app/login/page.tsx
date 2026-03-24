@@ -7,6 +7,7 @@ import { AppFrame } from '@/app/components/AppFrame'
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
+  const [password, setPassword] = useState('')
   const [inviteCode, setInviteCode] = useState('')
   const [adminSecret, setAdminSecret] = useState('')
   const [adminMode, setAdminMode] = useState(false)
@@ -26,6 +27,7 @@ export default function LoginPage() {
         body: JSON.stringify({
           email,
           name,
+          password,
           ...(adminMode
             ? { adminSecret: adminSecret.trim() || undefined }
             : { inviteCode: inviteCode.trim() || undefined }),
@@ -39,6 +41,7 @@ export default function LoginPage() {
 
       const result = await signIn('credentials', {
         email,
+        password,
         redirect: false,
       })
 
@@ -53,6 +56,27 @@ export default function LoginPage() {
       setError(err.message || 'Something went wrong')
       setLoading(false)
     }
+  }
+
+  const inputStyle = {
+    width: '100%',
+    padding: '11px 14px',
+    borderRadius: 10,
+    border: '1.5px solid rgba(0,0,0,0.08)',
+    fontSize: 14,
+    fontWeight: 500,
+    color: '#1a1a2e',
+    background: '#f8f9fc',
+    outline: 'none',
+    boxSizing: 'border-box' as const,
+  }
+
+  const labelStyle = {
+    display: 'block',
+    fontSize: 11,
+    fontWeight: 600,
+    color: '#888',
+    marginBottom: 6,
   }
 
   return (
@@ -127,7 +151,7 @@ export default function LoginPage() {
 
             <form onSubmit={handleSubmit}>
               <div style={{ marginBottom: 14 }}>
-                <label htmlFor="email" style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#888', marginBottom: 6 }}>
+                <label htmlFor="email" style={labelStyle}>
                   Email
                 </label>
                 <input
@@ -137,23 +161,12 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  style={{
-                    width: '100%',
-                    padding: '11px 14px',
-                    borderRadius: 10,
-                    border: '1.5px solid rgba(0,0,0,0.08)',
-                    fontSize: 14,
-                    fontWeight: 500,
-                    color: '#1a1a2e',
-                    background: '#f8f9fc',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
+                  style={inputStyle}
                 />
               </div>
 
               <div style={{ marginBottom: 14 }}>
-                <label htmlFor="name" style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#888', marginBottom: 6 }}>
+                <label htmlFor="name" style={labelStyle}>
                   Name <span style={{ color: '#bbb' }}>(optional)</span>
                 </label>
                 <input
@@ -162,25 +175,29 @@ export default function LoginPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Your name"
-                  style={{
-                    width: '100%',
-                    padding: '11px 14px',
-                    borderRadius: 10,
-                    border: '1.5px solid rgba(0,0,0,0.08)',
-                    fontSize: 14,
-                    fontWeight: 500,
-                    color: '#1a1a2e',
-                    background: '#f8f9fc',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
+                  style={inputStyle}
+                />
+              </div>
+
+              <div style={{ marginBottom: 14 }}>
+                <label htmlFor="password" style={labelStyle}>
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={!adminMode && inviteCode.trim() ? 'Create a password' : 'Enter your password'}
+                  style={inputStyle}
                 />
               </div>
 
               <div style={{ marginBottom: 20 }}>
                 {adminMode ? (
                   <>
-                    <label htmlFor="adminSecret" style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#888', marginBottom: 6 }}>
+                    <label htmlFor="adminSecret" style={labelStyle}>
                       Admin Secret
                     </label>
                     <input
@@ -189,23 +206,12 @@ export default function LoginPage() {
                       value={adminSecret}
                       onChange={(e) => setAdminSecret(e.target.value)}
                       placeholder="Enter admin secret"
-                      style={{
-                        width: '100%',
-                        padding: '11px 14px',
-                        borderRadius: 10,
-                        border: '1.5px solid rgba(0,0,0,0.08)',
-                        fontSize: 14,
-                        fontWeight: 500,
-                        color: '#1a1a2e',
-                        background: '#f8f9fc',
-                        outline: 'none',
-                        boxSizing: 'border-box',
-                      }}
+                      style={inputStyle}
                     />
                   </>
                 ) : (
                   <>
-                    <label htmlFor="inviteCode" style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#888', marginBottom: 6 }}>
+                    <label htmlFor="inviteCode" style={labelStyle}>
                       Invite Code
                     </label>
                     <input
@@ -214,18 +220,7 @@ export default function LoginPage() {
                       value={inviteCode}
                       onChange={(e) => setInviteCode(e.target.value)}
                       placeholder="Enter your league code"
-                      style={{
-                        width: '100%',
-                        padding: '11px 14px',
-                        borderRadius: 10,
-                        border: '1.5px solid rgba(0,0,0,0.08)',
-                        fontSize: 14,
-                        fontWeight: 500,
-                        color: '#1a1a2e',
-                        background: '#f8f9fc',
-                        outline: 'none',
-                        boxSizing: 'border-box',
-                      }}
+                      style={inputStyle}
                     />
                   </>
                 )}

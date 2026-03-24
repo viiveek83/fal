@@ -10,17 +10,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Credentials({
       credentials: {
         email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
         if (!credentials?.email) return null
         const email = credentials.email as string
 
-        // Find or create user (dev convenience — no password in Phase 1)
-        const user = await prisma.user.upsert({
-          where: { email },
-          update: {},
-          create: { email, name: email.split('@')[0], role: 'USER' },
-        })
+        // Login route already handles creation and password verification
+        const user = await prisma.user.findUnique({ where: { email } })
+        if (!user) return null
 
         return { id: user.id, email: user.email, name: user.name, role: user.role, activeLeagueId: user.activeLeagueId }
       },
