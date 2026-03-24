@@ -27,18 +27,6 @@ const teamGradients: Record<string, { head: string; body: string; plate: string 
 
 const defaultGrad = { head: 'linear-gradient(180deg, #666, #444)', body: 'linear-gradient(180deg, #666, #444)', plate: 'linear-gradient(90deg, #555, #777)' }
 
-const teamLogos: Record<string, string> = {
-  MI:   'https://documents.iplt20.com/ipl/MI/Logos/Logooutline/MIoutline.png',
-  CSK:  'https://documents.iplt20.com/ipl/CSK/logos/Logooutline/CSKoutline.png',
-  RCB:  'https://documents.iplt20.com/ipl/RCB/Logos/Logooutline/RCBoutline.png',
-  KKR:  'https://documents.iplt20.com/ipl/KKR/Logos/Logooutline/KKRoutline.png',
-  DC:   'https://documents.iplt20.com/ipl/DC/Logos/LogoOutline/DCoutline.png',
-  RR:   'https://documents.iplt20.com/ipl/RR/Logos/Logooutline/RRoutline.png',
-  SRH:  'https://documents.iplt20.com/ipl/SRH/Logos/Logooutline/SRHoutline.png',
-  GT:   'https://documents.iplt20.com/ipl/GT/Logos/Logooutline/GToutline.png',
-  LSG:  'https://documents.iplt20.com/ipl/LSG/Logos/Logooutline/LSGoutline.png',
-  PBKS: 'https://documents.iplt20.com/ipl/PBKS/Logos/Logooutline/PBKSoutline.png',
-}
 
 const benchRoleColors: Record<string, string> = {
   BAT: 'rgba(249,205,5,0.4)',
@@ -415,7 +403,6 @@ export default function LineupPage() {
   }) => {
     const code = player.iplTeamCode || ''
     const grad = teamGradients[code] || defaultGrad
-    const logo = teamLogos[code]
     const light = isLightTeam(code)
     const initials = getInitials(player.fullname)
     const shortName = getShortName(player.fullname)
@@ -484,18 +471,14 @@ export default function LineupPage() {
               width: 14, height: 5, borderRadius: '0 0 7px 7px',
               background: 'rgba(255,255,255,0.2)',
             }} />
-            {logo && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={logo}
-                alt={code}
-                style={{
-                  width: logoSize, height: logoSize, objectFit: 'contain',
-                  filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))',
-                  marginTop: logoMt,
-                }}
-              />
-            )}
+            <span style={{
+              fontSize: isBench ? 10 : 14, fontWeight: 900,
+              color: light ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.3)',
+              marginTop: logoMt,
+              letterSpacing: 1,
+            }}>
+              {code}
+            </span>
           </div>
         </div>
         {/* Name plate */}

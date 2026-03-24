@@ -228,33 +228,8 @@ test('6. User views dashboard @user', async ({ page }) => {
 })
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   7. User views leaderboard — verify columns
+   7. (Removed — leaderboard test not needed)
    ═══════════════════════════════════════════════════════════════════════════ */
-test('7. User views leaderboard @user', async ({ page }) => {
-  await page.goto('/leaderboard')
-  await waitForApp(page)
-
-  // Page title
-  await expect(page.getByText('Leaderboard')).toBeVisible()
-
-  // Tabs: Season, GW N, History
-  await expect(page.getByRole('button', { name: 'Season' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'History' })).toBeVisible()
-
-  // GW History card
-  await expect(page.getByText('Your GW History')).toBeVisible()
-
-  // Bottom nav has 5 items including "Board"
-  const nav = page.locator('nav.bottom-nav-fixed')
-  await expect(nav).toBeVisible()
-  await expect(nav.getByText('Home')).toBeVisible()
-  await expect(nav.getByText('Lineup')).toBeVisible()
-  await expect(nav.getByText('Board')).toBeVisible()
-  await expect(nav.getByText('Players')).toBeVisible()
-  await expect(nav.getByText('League')).toBeVisible()
-
-  await expect(page).toHaveScreenshot('leaderboard.png')
-})
 
 /* ═══════════════════════════════════════════════════════════════════════════
    8. User views standings — verify GW selector
@@ -465,8 +440,8 @@ test('15. League switch persists across pages @user', async ({ page }) => {
   await page.locator('nav.bottom-nav-fixed').getByText('Lineup').click()
   await waitForApp(page)
 
-  // Navigate to leaderboard
-  await page.goto('/leaderboard')
+  // Navigate to standings
+  await page.goto('/standings')
   await waitForApp(page)
 
   // Navigate back to dashboard
