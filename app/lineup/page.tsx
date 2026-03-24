@@ -990,7 +990,7 @@ export default function LineupPage() {
           {/* Playing XI Section */}
           <div style={{
             fontSize: 9, fontWeight: 700, color: '#aaa', textTransform: 'uppercase',
-            letterSpacing: 0.8, padding: '8px 16px 4px',
+            letterSpacing: 0.8, padding: '10px 16px 4px',
           }}>
             Playing XI &mdash; {xi.length} Selected
           </div>
@@ -1017,7 +1017,7 @@ export default function LineupPage() {
                   fontSize: 11, fontWeight: 800,
                   background: roleStyle.bg, color: roleStyle.color,
                 }}>
-                  {role}
+                  {role === 'BOWL' ? 'B' : role === 'BAT' ? 'B' : role === 'ALL' ? 'A' : 'W'}
                 </div>
                 {/* Info */}
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -1041,7 +1041,7 @@ export default function LineupPage() {
                     )}
                   </div>
                   <div style={{ fontSize: 11, color: '#999', fontWeight: 500, marginTop: 1 }}>
-                    {p.iplTeamCode || 'IPL'}
+                    {p.iplTeamCode || 'IPL'} &middot; {role}
                   </div>
                 </div>
                 {/* Action buttons */}
@@ -1129,7 +1129,7 @@ export default function LineupPage() {
                       fontSize: 11, fontWeight: 800,
                       background: roleStyle.bg, color: roleStyle.color,
                     }}>
-                      {role}
+                      {role === 'BOWL' ? 'B' : role === 'BAT' ? 'B' : role === 'ALL' ? 'A' : 'W'}
                     </div>
                     {/* Info */}
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -1140,7 +1140,7 @@ export default function LineupPage() {
                         {p.fullname}
                       </div>
                       <div style={{ fontSize: 11, color: '#999', fontWeight: 500, marginTop: 1 }}>
-                        {p.iplTeamCode || 'IPL'}
+                        {p.iplTeamCode || 'IPL'} &middot; {role}
                       </div>
                     </div>
                     {/* Move to XI button */}
@@ -1175,13 +1175,17 @@ export default function LineupPage() {
               <div style={{ fontSize: 9, color: '#aaa', fontWeight: 500, marginTop: 1 }}>Playing XI</div>
             </div>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: '#333' }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#333' }}>{bench.length}/4</div>
+              <div style={{ fontSize: 9, color: '#aaa', fontWeight: 500, marginTop: 1 }}>Bench</div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#b58800' }}>
                 {captainName ? getShortName(captainName) : '-'}
               </div>
               <div style={{ fontSize: 9, color: '#aaa', fontWeight: 500, marginTop: 1 }}>Captain</div>
             </div>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: '#333' }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#666' }}>
                 {vcName ? getShortName(vcName) : '-'}
               </div>
               <div style={{ fontSize: 9, color: '#aaa', fontWeight: 500, marginTop: 1 }}>Vice Captain</div>
@@ -1288,7 +1292,7 @@ export default function LineupPage() {
                   style={{
                     display: 'block', width: '100%', padding: 15, border: 'none', borderRadius: 14,
                     background: chipGrad,
-                    color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
+                    color: '#fff', fontSize: 16, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
                   }}
                 >
                   Yes, Play {chipLabel}
@@ -1372,9 +1376,12 @@ export default function LineupPage() {
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 14, background: 'rgba(249,205,5,0.12)',
                     }}>
-                      {isCap ? '&#10003;' : 'C'}
+                      {'\uD83C\uDFC6'}
                     </div>
-                    {isCap ? 'Captain (current)' : 'Make Captain'}
+                    <div>
+                      <div style={{ fontWeight: 700 }}>{isCap ? 'Captain (current)' : 'Make Captain'}</div>
+                      <div style={{ fontSize: 11, color: '#999', fontWeight: 500 }}>Earns 2&times; points this GW</div>
+                    </div>
                   </button>
                   <button
                     onClick={() => handleMakeVC(p.id)}
@@ -1391,9 +1398,12 @@ export default function LineupPage() {
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 14, background: 'rgba(192,199,208,0.15)',
                     }}>
-                      {isVCPlayer ? '&#10003;' : 'VC'}
+                      {'\u2B50'}
                     </div>
-                    {isVCPlayer ? 'Vice Captain (current)' : 'Make Vice Captain'}
+                    <div>
+                      <div style={{ fontWeight: 700 }}>{isVCPlayer ? 'Vice Captain (current)' : 'Make Vice Captain'}</div>
+                      <div style={{ fontSize: 11, color: '#999', fontWeight: 500 }}>2&times; only if Captain doesn&apos;t play</div>
+                    </div>
                   </button>
                   <button
                     onClick={() => handleMoveToBench(p.id)}
@@ -1410,31 +1420,39 @@ export default function LineupPage() {
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 14, background: '#f2f3f8',
                     }}>
-                      &darr;
+                      {'\uD83D\uDD04'}
                     </div>
-                    Move to Bench
+                    <div>
+                      <div style={{ fontWeight: 700 }}>Move to Bench</div>
+                      <div style={{ fontSize: 11, color: '#999', fontWeight: 500 }}>Swap with a bench player</div>
+                    </div>
                   </button>
                 </>
               )}
               {isBenchPlayer && (
-                <button
-                  onClick={() => handleMoveToXI(p.id)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '14px 20px', fontSize: 14, fontWeight: 600, color: '#1a1a2e',
-                    cursor: 'pointer', border: 'none', background: 'transparent',
-                    width: '100%', fontFamily: 'inherit',
-                  }}
-                >
-                  <div style={{
-                    width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 14, background: 'rgba(13,158,95,0.08)',
-                  }}>
-                    &uarr;
-                  </div>
-                  Move to Playing XI
-                </button>
+                <>
+                  <button
+                    onClick={() => handleMoveToXI(p.id)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '14px 20px', fontSize: 14, fontWeight: 600, color: '#1a1a2e',
+                      cursor: 'pointer', border: 'none', background: 'transparent',
+                      width: '100%', fontFamily: 'inherit',
+                    }}
+                  >
+                    <div style={{
+                      width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 14, background: 'rgba(13,158,95,0.08)',
+                    }}>
+                      {'\u2705'}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 700 }}>Move to Playing XI</div>
+                      <div style={{ fontSize: 11, color: '#999', fontWeight: 500 }}>Swap with an XI player</div>
+                    </div>
+                  </button>
+                </>
               )}
               {/* Cancel */}
               <button
