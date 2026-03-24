@@ -129,7 +129,7 @@ test('4. User sets lineup — list view @user', async ({ page }) => {
   await page.getByText('List View').click()
 
   // Playing XI section label
-  await expect(page.getByText(/Playing XI/)).toBeVisible()
+  await expect(page.getByText(/Playing XI/).first()).toBeVisible()
 
   // Bench section label with "Auto-Sub Order" (CSS text-transform: uppercase)
   await expect(page.getByText(/BENCH.*AUTO-SUB ORDER/i)).toBeVisible()
@@ -193,7 +193,7 @@ test('5. User edits lineup @user', async ({ page }) => {
 
   // Switch to list view and verify (CSS text-transform: uppercase)
   await page.getByText('List View').click()
-  await expect(page.getByText(/Playing XI/i)).toBeVisible()
+  await expect(page.getByText(/Playing XI/i).first()).toBeVisible()
 
   await expect(page).toHaveScreenshot('lineup-edited.png')
 })
@@ -252,7 +252,7 @@ test('7. User views dashboard @user', async ({ page }) => {
   await waitForApp(page)
 
   // Gameweek label (either "Gameweek N" or "Season not started")
-  const gwLabel = page.getByText(/Gameweek \d+|Season not started/)
+  const gwLabel = page.getByText(/Gameweek \d+/).first()
   await expect(gwLabel).toBeVisible()
 
   // Score trio: "Your Points", "Average", "Highest"
@@ -514,7 +514,7 @@ test("14. User views another manager's lineup — list view @user", async ({ pag
     await page.waitForTimeout(300)
 
     // Playing XI section label
-    await expect(page.getByText('Playing XI')).toBeVisible()
+    await expect(page.getByText('Playing XI').first()).toBeVisible()
 
     // Bench section label
     await expect(page.getByText('Bench').last()).toBeVisible()
@@ -729,7 +729,7 @@ test('22. Dashboard shows active gameweek with matches @user', async ({ page }) 
   await waitForApp(page)
 
   // Should show "Gameweek N" (not "Season not started")
-  await expect(page.getByText(/Gameweek \d+/)).toBeVisible()
+  await expect(page.getByText(/Gameweek \d+$/).first()).toBeVisible()
 
   // Should show upcoming match cards in "This Week" section
   await expect(page.getByText('This Week')).toBeVisible()
@@ -753,8 +753,8 @@ test('23. Lineup shows gameweek deadline @user', async ({ page }) => {
   await waitForApp(page)
 
   // Should show gameweek number and deadline or "Lineup Locked"
-  await expect(page.getByText(/Gameweek \d+/)).toBeVisible()
-  const deadlineOrLock = page.getByText(/Deadline|Lineup Locked/)
+  await expect(page.getByText(/Gameweek \d+/).first()).toBeVisible()
+  const deadlineOrLock = page.getByText(/Deadline|Lineup Locked/).first()
   await expect(deadlineOrLock).toBeVisible()
 
   await expect(page).toHaveScreenshot('lineup-mid-season.png')
