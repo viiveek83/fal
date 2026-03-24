@@ -153,6 +153,8 @@ export default function LineupPage() {
   const [swapMode, setSwapMode] = useState<string | null>(null) // benchPlayerId being swapped
   const [dirty, setDirty] = useState(false)
   const [currentGW, setCurrentGW] = useState<CurrentGameweek | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   /* ─── Fetch current gameweek ─── */
   useEffect(() => {
@@ -220,6 +222,45 @@ export default function LineupPage() {
     if (sessionStatus === 'authenticated') fetchSquad()
     else if (sessionStatus === 'unauthenticated') setLoading(false)
   }, [sessionStatus, fetchSquad])
+
+  /* ─── Save lineup ─── */
+  const saveLineup = async () => {
+    if (!squad || !currentGW || saving) return
+    setSaving(true)
+    setSaveMessage(null)
+    try {
+      const slots = [
+        ...xi.map(p => ({
+          playerId: p.id,
+          slotType: 'XI' as const,
+          benchPriority: null,
+          role: captainId === p.id ? 'CAPTAIN' as const : vcId === p.id ? 'VC' as const : null,
+        })),
+        ...bench.map((p, i) => ({
+          playerId: p.id,
+          slotType: 'BENCH' as const,
+          benchPriority: i + 1,
+          role: captainId === p.id ? 'CAPTAIN' as const : vcId === p.id ? 'VC' as const : null,
+        })),
+      ]
+      const res = await fetch(`/api/teams/${squad.teamId}/lineups/${currentGW.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slots }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: 'Failed to save lineup' }))
+        throw new Error(data.error || 'Failed to save lineup')
+      }
+      setDirty(false)
+      setSaveMessage({ type: 'success', text: 'Lineup saved!' })
+      setTimeout(() => setSaveMessage(null), 3000)
+    } catch (err) {
+      setSaveMessage({ type: 'error', text: err instanceof Error ? err.message : 'Failed to save lineup' })
+    } finally {
+      setSaving(false)
+    }
+  }
 
   /* ─── Handlers ─── */
   const handlePlayerTap = (playerId: string) => {
@@ -681,19 +722,34 @@ export default function LineupPage() {
       )}
 
       {/* ── Save Area ── */}
-      {dirty && (
+      {(dirty || saveMessage) && (
         <div style={{
           flexShrink: 0, padding: '6px 16px 34px', background: '#f2f3f8',
           animation: 'slideUp 0.3s ease',
         }}>
-          <button style={{
-            display: 'block', width: '100%', padding: 13, border: 'none', borderRadius: 14,
-            background: 'linear-gradient(160deg, #1a0a3e 0%, #2d1b69 25%, #004BA0 50%, #0EB1A2 80%, #00AEEF 100%)',
-            color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer',
-            fontFamily: 'inherit', letterSpacing: -0.3,
-          }}>
-            Save Lineup
-          </button>
+          {dirty && (
+            <button
+              onClick={saveLineup}
+              disabled={saving}
+              style={{
+                display: 'block', width: '100%', padding: 13, border: 'none', borderRadius: 14,
+                background: 'linear-gradient(160deg, #1a0a3e 0%, #2d1b69 25%, #004BA0 50%, #0EB1A2 80%, #00AEEF 100%)',
+                color: '#fff', fontSize: 14, fontWeight: 800, cursor: saving ? 'not-allowed' : 'pointer',
+                fontFamily: 'inherit', letterSpacing: -0.3,
+                opacity: saving ? 0.6 : 1,
+              }}>
+              {saving ? 'Saving...' : 'Save Lineup'}
+            </button>
+          )}
+          {saveMessage && (
+            <div style={{
+              textAlign: 'center', marginTop: 8, fontSize: 13, fontWeight: 600,
+              fontFamily: 'inherit',
+              color: saveMessage.type === 'success' ? '#0a8754' : '#d32f2f',
+            }}>
+              {saveMessage.text}
+            </div>
+          )}
         </div>
       )}
 
