@@ -9,7 +9,7 @@
 
 Six test layers at increasing scope, each catching different classes of bugs independently. If Layer 3 fails, Layers 0-2 results are still valid. A full teardown removes all simulation data afterward.
 
-**Data source:** Real IPL 2025 match data from SportMonks API (season ID `1689`, 74 fixtures, 71 finished + 3 abandoned, March 22 – June 3 2025).
+**Data source:** Real IPL 2025 match data from SportMonks API (season ID `1689`, 70 league fixtures only (playoffs excluded), 67 finished + 3 abandoned, March 22 – May 2025).
 
 **Isolation:** All simulation data lives in a dedicated "IPL 2025 Simulation" league — completely separate from production 2026 data. Full cleanup after the run.
 
@@ -44,7 +44,7 @@ All users created via credentials provider. You can log in as any of them during
 3. **Generate 10 test user accounts** — `sim-user-1` through `sim-user-10` with password `sim-test-2025` (bcryptjs hashed)
 4. **Build roster CSV** — Each user gets 15 players drafted from different IPL 2025 squads (realistic auction-style distribution)
 5. **Upload roster** — Via `POST /api/leagues/[id]/roster`
-6. **Import fixtures** — All 74 matches + gameweeks from season 1689 via `importFixturesAndGameweeks()`
+6. **Import fixtures** — All 70 league matches + gameweeks from season 1689 via `importFixturesAndGameweeks()` (league stage only, playoffs excluded)
 7. **Print login credentials** — Display all 11 accounts for manual QA during the run
 
 ---
@@ -61,7 +61,7 @@ Browser-based E2E tests running at 393px viewport (mobile-first per PRD). Tests 
 | 2 | User views squad | Login as sim-user-1 -> squad page -> verify 15 players | Player names, roles, images, IPL team badges visible |
 | 3 | User sets lineup | Pick XI (11) + bench (4) -> assign captain & VC -> set bench priorities -> submit | Pitch-style layout, captain badge shows 2x, bench priorities sequential |
 | 4 | User edits lineup | Load existing lineup -> swap player -> change captain -> save -> refresh | Changes persisted correctly after reload |
-| 5 | User activates chip | Navigate to lineup -> activate POWER_PLAY_BAT -> confirm | Confirmation modal with "cannot be undone" warning, chip shown as active |
+| 5 | User activates chip | Navigate to lineup -> activate POWER_PLAY_BAT -> confirm -> deactivate before GW start -> reactivate | Confirmation modal shown on activate; chip can be toggled off before GW lock; once GW starts chip is locked in |
 | 6 | User views dashboard | Navigate to home (`/`) after GW1 scored | GW score, standings snapshot, deadline, match schedule visible |
 | 7 | User views leaderboard | Navigate to leaderboard (after GW1 scored) | Rank movement indicators, GW/Total columns, tappable rows |
 | 8 | User views standings | Navigate to standings page -> use GW selector | Full season table with GW selector tabs working |
@@ -79,9 +79,10 @@ Browser-based E2E tests running at 393px viewport (mobile-first per PRD). Tests 
 
 | PRD Requirement | Assertion |
 |---|---|
-| Pitch-style layout (2-4-5 formation) | XI slots rendered in correct formation, bench section separate |
+| Pitch-style layout (4-3-3 formation) | XI slots rendered in correct formation, bench section separate |
 | Captain badge shows 2x | `[data-role="CAPTAIN"]` badge visible |
-| Chip confirmation modal with "cannot be undone" | Modal text contains warning |
+| Vice Captain badge shows VC | `[data-role="VC"]` badge visible on VC player |
+| Chip confirmation modal — chip can be reverted until GW starts | Modal text contains warning; chip toggle reverses until lock time; confirmed chip shows as active |
 | Used chip shows "Used GW N" badge | Badge text present, chip button disabled |
 | Lock time prevents edits | Submit button disabled / 423 after lock |
 | Role badge colors (BAT=#F9CD05, BOWL=#a0c4ff, ALL=#0EB1A2, WK=#EA1A85) | CSS color values on role badges |
@@ -114,6 +115,7 @@ Playwright's `toHaveScreenshot()` captures baseline screenshots on first run, fl
 | Default league fallback | User with no `activeLeagueId` set sees their first league (backwards compatible) |
 | Auto-set on first join | New user joining via invite code gets `activeLeagueId` auto-set to that league |
 | Join switches active league | Using invite code for League B while in League A switches activeLeagueId to League B |
+| All teams have exactly 15 players | Each of the 10 test teams has exactly 15 players after roster upload |
 
 ---
 
@@ -161,9 +163,9 @@ For gameweeks 1, mid-season, and last gameweek (dynamically determined from fixt
 
 ---
 
-## Layer 3 — Score All 74 Matches (~15 min)
+## Layer 3 — Score All 70 League Matches (~15 min)
 
-- Fetch scorecards from SportMonks for all 74 fixtures (season 1689)
+- Fetch scorecards from SportMonks for all 70 league fixtures (season 1689, playoffs excluded)
 - Process in batches of 8 (respect API rate limits)
 - Run through scoring pipeline: `scoreMatch()` for each fixture
 - Handle 3 abandoned matches (expect CANCELLED status, no scoring)
@@ -317,7 +319,7 @@ Each run produces two files in `tests/simulation/results/`:
     "layer0_ux": { "status": "passed", "tests": 17, "passed": 17, "failed": 0, "screenshots": 24 },
     "layer1_roster": { "status": "passed", "tests": 6, "passed": 6, "failed": 0 },
     "layer2_lineups": { "status": "passed", "tests": 22, "passed": 22, "failed": 0 },
-    "layer3_scoring": { "status": "passed", "matches": 74, "scored": 71, "abandoned": 3, "golden_players_verified": 9 },
+    "layer3_scoring": { "status": "passed", "matches": 70, "scored": 67, "abandoned": 3, "golden_players_verified": 9 },
     "layer4_aggregation": { "status": "passed", "gameweeks_dynamic": true, "assertions": 180 },
     "layer5_edge_cases": { "status": "passed", "tests": 13, "passed": 13, "failed": 0 }
   },
@@ -384,7 +386,7 @@ Deletes all simulation data in FK order:
 | Layer 0 | ~10 min | UX flows (17 scenarios), PRD compliance, visual regression, auth, league switching |
 | Layer 1 | ~2 min | Roster upload, squad integrity, season start gate |
 | Layer 2 | ~4 min | Lineup rules, carry-forward, lock enforcement, chip constraints |
-| Layer 3 | ~15 min | Scoring accuracy for all 74 matches + golden player verification |
+| Layer 3 | ~15 min | Scoring accuracy for all 70 league matches + golden player verification |
 | Layer 4 | ~10 min | Aggregation, bench subs, multipliers, chip stacking, leaderboard |
 | Layer 5 | ~7 min | Edge cases (13 scenarios) |
 | Teardown | ~1 min | Cleanup |
