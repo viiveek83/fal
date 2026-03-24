@@ -21,3 +21,44 @@ export async function getSimLeague() {
 export async function getSimGameweeks() {
   return prisma.gameweek.findMany({ orderBy: { number: 'asc' } })
 }
+
+export interface LineupSlotInput {
+  playerId: string
+  slotType: 'XI' | 'BENCH'
+  benchPriority: number | null
+  role: 'CAPTAIN' | 'VC' | null
+}
+
+/**
+ * Generates a valid lineup from a squad: first 11 as XI, rest as bench.
+ * Player at captainIdx = CAPTAIN, vcIdx = VC.
+ */
+export function generateLineup(
+  squad: Array<{ id: string; role: string }>,
+  captainIdx = 0,
+  vcIdx = 1
+): LineupSlotInput[] {
+  const slots: LineupSlotInput[] = []
+  const xi = squad.slice(0, 11)
+  const bench = squad.slice(11, 15)
+
+  xi.forEach((p, i) => {
+    slots.push({
+      playerId: p.id,
+      slotType: 'XI',
+      benchPriority: null,
+      role: i === captainIdx ? 'CAPTAIN' : i === vcIdx ? 'VC' : null,
+    })
+  })
+
+  bench.forEach((p, i) => {
+    slots.push({
+      playerId: p.id,
+      slotType: 'BENCH',
+      benchPriority: i + 1,
+      role: null,
+    })
+  })
+
+  return slots
+}
