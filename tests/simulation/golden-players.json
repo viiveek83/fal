@@ -1,0 +1,5 @@
+{
+  "description": "Golden player test cases — verify scoring engine accuracy against hand-computed values",
+  "note": "Expected points will be populated after first scoring run and verified manually",
+  "players": []
+}
