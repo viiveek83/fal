@@ -72,6 +72,34 @@ interface Performance {
   }
 }
 
+interface CareerBatting {
+  matches: number
+  innings: number
+  runs: number
+  balls: number
+  fours: number
+  sixes: number
+  strikeRate: number
+  average: number
+  highestScore: number | null
+  hundreds: number
+  fifties: number
+  notOuts: number
+}
+
+interface CareerBowling {
+  matches: number
+  innings: number
+  overs: number
+  runs: number
+  wickets: number
+  economyRate: number
+  average: number
+  bestInnings: string | null
+  fourWickets: number
+  fiveWickets: number
+}
+
 interface PlayerDetailData {
   player: {
     id: string
@@ -95,6 +123,11 @@ interface PlayerDetailData {
   }
   performances: Performance[]
   teams: { teamName: string; leagueName: string }[]
+  dataSource?: 'local' | 'sportmonks' | 'none'
+  careerStats?: {
+    batting: CareerBatting | null
+    bowling: CareerBowling | null
+  } | null
 }
 
 /* ─── Helpers ─── */
@@ -607,14 +640,14 @@ export default function PlayersPage() {
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 15, fontWeight: 800, color: '#1a1a2e' }}>{selectedPlayer.fullname}</div>
                   <div style={{ fontSize: 10, color: '#888', fontWeight: 500 }}>
-                    {selectedPlayer.iplTeamCode || ''} · {roleFullName[selectedPlayer.role] || selectedPlayer.role}{detail ? ` · ${detail.stats.matches} matches` : ''}
+                    {selectedPlayer.iplTeamCode || ''} · {roleFullName[selectedPlayer.role] || selectedPlayer.role}{detail ? (detail.stats.matches > 0 ? ` · ${detail.stats.matches} matches` : detail.careerStats?.batting?.matches ? ` · ${detail.careerStats.batting.matches} T20 matches` : '') : ''}
                   </div>
                 </div>
                 <div style={{
                   fontSize: 24, fontWeight: 800, color: '#004BA0',
                   fontVariantNumeric: 'tabular-nums', letterSpacing: -1,
                 }}>
-                  {detail ? detail.stats.totalPoints : '—'}
+                  {detail ? (detail.stats.totalPoints > 0 ? detail.stats.totalPoints : (detail.dataSource === 'none' || detail.dataSource === 'sportmonks' ? '—' : 0)) : '—'}
                 </div>
                 <button
                   onClick={closePlayerSheet}
@@ -672,12 +705,128 @@ export default function PlayersPage() {
                   </div>
                 )}
 
-                {/* No match data at all (season not started) */}
-                {!detailLoading && detail && detail.performances.length === 0 && activeGwTab === 'Season' && (
-                  <div style={{ textAlign: 'center', padding: '32px 16px', color: '#aaa', fontSize: 12, fontWeight: 500 }}>
-                    No match data yet
-                  </div>
-                )}
+                {/* No local performances — show SportMonks career stats or empty state */}
+                {!detailLoading && detail && detail.performances.length === 0 && activeGwTab === 'Season' && (() => {
+                  const cs = detail.careerStats
+                  const hasBatting = cs?.batting && cs.batting.matches > 0
+                  const hasBowling = cs?.bowling && cs.bowling.wickets > 0
+
+                  if (!hasBatting && !hasBowling) {
+                    return (
+                      <div style={{ textAlign: 'center', padding: '32px 16px', color: '#aaa', fontSize: 12, fontWeight: 500 }}>
+                        No match data available yet
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <>
+                      {/* Source label */}
+                      <div style={{
+                        padding: '6px 16px 0', fontSize: 9, fontWeight: 600,
+                        color: '#0d9e5f', letterSpacing: 0.3,
+                      }}>
+                        T20 Career Stats
+                      </div>
+
+                      {/* Career batting */}
+                      {hasBatting && cs?.batting && (
+                        <div style={{ padding: '8px 16px' }}>
+                          <div style={{
+                            fontSize: 9, fontWeight: 700, color: '#aaa',
+                            textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6,
+                          }}>
+                            Batting
+                          </div>
+                          <div style={{ display: 'flex', gap: 4 }}>
+                            {[
+                              { val: String(cs.batting.runs), label: 'Runs' },
+                              { val: String(cs.batting.matches), label: 'Matches' },
+                              { val: cs.batting.strikeRate > 0 ? cs.batting.strikeRate.toFixed(1) : '—', label: 'SR' },
+                              { val: cs.batting.average > 0 ? cs.batting.average.toFixed(1) : '—', label: 'Avg' },
+                              { val: cs.batting.highestScore != null ? String(cs.batting.highestScore) : '—', label: 'HS' },
+                            ].map((s, i) => (
+                              <div key={i} style={{
+                                flex: 1, textAlign: 'center', padding: '6px 3px',
+                                background: '#f7f8fb', borderRadius: 8,
+                              }}>
+                                <div style={{ fontSize: 14, fontWeight: 800, color: '#222', fontVariantNumeric: 'tabular-nums' }}>
+                                  {s.val}
+                                </div>
+                                <div style={{ fontSize: 8, color: '#aaa', fontWeight: 500, marginTop: 1 }}>
+                                  {s.label}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          {/* Additional batting details */}
+                          <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+                            {[
+                              { val: String(cs.batting.fours), label: '4s' },
+                              { val: String(cs.batting.sixes), label: '6s' },
+                              { val: String(cs.batting.fifties), label: '50s' },
+                              { val: String(cs.batting.hundreds), label: '100s' },
+                              { val: String(cs.batting.innings), label: 'Inn' },
+                            ].map((s, i) => (
+                              <div key={i} style={{
+                                flex: 1, textAlign: 'center', padding: '6px 3px',
+                                background: '#f7f8fb', borderRadius: 8,
+                              }}>
+                                <div style={{ fontSize: 14, fontWeight: 800, color: '#222', fontVariantNumeric: 'tabular-nums' }}>
+                                  {s.val}
+                                </div>
+                                <div style={{ fontSize: 8, color: '#aaa', fontWeight: 500, marginTop: 1 }}>
+                                  {s.label}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Career bowling */}
+                      {hasBowling && cs?.bowling && (
+                        <div style={{ padding: '8px 16px', borderTop: '1px solid #f5f5f8' }}>
+                          <div style={{
+                            fontSize: 9, fontWeight: 700, color: '#aaa',
+                            textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6,
+                          }}>
+                            Bowling
+                          </div>
+                          <div style={{ display: 'flex', gap: 4 }}>
+                            {[
+                              { val: String(cs.bowling.wickets), label: 'Wkts' },
+                              { val: cs.bowling.overs > 0 ? cs.bowling.overs.toFixed(1) : '—', label: 'Overs' },
+                              { val: cs.bowling.economyRate > 0 ? cs.bowling.economyRate.toFixed(1) : '—', label: 'Econ' },
+                              { val: cs.bowling.average > 0 ? cs.bowling.average.toFixed(1) : '—', label: 'Avg' },
+                              { val: cs.bowling.bestInnings ?? '—', label: 'Best' },
+                            ].map((s, i) => (
+                              <div key={i} style={{
+                                flex: 1, textAlign: 'center', padding: '6px 3px',
+                                background: '#f7f8fb', borderRadius: 8,
+                              }}>
+                                <div style={{ fontSize: 14, fontWeight: 800, color: '#222', fontVariantNumeric: 'tabular-nums' }}>
+                                  {s.val}
+                                </div>
+                                <div style={{ fontSize: 8, color: '#aaa', fontWeight: 500, marginTop: 1 }}>
+                                  {s.label}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Note about data source */}
+                      <div style={{
+                        padding: '12px 16px 4px', textAlign: 'center',
+                        fontSize: 9, color: '#bbb', fontWeight: 500,
+                      }}>
+                        FAL season stats will appear once matches are scored
+                      </div>
+                    </>
+                  )
+                })()}
 
                 {/* Stats content — show when we have data */}
                 {!detailLoading && detail && hasData && (
