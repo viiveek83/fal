@@ -118,7 +118,33 @@ After editing the lineup and changing captains, the user received a "Saved Succe
 
 ## Resolved Issues
 
-_None yet._
+### ISSUE-001 — Admin must be a player in their own league
+**Status:** Resolved (2026-03-24)
+**Fix:** Already working — `teams.create` in POST /api/leagues auto-enrolls admin.
+
+### ISSUE-002 — Cannot create a second league after creating the first
+**Status:** Resolved (2026-03-24)
+**Fix:** Admin page form gate updated to allow creating additional leagues.
+
+### ISSUE-004 — Manager name should display as team name
+**Status:** Resolved (2026-03-24)
+**Fix:** Changed all display pages (dashboard, standings, leaderboard) to show `teamName` instead of `manager`.
+
+### ISSUE-005 — Tapping team name on home screen does not navigate
+**Status:** Resolved (2026-03-24)
+**Fix:** Standings rows now wrapped with `<Link>` to `/view-lineup/{teamId}`.
+
+### ISSUE-006 — Read-only team view should show the locked GW lineup
+**Status:** Resolved (2026-03-24)
+**Fix:** View-lineup now fetches saved lineup from API.
+
+### ISSUE-007 — Bench swap auto-selects
+**Status:** Resolved (2026-03-24)
+**Fix:** Swap mode allows user choice.
+
+### ISSUE-008 — Lineup and captain changes lost after re-login
+**Status:** Resolved (2026-03-24)
+**Fix:** Lineup page now fetches saved lineup on load instead of regenerating from squad.
 
 ---
 

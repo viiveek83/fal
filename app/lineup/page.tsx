@@ -173,6 +173,7 @@ export default function LineupPage() {
   const [viewMode, setViewMode] = useState<'pitch' | 'list'>('pitch')
   const [actionSheetPlayer, setActionSheetPlayer] = useState<SquadPlayer | null>(null)
   const [actionSheetIsBench, setActionSheetIsBench] = useState(false)
+  const [playerStatsSheet, setPlayerStatsSheet] = useState<SquadPlayer | null>(null)
   const isLocked = currentGW?.lockTime ? new Date() >= new Date(currentGW.lockTime) : false
 
   /* ─── Fetch current gameweek ─── */
@@ -1065,8 +1066,11 @@ export default function LineupPage() {
                 }}>
                   {role === 'BOWL' ? 'B' : role === 'BAT' ? 'B' : role === 'ALL' ? 'A' : 'W'}
                 </div>
-                {/* Info */}
-                <div style={{ flex: 1, minWidth: 0 }}>
+                {/* Info — tappable for player stats sheet */}
+                <div
+                  onClick={(e) => { e.stopPropagation(); setPlayerStatsSheet(p) }}
+                  style={{ flex: 1, minWidth: 0, cursor: 'pointer' }}
+                >
                   <div style={{
                     fontSize: 13, fontWeight: 700, color: '#1a1a2e',
                     display: 'flex', alignItems: 'center', gap: 5,
@@ -1177,8 +1181,11 @@ export default function LineupPage() {
                     }}>
                       {role === 'BOWL' ? 'B' : role === 'BAT' ? 'B' : role === 'ALL' ? 'A' : 'W'}
                     </div>
-                    {/* Info */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                    {/* Info — tappable for player stats sheet */}
+                    <div
+                      onClick={(e) => { e.stopPropagation(); setPlayerStatsSheet(p) }}
+                      style={{ flex: 1, minWidth: 0, cursor: 'pointer' }}
+                    >
                       <div style={{
                         fontSize: 13, fontWeight: 700, color: '#1a1a2e',
                         whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
@@ -1503,6 +1510,167 @@ export default function LineupPage() {
               {/* Cancel */}
               <button
                 onClick={closeActionSheet}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  padding: '14px 20px', fontSize: 13, fontWeight: 600, color: '#999',
+                  cursor: 'pointer', border: 'none', background: 'transparent',
+                  width: '100%', fontFamily: 'inherit',
+                  borderTop: '1px solid #f2f3f8', marginTop: 4,
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </>
+        )
+      })()}
+
+      {/* ── Player Stats Sheet (C/VC selection) ── */}
+      {playerStatsSheet && (() => {
+        const p = playerStatsSheet
+        const role = normalizeRole(p.role)
+        const roleStyle = listRoleGradients[role] || listRoleGradients.BAT
+        const isBenchPlayer = bench.some(b => b.id === p.id)
+        const isCap = captainId === p.id
+        const isVCPlayer = vcId === p.id
+        const closeStatsSheet = () => setPlayerStatsSheet(null)
+        return (
+          <>
+            <div
+              onClick={closeStatsSheet}
+              style={{
+                position: 'fixed', inset: 0,
+                background: 'rgba(0,0,0,0.4)',
+                backdropFilter: 'blur(3px)',
+                WebkitBackdropFilter: 'blur(3px)',
+                zIndex: 200,
+              }}
+            />
+            <div style={{
+              position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+              width: '100%', maxWidth: 480,
+              background: '#fff', borderRadius: '20px 20px 0 0',
+              zIndex: 210, paddingBottom: 36,
+              animation: 'slideUp 0.25s ease-out',
+            }}>
+              {/* Handle */}
+              <div style={{ width: 36, height: 4, background: '#ddd', borderRadius: 2, margin: '12px auto 8px' }} />
+              {/* Player info */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 10, padding: '8px 20px 14px',
+                borderBottom: '1px solid #f2f3f8',
+              }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 12, fontWeight: 800,
+                  background: roleStyle.bg, color: roleStyle.color,
+                }}>
+                  {role}
+                </div>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: '#1a1a2e' }}>{p.fullname}</div>
+                  <div style={{ fontSize: 12, color: '#999', fontWeight: 500, marginTop: 1 }}>
+                    {p.iplTeamName || p.iplTeamCode || 'IPL'} &middot; {role}
+                  </div>
+                </div>
+              </div>
+              {/* C/VC controls or bench message */}
+              {isBenchPlayer ? (
+                <div style={{
+                  padding: '20px 20px', textAlign: 'center',
+                  color: '#888', fontSize: 13, fontWeight: 500, lineHeight: 1.5,
+                }}>
+                  Move to Playing XI to assign Captain/VC
+                </div>
+              ) : (
+                <>
+                  {/* Captain toggle */}
+                  <button
+                    onClick={() => {
+                      if (!isLocked) {
+                        if (captainId === p.id) { closeStatsSheet(); return }
+                        if (vcId === p.id) setVcId(captainId)
+                        setCaptainId(p.id)
+                        setDirty(true)
+                      }
+                      closeStatsSheet()
+                    }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '14px 20px', fontSize: 14, fontWeight: 600, color: '#1a1a2e',
+                      cursor: isLocked ? 'default' : 'pointer',
+                      border: 'none', width: '100%', fontFamily: 'inherit',
+                      background: isCap ? 'rgba(249,205,5,0.10)' : 'transparent',
+                      transition: 'background 0.15s',
+                    }}
+                  >
+                    <div style={{
+                      width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 16, background: 'rgba(249,205,5,0.12)',
+                    }}>
+                      {'\u2729'}
+                    </div>
+                    <div style={{ flex: 1, textAlign: 'left' }}>
+                      <div style={{ fontWeight: 700 }}>{isCap ? 'Captain (current)' : 'Make Captain'}</div>
+                      <div style={{ fontSize: 11, color: '#999', fontWeight: 500 }}>2&times; points this GW</div>
+                    </div>
+                    {isCap && (
+                      <div style={{
+                        width: 22, height: 22, borderRadius: 6,
+                        background: '#F9CD05', color: '#1a1a1a',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 13, fontWeight: 800,
+                      }}>&#10003;</div>
+                    )}
+                  </button>
+                  {/* Vice Captain toggle */}
+                  <button
+                    onClick={() => {
+                      if (!isLocked) {
+                        if (vcId === p.id) { closeStatsSheet(); return }
+                        if (captainId === p.id) setCaptainId(vcId)
+                        setVcId(p.id)
+                        setDirty(true)
+                      }
+                      closeStatsSheet()
+                    }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '14px 20px', fontSize: 14, fontWeight: 600, color: '#1a1a2e',
+                      cursor: isLocked ? 'default' : 'pointer',
+                      border: 'none', width: '100%', fontFamily: 'inherit',
+                      borderTop: '1px solid #f2f3f8',
+                      background: isVCPlayer ? 'rgba(192,199,208,0.12)' : 'transparent',
+                      transition: 'background 0.15s',
+                    }}
+                  >
+                    <div style={{
+                      width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 16, background: 'rgba(192,199,208,0.15)',
+                    }}>
+                      {'\u2606'}
+                    </div>
+                    <div style={{ flex: 1, textAlign: 'left' }}>
+                      <div style={{ fontWeight: 700 }}>{isVCPlayer ? 'Vice Captain (current)' : 'Make Vice Captain'}</div>
+                      <div style={{ fontSize: 11, color: '#999', fontWeight: 500 }}>2&times; only if Captain absent</div>
+                    </div>
+                    {isVCPlayer && (
+                      <div style={{
+                        width: 22, height: 22, borderRadius: 6,
+                        background: '#C0C7D0', color: '#1a1a1a',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 13, fontWeight: 800,
+                      }}>&#10003;</div>
+                    )}
+                  </button>
+                </>
+              )}
+              {/* Cancel */}
+              <button
+                onClick={closeStatsSheet}
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   padding: '14px 20px', fontSize: 13, fontWeight: 600, color: '#999',

@@ -578,7 +578,7 @@ export default function DashboardPage() {
                 color: '#aaa', textTransform: 'uppercase' as const, letterSpacing: 0.5, gap: 8,
               }}>
                 <div style={{ width: 22 }}>#</div>
-                <div style={{ flex: 1 }}>Manager</div>
+                <div style={{ flex: 1 }}>Team</div>
                 <div style={{ width: 36, textAlign: 'right' }}>GW</div>
                 <div style={{ width: 42, textAlign: 'right' }}>Total</div>
               </div>
@@ -602,14 +602,14 @@ export default function DashboardPage() {
                 const nameWeight = isYou ? 700 : isFirst ? 600 : 500
 
                 return (
-                  <div key={s.teamId} style={rowStyle}>
+                  <Link href={`/view-lineup/${s.teamId}`} key={s.teamId} style={{...rowStyle, textDecoration: 'none'}}>
                     <div style={getRankStyle(s.rank, isYou)}>{s.rank}</div>
                     <div style={{ flex: 1, fontWeight: nameWeight, color: nameColor }}>
-                      {s.manager}{isYou ? ' (You)' : ''}
+                      {s.teamName}{isYou ? ' (You)' : ''}
                     </div>
                     <div style={{ fontSize: 11, color: '#999', fontWeight: 500, fontVariantNumeric: 'tabular-nums', width: 36, textAlign: 'right' }}>{s.lastGwPoints}</div>
                     <div style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: ptsColor, width: 42, textAlign: 'right' }}>{formatNumber(s.totalPoints)}</div>
-                  </div>
+                  </Link>
                 )
               })}
 
@@ -631,7 +631,7 @@ export default function DashboardPage() {
 
               {/* Hint */}
               <div style={{ fontSize: 9, color: '#bbb', textAlign: 'center', marginTop: 6, fontWeight: 500 }}>
-                Tap a manager to view their lineup
+                Tap a team to view their lineup
               </div>
             </>
           )}
@@ -773,7 +773,7 @@ export default function DashboardPage() {
                   {l.name}
                 </div>
                 <div style={{ fontSize: 11, fontWeight: 500, color: '#999', marginTop: 1 }}>
-                  {l.teamCount} manager{l.teamCount !== 1 ? 's' : ''}{currentGw ? ` \u00B7 GW ${currentGw.number}` : ''}
+                  {l.teamCount} team{l.teamCount !== 1 ? 's' : ''}{currentGw ? ` \u00B7 GW ${currentGw.number}` : ''}
                 </div>
               </div>
               {/* Check */}

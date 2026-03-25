@@ -295,7 +295,7 @@ export default function StandingsPage() {
                   flex: 1,
                   fontWeight: isYou ? 700 : 500,
                   color: isYou ? '#111' : rank === 1 ? '#222' : '#555',
-                }}>{isYou ? 'You' : (team.manager ?? 'Manager')}</div>
+                }}>{isYou ? 'You' : (team.teamName ?? 'Team')}</div>
                 {/* Delta placeholder */}
                 <div style={{
                   fontSize: 10, fontWeight: 700, width: 24, textAlign: 'center',
