@@ -244,7 +244,7 @@ export default function StandingsPage() {
             marginBottom: 4,
           }}>
             <div style={{ width: 22 }}>#</div>
-            <div style={{ flex: 1 }}>Manager</div>
+            <div style={{ flex: 1 }}>Team</div>
             <div style={{ width: 24, textAlign: 'center' }}>{'\u0394'}</div>
             <div style={{ width: 36, textAlign: 'right' }}>GW</div>
             <div style={{ width: 46, textAlign: 'right' }}>Total</div>
@@ -295,7 +295,7 @@ export default function StandingsPage() {
                   flex: 1,
                   fontWeight: isYou ? 700 : 500,
                   color: isYou ? '#111' : rank === 1 ? '#222' : '#555',
-                }}>{isYou ? 'You' : (team.manager ?? 'Manager')}</div>
+                }}>{isYou ? 'You' : (team.teamName ?? 'Team')}</div>
                 {/* Delta placeholder */}
                 <div style={{
                   fontSize: 10, fontWeight: 700, width: 24, textAlign: 'center',

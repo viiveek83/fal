@@ -239,8 +239,8 @@ export default function LeaderboardPage() {
               {/* 2nd place (left) */}
               <PodiumItem
                 rank={2}
-                initials={getInitials(second.manager)}
-                name={second.managerId === userId ? 'You' : (second.manager ?? 'Manager')}
+                initials={getInitials(second.teamName)}
+                name={second.managerId === userId ? 'You' : (second.teamName ?? 'Team')}
                 points={second.totalPoints}
                 avatarStyle={avatarStyles[1]}
                 barHeight={60}
@@ -248,8 +248,8 @@ export default function LeaderboardPage() {
               {/* 1st place (center) */}
               <PodiumItem
                 rank={1}
-                initials={getInitials(first.manager)}
-                name={first.managerId === userId ? 'You' : (first.manager ?? 'Manager')}
+                initials={getInitials(first.teamName)}
+                name={first.managerId === userId ? 'You' : (first.teamName ?? 'Team')}
                 points={first.totalPoints}
                 avatarStyle={avatarStyles[0]}
                 barHeight={80}
@@ -258,8 +258,8 @@ export default function LeaderboardPage() {
               {/* 3rd place (right) */}
               <PodiumItem
                 rank={3}
-                initials={getInitials(third.manager)}
-                name={third.managerId === userId ? 'You' : (third.manager ?? 'Manager')}
+                initials={getInitials(third.teamName)}
+                name={third.managerId === userId ? 'You' : (third.teamName ?? 'Team')}
                 points={third.totalPoints}
                 avatarStyle={avatarStyles[2]}
                 barHeight={44}
@@ -323,11 +323,11 @@ export default function LeaderboardPage() {
                   alignItems: 'center', justifyContent: 'center',
                   fontSize: 11, fontWeight: 700, color: '#fff',
                   background: rankAvatarGradients[i % rankAvatarGradients.length],
-                }}>{getInitials(team.manager)}</div>
+                }}>{getInitials(team.teamName)}</div>
                 {/* Info */}
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, fontWeight: isYou || rank === 1 ? 700 : 600, color: '#1a1a2e' }}>
-                    {isYou ? 'You' : (team.manager ?? 'Manager')}
+                    {isYou ? 'You' : (team.teamName ?? 'Team')}
                   </div>
                   <div style={{ fontSize: 10, color: '#999', marginTop: 1 }}>Best GW: {team.bestGwScore}</div>
                 </div>
