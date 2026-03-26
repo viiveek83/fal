@@ -36,11 +36,15 @@ const benchRoleColors: Record<string, string> = {
 }
 
 /* ─── List view role gradients ─── */
-const listRoleGradients: Record<string, { bg: string; color: string }> = {
-  BAT:  { bg: 'linear-gradient(135deg, #F9CD05, #e0b800)', color: '#1a1a1a' },
-  BOWL: { bg: 'linear-gradient(135deg, #004BA0, #0066cc)', color: '#fff' },
-  ALL:  { bg: 'linear-gradient(135deg, #0EB1A2, #089e90)', color: '#fff' },
-  WK:   { bg: 'linear-gradient(135deg, #EA1A85, #c4166e)', color: '#fff' },
+const listRoleGradients: Record<string, { bg: string; color: string; label: string }> = {
+  BAT:  { bg: 'linear-gradient(135deg, #F9CD05, #e0b800)', color: '#1a1a1a', label: 'BA' },
+  BOWL: { bg: 'linear-gradient(135deg, #004BA0, #0066cc)', color: '#fff', label: 'BO' },
+  ALL:  { bg: 'linear-gradient(135deg, #0EB1A2, #089e90)', color: '#fff', label: 'AR' },
+  WK:   { bg: 'linear-gradient(135deg, #EA1A85, #c4166e)', color: '#fff', label: 'WK' },
+}
+
+const roleFullName: Record<string, string> = {
+  BAT: 'Batsman', BOWL: 'Bowler', ALL: 'All-Rounder', WK: 'Wicket-keeper',
 }
 
 /* ─── Types ─── */
@@ -58,6 +62,30 @@ interface SquadData {
   teamId: string
   teamName: string
   players: SquadPlayer[]
+}
+
+interface SheetSeasonEntry {
+  seasonId: number
+  seasonName: string
+  batting?: { runs: number; matches: number; innings: number; balls: number; fours: number; sixes: number; strikeRate: number; average: number; highestScore: number | null }
+  bowling?: { wickets: number; matches: number; overs: number; runs: number; economyRate: number; average: number }
+}
+
+interface SheetPlayerDetail {
+  totalPoints: number
+  matches: number
+  performances: {
+    runs: number | null; balls: number | null; fours: number | null; sixes: number | null
+    wickets: number | null; overs: number | null; maidens: number | null; runsConceded: number | null
+    catches: number; stumpings: number; fantasyPoints: number
+  }[]
+  careerStats?: {
+    batting?: { runs: number; matches: number; innings: number; balls: number; fours: number; sixes: number; strikeRate: number; average: number; highestScore: number; hundreds: number; fifties: number }
+    bowling?: { wickets: number; matches: number; innings: number; overs: number; runs: number; economyRate: number; average: number; bestInnings: string; fourWickets: number; fiveWickets: number }
+    isIplSpecific?: boolean
+  } | null
+  seasonStats?: { seasons: SheetSeasonEntry[] } | null
+  dataSource?: string
 }
 
 interface League {
@@ -175,7 +203,43 @@ export default function LineupPage() {
   const [actionSheetIsBench, setActionSheetIsBench] = useState(false)
   const [swapSelection, setSwapSelection] = useState<{ direction: 'toBench' | 'toXI'; sourceId: string } | null>(null)
   const [playerStatsSheet, setPlayerStatsSheet] = useState<SquadPlayer | null>(null)
+  const [sheetDetail, setSheetDetail] = useState<SheetPlayerDetail | null>(null)
+  const [sheetDetailLoading, setSheetDetailLoading] = useState(false)
+  const [sheetSeasonTab, setSheetSeasonTab] = useState<number | null>(null)
   const isLocked = currentGW?.lockTime ? new Date() >= new Date(currentGW.lockTime) : false
+
+  /* ─── Fetch player detail when stats sheet opens ─── */
+  useEffect(() => {
+    if (!playerStatsSheet) { setSheetDetail(null); setSheetSeasonTab(null); return }
+    let cancelled = false
+    setSheetDetailLoading(true)
+    setSheetDetail(null)
+    setSheetSeasonTab(null)
+    fetch(`/api/players/${playerStatsSheet.id}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (cancelled || !data) { setSheetDetailLoading(false); return }
+        const perfs = (data.performances || []).map((p: Record<string, unknown>) => ({
+          runs: p.runs as number | null, balls: p.balls as number | null,
+          fours: p.fours as number | null, sixes: p.sixes as number | null,
+          wickets: p.wickets as number | null, overs: p.overs as number | null,
+          maidens: p.maidens as number | null, runsConceded: p.runsConceded as number | null,
+          catches: (p.catches as number) || 0, stumpings: (p.stumpings as number) || 0,
+          fantasyPoints: (p.fantasyPoints as number) || 0,
+        }))
+        setSheetDetail({
+          totalPoints: data.stats?.totalPoints ?? 0,
+          matches: data.stats?.matches ?? perfs.length,
+          performances: perfs,
+          careerStats: data.careerStats || null,
+          seasonStats: data.seasonStats || null,
+          dataSource: data.dataSource || 'none',
+        })
+        setSheetDetailLoading(false)
+      })
+      .catch(() => { if (!cancelled) setSheetDetailLoading(false) })
+    return () => { cancelled = true }
+  }, [playerStatsSheet])
 
   /* ─── Fetch current gameweek ─── */
   useEffect(() => {
@@ -353,15 +417,14 @@ export default function LineupPage() {
 
   /* ─── Handlers ─── */
   const handlePlayerTap = (playerId: string) => {
-    if (isLocked) return // lineup locked after deadline
-    // If in swap mode, do the swap
+    if (isLocked) return
+    // If in swap mode, complete the swap
     if (swapMode) {
       const benchPlayer = bench.find(p => p.id === swapMode)
       const xiPlayer = xi.find(p => p.id === playerId)
       if (benchPlayer && xiPlayer) {
         setXi(prev => prev.map(p => p.id === playerId ? benchPlayer : p))
         setBench(prev => prev.map(p => p.id === swapMode ? xiPlayer : p))
-        // If swapped player was captain/vc, transfer to new player
         if (captainId === playerId) setCaptainId(benchPlayer.id)
         if (vcId === playerId) setVcId(benchPlayer.id)
         setDirty(true)
@@ -369,32 +432,34 @@ export default function LineupPage() {
       setSwapMode(null)
       return
     }
-
-    // Toggle captain/vc
-    if (captainId === playerId) {
-      // Already captain, make VC (swap with current VC)
-      setCaptainId(vcId)
-      setVcId(playerId)
-      setDirty(true)
-    } else if (vcId === playerId) {
-      // Already VC, make captain (swap with current captain)
-      setVcId(captainId)
-      setCaptainId(playerId)
-      setDirty(true)
-    } else {
-      // Make this player VC, current VC becomes normal
-      setVcId(playerId)
-      setDirty(true)
-    }
+    // Open player stats sheet (same as list view)
+    const player = xi.find(p => p.id === playerId)
+    if (player) setPlayerStatsSheet(player)
   }
 
   const handleBenchTap = (playerId: string) => {
-    if (isLocked) return // lineup locked after deadline
+    if (isLocked) return
+    // If in swap mode, toggle off
     if (swapMode === playerId) {
       setSwapMode(null)
-    } else {
-      setSwapMode(playerId)
+      return
     }
+    // If swap mode active and tapping a different bench player, swap bench positions
+    if (swapMode) {
+      const srcIdx = bench.findIndex(p => p.id === swapMode)
+      const tgtIdx = bench.findIndex(p => p.id === playerId)
+      if (srcIdx !== -1 && tgtIdx !== -1) {
+        const newBench = [...bench]
+        ;[newBench[srcIdx], newBench[tgtIdx]] = [newBench[tgtIdx], newBench[srcIdx]]
+        setBench(newBench)
+        setDirty(true)
+      }
+      setSwapMode(null)
+      return
+    }
+    // Open player stats sheet for bench player
+    const player = bench.find(p => p.id === playerId)
+    if (player) setPlayerStatsSheet(player)
   }
 
   const handleChipToggle = async (chipType: 'POWER_PLAY_BAT' | 'BOWLING_BOOST') => {
@@ -1634,6 +1699,108 @@ export default function LineupPage() {
         const isCap = captainId === p.id
         const isVCPlayer = vcId === p.id
         const closeStatsSheet = () => setPlayerStatsSheet(null)
+
+        // Season tabs from API + T20 Career as last tab
+        const apiSeasons = sheetDetail?.seasonStats?.seasons ?? []
+        const career = sheetDetail?.careerStats
+        const isIpl = career?.isIplSpecific
+
+        // Add T20 Career as a virtual tab (seasonId: -1) if career stats exist
+        const t20CareerTab = career?.batting ? {
+          seasonId: -1,
+          seasonName: 'T20 Career',
+          batting: career.batting,
+          bowling: career.bowling,
+        } as typeof apiSeasons[0] : null
+
+        const seasons = t20CareerTab ? [...apiSeasons, t20CareerTab] : apiSeasons
+        const hasSeasons = seasons.length > 0
+        const hasPerfs = sheetDetail && sheetDetail.performances.length > 0
+
+        // Determine current season tab (default to most recent IPL, not T20 Career)
+        const currentSeasonId = hasSeasons ? (sheetSeasonTab ?? seasons[0].seasonId) : null
+        const activeSeason = hasSeasons ? (seasons.find(s => s.seasonId === currentSeasonId) ?? seasons[0]) : null
+
+        // Build agg from active season if available
+        const agg = sheetDetail ? (activeSeason ? {
+          runs: activeSeason.batting?.runs ?? 0,
+          balls: activeSeason.batting?.balls ?? 0,
+          fours: activeSeason.batting?.fours ?? 0,
+          sixes: activeSeason.batting?.sixes ?? 0,
+          wickets: activeSeason.bowling?.wickets ?? 0,
+          overs: activeSeason.bowling?.overs ?? 0,
+          maidens: 0,
+          runsConceded: activeSeason.bowling?.runs ?? 0,
+          catches: 0, stumpings: 0,
+        } : hasPerfs ? {
+          runs: sheetDetail.performances.reduce((s, perf) => s + (perf.runs ?? 0), 0),
+          balls: sheetDetail.performances.reduce((s, perf) => s + (perf.balls ?? 0), 0),
+          fours: sheetDetail.performances.reduce((s, perf) => s + (perf.fours ?? 0), 0),
+          sixes: sheetDetail.performances.reduce((s, perf) => s + (perf.sixes ?? 0), 0),
+          wickets: sheetDetail.performances.reduce((s, perf) => s + (perf.wickets ?? 0), 0),
+          overs: sheetDetail.performances.reduce((s, perf) => s + (perf.overs ?? 0), 0),
+          maidens: sheetDetail.performances.reduce((s, perf) => s + (perf.maidens ?? 0), 0),
+          runsConceded: sheetDetail.performances.reduce((s, perf) => s + (perf.runsConceded ?? 0), 0),
+          catches: sheetDetail.performances.reduce((s, perf) => s + perf.catches, 0),
+          stumpings: sheetDetail.performances.reduce((s, perf) => s + perf.stumpings, 0),
+        } : career?.batting ? {
+          // Fallback to career stats
+          runs: career.batting.runs, balls: career.batting.balls,
+          fours: career.batting.fours, sixes: career.batting.sixes,
+          wickets: career.bowling?.wickets ?? 0, overs: career.bowling?.overs ?? 0,
+          maidens: 0, runsConceded: career.bowling?.runs ?? 0,
+          catches: 0, stumpings: 0,
+        } : null) : null
+
+        const statsLabel = activeSeason ? activeSeason.seasonName : (hasPerfs ? 'Season' : (isIpl ? 'IPL Career' : career ? 'T20 Career' : null))
+
+        // Build role-based stats grid
+        const buildSheetStatsGrid = () => {
+          if (!agg) return null
+          if (role === 'BAT') return {
+            section: statsLabel ? `${statsLabel} Batting` : 'Batting',
+            stats: [
+              { val: String(agg.runs), label: 'Runs' },
+              { val: String(agg.fours), label: '4s' },
+              { val: String(agg.sixes), label: '6s' },
+              { val: agg.balls > 0 ? ((agg.runs / agg.balls) * 100).toFixed(1) : '0.0', label: 'SR' },
+              { val: String(agg.balls), label: 'Balls' },
+            ],
+          }
+          if (role === 'BOWL') return {
+            section: statsLabel ? `${statsLabel} Bowling` : 'Bowling',
+            stats: [
+              { val: String(agg.wickets), label: 'Wkts' },
+              { val: agg.overs ? agg.overs.toFixed(1) : '0', label: 'Overs' },
+              { val: String(agg.runsConceded), label: 'Runs' },
+              { val: String(agg.maidens), label: 'Maiden' },
+              { val: agg.overs > 0 ? (agg.runsConceded / agg.overs).toFixed(1) : '0.0', label: 'Econ' },
+            ],
+          }
+          if (role === 'WK') return {
+            section: 'Wicket-keeping',
+            stats: [
+              { val: String(agg.runs), label: 'Runs' },
+              { val: String(agg.fours), label: '4s' },
+              { val: String(agg.catches), label: 'Catches' },
+              { val: String(agg.stumpings), label: 'Stumpings' },
+              { val: agg.balls > 0 ? ((agg.runs / agg.balls) * 100).toFixed(1) : '0.0', label: 'SR' },
+            ],
+          }
+          return {
+            section: 'All-Round',
+            stats: [
+              { val: String(agg.runs), label: 'Runs' },
+              { val: String(agg.wickets), label: 'Wkts' },
+              { val: agg.balls > 0 ? ((agg.runs / agg.balls) * 100).toFixed(1) : '0.0', label: 'SR' },
+              { val: agg.overs > 0 ? (agg.runsConceded / agg.overs).toFixed(1) : '0.0', label: 'Econ' },
+              { val: String(agg.catches), label: 'Catches' },
+            ],
+          }
+        }
+
+        const statsGrid = buildSheetStatsGrid()
+
         return (
           <>
             <div
@@ -1655,128 +1822,269 @@ export default function LineupPage() {
             }}>
               {/* Handle */}
               <div style={{ width: 36, height: 4, background: '#ddd', borderRadius: 2, margin: '12px auto 8px' }} />
-              {/* Player info */}
+
+              {/* Player header — matches Players page modal */}
               <div style={{
-                display: 'flex', alignItems: 'center', gap: 10, padding: '8px 20px 14px',
-                borderBottom: '1px solid #f2f3f8',
+                display: 'flex', alignItems: 'center', gap: 10, padding: '8px 20px 10px', position: 'relative',
               }}>
                 <div style={{
-                  width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                  width: 34, height: 34, borderRadius: 10, flexShrink: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 12, fontWeight: 800,
+                  fontSize: 11, fontWeight: 800,
                   background: roleStyle.bg, color: roleStyle.color,
                 }}>
-                  {role}
+                  {roleStyle.label}
                 </div>
-                <div>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: '#1a1a2e' }}>{p.fullname}</div>
-                  <div style={{ fontSize: 12, color: '#999', fontWeight: 500, marginTop: 1 }}>
-                    {p.iplTeamName || p.iplTeamCode || 'IPL'} &middot; {role}
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: '#1a1a2e' }}>{p.fullname}</div>
+                  <div style={{ fontSize: 10, color: '#888', fontWeight: 500 }}>
+                    {p.iplTeamCode || 'IPL'} &middot; {roleFullName[role] || role}
+                    {sheetDetail && sheetDetail.matches > 0 ? ` \u00B7 ${sheetDetail.matches} matches` : ''}
                   </div>
                 </div>
+                <div style={{
+                  fontSize: 24, fontWeight: 800, color: '#004BA0',
+                  fontVariantNumeric: 'tabular-nums', letterSpacing: -1,
+                }}>
+                  {sheetDetail ? (sheetDetail.totalPoints > 0 ? sheetDetail.totalPoints : '\u2014') : '\u2014'}
+                </div>
               </div>
-              {/* C/VC controls or bench message */}
+
+              {/* Stats grid — role-based, matches Players page layout */}
+              {sheetDetailLoading && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px 0 12px' }}>
+                  <div style={{
+                    width: 20, height: 20, border: '2.5px solid #e8eaf0', borderTopColor: '#004BA0',
+                    borderRadius: '50%', animation: 'spin 0.8s linear infinite',
+                  }} />
+                  <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+                </div>
+              )}
+
+              {/* Season comparison table — years as rows, stats as columns */}
+              {!sheetDetailLoading && hasSeasons && (() => {
+                const batCols: { label: string; key: string; format?: (v: number) => string }[] = [
+                  { label: 'Runs', key: 'runs' },
+                  { label: '4s', key: 'fours' },
+                  { label: '6s', key: 'sixes' },
+                  { label: 'SR', key: 'strikeRate', format: (v: number) => v > 0 ? v.toFixed(1) : '—' },
+                  { label: 'HS', key: 'highestScore' },
+                ]
+                const bowlCols: { label: string; key: string; format?: (v: number) => string }[] = [
+                  { label: 'Wkts', key: 'wickets' },
+                  { label: 'Overs', key: 'overs', format: (v: number) => v > 0 ? v.toFixed(1) : '—' },
+                  { label: 'Econ', key: 'economyRate', format: (v: number) => v > 0 ? v.toFixed(1) : '—' },
+                ]
+                const hasBowling = seasons.some(s => s.bowling && (s.bowling.wickets > 0 || s.bowling.overs > 0))
+
+                const getVal = (season: typeof seasons[0], key: string, isBowl = false) => {
+                  const src = isBowl ? season.bowling : season.batting
+                  if (!src) return null
+                  return (src as Record<string, unknown>)[key] as number | undefined
+                }
+                const fmtVal = (v: number | null | undefined, fmt?: (v: number) => string) => {
+                  if (v === null || v === undefined) return '—'
+                  return fmt ? fmt(v) : String(v)
+                }
+
+                const renderTable = (cols: typeof batCols, isBowl: boolean, title: string) => (
+                  <>
+                    <div style={{
+                      fontSize: 8, fontWeight: 700, color: '#999',
+                      textTransform: 'uppercase', letterSpacing: 1, padding: isBowl ? '8px 0 3px' : '4px 0 3px',
+                    }}>{title}</div>
+                    <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid #eef0f5' }}>
+                      {/* Column headers */}
+                      <div style={{ display: 'flex' }}>
+                        <div style={{
+                          width: 62, padding: '6px 10px', fontSize: 9, fontWeight: 700,
+                          color: '#999', background: '#fafbfd',
+                        }}>Season</div>
+                        {cols.map(c => (
+                          <div key={c.key} style={{
+                            flex: 1, textAlign: 'center', padding: '6px 2px',
+                            fontSize: 9, fontWeight: 700, color: '#888',
+                            background: '#fafbfd', borderLeft: '1px solid #eef0f5',
+                          }}>{c.label}</div>
+                        ))}
+                      </div>
+                      {/* Season rows */}
+                      {seasons.map((s, ri) => (
+                        <div key={s.seasonId} style={{ display: 'flex', borderTop: '1px solid #f2f3f8' }}>
+                          <div style={{
+                            width: 62, padding: '6px 10px', fontSize: 10,
+                            fontWeight: ri === 0 ? 800 : 600,
+                            color: ri === 0 ? '#004BA0' : '#555',
+                            background: ri === 0 ? 'rgba(0,75,160,0.04)' : (ri % 2 === 0 ? '#fff' : '#fafbfd'),
+                          }}>
+                            {s.seasonName.replace('IPL ', '').replace('T20 Career', 'T20')}
+                          </div>
+                          {cols.map(c => {
+                            const v = getVal(s, c.key, isBowl)
+                            return (
+                              <div key={c.key} style={{
+                                flex: 1, textAlign: 'center', padding: '6px 2px',
+                                fontSize: 11, fontVariantNumeric: 'tabular-nums',
+                                fontWeight: ri === 0 ? 800 : 500,
+                                color: v && v > 0 ? (ri === 0 ? '#1a1a2e' : '#444') : '#ccc',
+                                background: ri === 0 ? 'rgba(0,75,160,0.04)' : (ri % 2 === 0 ? '#fff' : '#fafbfd'),
+                                borderLeft: '1px solid #f2f3f8',
+                              }}>
+                                {fmtVal(v, c.format)}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )
+
+                return (
+                  <div style={{ padding: '6px 16px 8px', overflowX: 'auto' }}>
+                    {renderTable(batCols, false, 'Batting')}
+                    {hasBowling && renderTable(bowlCols, true, 'Bowling')}
+                  </div>
+                )
+              })()}
+
+              {/* Price badge — when no season data */}
+              {!sheetDetailLoading && !hasSeasons && (
+                <div style={{ padding: '8px 20px 8px' }}>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <div style={{
+                      textAlign: 'center', padding: '6px 14px',
+                      background: '#f7f8fb', borderRadius: 8,
+                    }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: '#222', fontVariantNumeric: 'tabular-nums' }}>
+                        {p.purchasePrice}
+                      </div>
+                      <div style={{ fontSize: 8, color: '#aaa', fontWeight: 500, marginTop: 1 }}>Price</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div style={{ borderTop: '1px solid #f2f3f8' }} />
+
+              {/* C/VC checkboxes — inline row */}
               {isBenchPlayer ? (
                 <div style={{
-                  padding: '20px 20px', textAlign: 'center',
+                  padding: '16px 20px', textAlign: 'center',
                   color: '#888', fontSize: 13, fontWeight: 500, lineHeight: 1.5,
                 }}>
                   Move to Playing XI to assign Captain/VC
                 </div>
               ) : (
-                <>
-                  {/* Captain toggle */}
+                <div style={{
+                  display: 'flex', gap: 16, padding: '16px 20px',
+                  borderBottom: '1px solid #f2f3f8',
+                }}>
                   <button
                     onClick={() => {
-                      if (!isLocked) {
-                        if (captainId === p.id) { closeStatsSheet(); return }
-                        if (vcId === p.id) setVcId(captainId)
-                        setCaptainId(p.id)
-                        setDirty(true)
-                      }
-                      closeStatsSheet()
+                      if (isLocked) return
+                      if (captainId === p.id) return
+                      if (vcId === p.id) setVcId(captainId)
+                      setCaptainId(p.id)
+                      setDirty(true)
                     }}
                     style={{
-                      display: 'flex', alignItems: 'center', gap: 12,
-                      padding: '14px 20px', fontSize: 14, fontWeight: 600, color: '#1a1a2e',
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      padding: 0, border: 'none', background: 'transparent',
                       cursor: isLocked ? 'default' : 'pointer',
-                      border: 'none', width: '100%', fontFamily: 'inherit',
-                      background: isCap ? 'rgba(249,205,5,0.10)' : 'transparent',
-                      transition: 'background 0.15s',
+                      fontFamily: 'inherit',
                     }}
                   >
                     <div style={{
-                      width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+                      width: 22, height: 22, borderRadius: 6,
+                      border: isCap ? 'none' : '2px solid #d0d2da',
+                      background: isCap ? '#F9CD05' : 'transparent',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 16, background: 'rgba(249,205,5,0.12)',
-                    }}>
-                      {'\u2729'}
-                    </div>
-                    <div style={{ flex: 1, textAlign: 'left' }}>
-                      <div style={{ fontWeight: 700 }}>{isCap ? 'Captain (current)' : 'Make Captain'}</div>
-                      <div style={{ fontSize: 11, color: '#999', fontWeight: 500 }}>2&times; points this GW</div>
-                    </div>
-                    {isCap && (
-                      <div style={{
-                        width: 22, height: 22, borderRadius: 6,
-                        background: '#F9CD05', color: '#1a1a1a',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 13, fontWeight: 800,
-                      }}>&#10003;</div>
-                    )}
+                      fontSize: 12, fontWeight: 800, color: isCap ? '#1a1a1a' : 'transparent',
+                      transition: 'all 0.15s',
+                    }}>&#10003;</div>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a2e' }}>Captain</span>
                   </button>
-                  {/* Vice Captain toggle */}
                   <button
                     onClick={() => {
-                      if (!isLocked) {
-                        if (vcId === p.id) { closeStatsSheet(); return }
-                        if (captainId === p.id) setCaptainId(vcId)
-                        setVcId(p.id)
-                        setDirty(true)
-                      }
-                      closeStatsSheet()
+                      if (isLocked) return
+                      if (vcId === p.id) return
+                      if (captainId === p.id) setCaptainId(vcId)
+                      setVcId(p.id)
+                      setDirty(true)
                     }}
                     style={{
-                      display: 'flex', alignItems: 'center', gap: 12,
-                      padding: '14px 20px', fontSize: 14, fontWeight: 600, color: '#1a1a2e',
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      padding: 0, border: 'none', background: 'transparent',
                       cursor: isLocked ? 'default' : 'pointer',
-                      border: 'none', width: '100%', fontFamily: 'inherit',
-                      borderTop: '1px solid #f2f3f8',
-                      background: isVCPlayer ? 'rgba(192,199,208,0.12)' : 'transparent',
-                      transition: 'background 0.15s',
+                      fontFamily: 'inherit',
                     }}
                   >
                     <div style={{
-                      width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+                      width: 22, height: 22, borderRadius: 6,
+                      border: isVCPlayer ? 'none' : '2px solid #d0d2da',
+                      background: isVCPlayer ? '#C0C7D0' : 'transparent',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 16, background: 'rgba(192,199,208,0.15)',
-                    }}>
-                      {'\u2606'}
-                    </div>
-                    <div style={{ flex: 1, textAlign: 'left' }}>
-                      <div style={{ fontWeight: 700 }}>{isVCPlayer ? 'Vice Captain (current)' : 'Make Vice Captain'}</div>
-                      <div style={{ fontSize: 11, color: '#999', fontWeight: 500 }}>2&times; only if Captain absent</div>
-                    </div>
-                    {isVCPlayer && (
-                      <div style={{
-                        width: 22, height: 22, borderRadius: 6,
-                        background: '#C0C7D0', color: '#1a1a1a',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 13, fontWeight: 800,
-                      }}>&#10003;</div>
-                    )}
+                      fontSize: 12, fontWeight: 800, color: isVCPlayer ? '#1a1a1a' : 'transparent',
+                      transition: 'all 0.15s',
+                    }}>&#10003;</div>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a2e' }}>Vice Captain</span>
                   </button>
-                </>
+                </div>
+              )}
+              {/* Action buttons */}
+              {!isLocked && (
+                <div style={{
+                  display: 'flex', gap: 10, padding: '14px 20px',
+                  borderTop: '1px solid #f2f3f8',
+                }}>
+                  <button
+                    onClick={() => {
+                      closeStatsSheet()
+                      // Navigate to full player profile on players page
+                      window.location.href = '/players'
+                    }}
+                    style={{
+                      flex: 1, padding: '13px', borderRadius: 12,
+                      border: '2px solid #e0e2ea', background: '#fff',
+                      color: '#1a1a2e', fontSize: 13, fontWeight: 700,
+                      cursor: 'pointer', fontFamily: 'inherit',
+                    }}
+                  >
+                    Full Profile
+                  </button>
+                  <button
+                    onClick={() => {
+                      closeStatsSheet()
+                      // Enter swap mode for this player
+                      if (isBenchPlayer) {
+                        setSwapSelection({ direction: 'toXI', sourceId: p.id })
+                      } else {
+                        setSwapSelection({ direction: 'toBench', sourceId: p.id })
+                      }
+                    }}
+                    style={{
+                      flex: 1, padding: '13px', borderRadius: 12,
+                      border: 'none',
+                      background: 'linear-gradient(135deg, #0d9e5f, #07c472)',
+                      color: '#fff', fontSize: 13, fontWeight: 700,
+                      cursor: 'pointer', fontFamily: 'inherit',
+                      boxShadow: '0 4px 14px rgba(13, 158, 95, 0.25)',
+                    }}
+                  >
+                    Substitute
+                  </button>
+                </div>
               )}
               {/* Cancel */}
               <button
                 onClick={closeStatsSheet}
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  padding: '14px 20px', fontSize: 13, fontWeight: 600, color: '#999',
+                  padding: '12px 20px', fontSize: 13, fontWeight: 600, color: '#999',
                   cursor: 'pointer', border: 'none', background: 'transparent',
                   width: '100%', fontFamily: 'inherit',
-                  borderTop: '1px solid #f2f3f8', marginTop: 4,
+                  borderTop: '1px solid #f2f3f8',
                 }}
               >
                 Cancel
