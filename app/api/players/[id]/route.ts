@@ -367,6 +367,35 @@ export async function GET(
 
     // Season stats only show past IPL seasons (2025, 2024, 2023) — current season hasn't started yet
 
+    // Fetch upcoming matches for this player's IPL team
+    let upcomingFixtures: { opponent: string; startingAt: string; gameweek: number | null }[] = []
+    if (player.iplTeamName) {
+      const upcoming = await prisma.match.findMany({
+        where: {
+          scoringStatus: 'SCHEDULED',
+          OR: [
+            { localTeamName: player.iplTeamName },
+            { visitorTeamName: player.iplTeamName },
+          ],
+        },
+        orderBy: { startingAt: 'asc' },
+        take: 6,
+        select: {
+          localTeamName: true,
+          visitorTeamName: true,
+          startingAt: true,
+          gameweek: { select: { number: true } },
+        },
+      })
+      upcomingFixtures = upcoming.map((m) => ({
+        opponent: m.localTeamName === player.iplTeamName
+          ? (m.visitorTeamName ?? '?')
+          : (m.localTeamName ?? '?'),
+        startingAt: m.startingAt.toISOString(),
+        gameweek: m.gameweek?.number ?? null,
+      }))
+    }
+
     return Response.json({
       player: {
         id: player.id,
@@ -389,6 +418,7 @@ export async function GET(
       dataSource,
       careerStats,
       seasonStats,
+      upcomingFixtures,
     })
   } catch (error) {
     console.error('GET /api/players/[id] error:', error)

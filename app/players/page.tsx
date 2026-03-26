@@ -2,6 +2,7 @@
 
 import { useSession } from 'next-auth/react'
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { AppFrame } from '@/app/components/AppFrame'
 
 /* ─── IPL teams ─── */
@@ -206,6 +207,19 @@ export default function PlayersPage() {
   const [activeGwTab, setActiveGwTab] = useState('Season')
   const [activeSeasonTab, setActiveSeasonTab] = useState<number | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const searchParams = useSearchParams()
+  const autoOpenRef = useRef(false)
+
+  /* Auto-open player profile if ?playerId=xxx in URL */
+  useEffect(() => {
+    const pid = searchParams.get('playerId')
+    if (!pid || autoOpenRef.current) return
+    autoOpenRef.current = true
+    // Open directly by ID — create a minimal player object for the sheet
+    const stub: Player = { id: pid, fullname: '', role: '', iplTeamCode: null, iplTeamName: null, imageUrl: null, seasonPoints: 0, matchesPlayed: 0 }
+    openPlayerSheet(stub)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   /* Open / close player detail sheet */
   const openPlayerSheet = async (player: Player) => {
@@ -601,29 +615,6 @@ export default function PlayersPage() {
           }
         }
 
-        // Build form data from per-GW points (most recent 5 GWs)
-        const buildFormData = (): { values: number[]; labels: string[] } => {
-          if (!detail || detail.performances.length === 0) return { values: [], labels: [] }
-          const gwMap = new Map<number, number>()
-          for (const p of detail.performances) {
-            const gw = p.match.gameweek?.number
-            if (gw != null) {
-              gwMap.set(gw, (gwMap.get(gw) || 0) + p.fantasyPoints)
-            }
-          }
-          const sorted = [...gwMap.entries()].sort((a, b) => a[0] - b[0]).slice(-5)
-          return {
-            values: sorted.map(([, pts]) => pts),
-            labels: sorted.map(([gw]) => `GW${gw}`),
-          }
-        }
-
-        const formData = buildFormData()
-        const maxForm = formData.values.length > 0 ? Math.max(...formData.values, 1) : 1
-        const trendUp = formData.values.length >= 3 &&
-          formData.values[formData.values.length - 1] > formData.values[formData.values.length - 2] &&
-          formData.values[formData.values.length - 2] > formData.values[formData.values.length - 3]
-
         const statsGrid = buildStatsGrid()
         const hasData = activePerfs.length > 0
 
@@ -653,7 +644,7 @@ export default function PlayersPage() {
               borderRadius: '22px 22px 0 0',
               zIndex: 201,
               transition: 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
-              maxHeight: '82vh',
+              maxHeight: '80vh',
               overflow: 'hidden',
               boxShadow: '0 -6px 30px rgba(0,0,0,0.15)',
             }}>
@@ -671,17 +662,11 @@ export default function PlayersPage() {
                 }}>
                   {iconInfo.label}
                 </div>
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, paddingRight: 30 }}>
                   <div style={{ fontSize: 15, fontWeight: 800, color: '#1a1a2e' }}>{selectedPlayer.fullname}</div>
                   <div style={{ fontSize: 10, color: '#888', fontWeight: 500 }}>
                     {selectedPlayer.iplTeamCode || ''} · {roleFullName[selectedPlayer.role] || selectedPlayer.role}{detail ? (detail.stats.matches > 0 ? ` · ${detail.stats.matches} matches` : detail.careerStats?.batting?.matches ? ` · ${detail.careerStats.batting.matches} ${detail.careerStats.isIplSpecific ? 'IPL' : 'T20'} matches` : '') : ''}
                   </div>
-                </div>
-                <div style={{
-                  fontSize: 24, fontWeight: 800, color: '#004BA0',
-                  fontVariantNumeric: 'tabular-nums', letterSpacing: -1,
-                }}>
-                  {detail ? (detail.stats.totalPoints > 0 ? detail.stats.totalPoints : (detail.dataSource === 'none' || detail.dataSource === 'sportmonks' ? '—' : 0)) : '—'}
                 </div>
                 <button
                   onClick={closePlayerSheet}
@@ -697,27 +682,11 @@ export default function PlayersPage() {
                 </button>
               </div>
 
-              {/* GW Tabs */}
-              <div style={{ display: 'flex', padding: '0 16px', borderBottom: '1px solid #f0f0f4' }}>
-                {gwTabs.map((tab) => (
-                  <div
-                    key={tab}
-                    onClick={() => setActiveGwTab(tab)}
-                    style={{
-                      padding: '7px 12px', fontSize: 10, fontWeight: 600,
-                      color: activeGwTab === tab ? '#004BA0' : '#aaa',
-                      cursor: 'pointer',
-                      borderBottom: `2px solid ${activeGwTab === tab ? '#004BA0' : 'transparent'}`,
-                    }}
-                  >
-                    {tab}
-                  </div>
-                ))}
-              </div>
+              <div style={{ borderBottom: '1px solid #f0f0f4' }} />
 
               {/* Scrollable content */}
               <div style={{
-                overflowY: 'auto', maxHeight: 'calc(82vh - 130px)', padding: '4px 0 24px',
+                overflowY: 'auto', maxHeight: 'calc(80vh - 130px)', padding: '4px 0 24px',
                 scrollbarWidth: 'none',
               } as React.CSSProperties}>
 
@@ -732,15 +701,8 @@ export default function PlayersPage() {
                   </div>
                 )}
 
-                {/* No data for this tab */}
-                {!detailLoading && detail && !hasData && activeGwTab !== 'Season' && (
-                  <div style={{ textAlign: 'center', padding: '32px 16px', color: '#aaa', fontSize: 12, fontWeight: 500 }}>
-                    No data for this gameweek
-                  </div>
-                )}
-
-                {/* No local performances — show batting/bowling tables */}
-                {!detailLoading && detail && detail.performances.length === 0 && activeGwTab === 'Season' && (() => {
+                {/* Batting/bowling tables */}
+                {!detailLoading && detail && (() => {
                   const apiSeasons = detail.seasonStats?.seasons ?? []
                   const cs = detail.careerStats
                   const hasBatting = (cs?.batting && cs.batting.matches > 0) || apiSeasons.some(s => s.batting && s.batting.matches > 0)
@@ -760,7 +722,7 @@ export default function PlayersPage() {
                   if (cs?.batting && cs.batting.matches > 0) {
                     const b = cs.batting
                     batRows.push({
-                      label: 'T20 Career', isCareer: true, isMostRecent: false,
+                      label: 'T20', isCareer: true, isMostRecent: false,
                       mat: b.matches, runs: b.runs,
                       avg: b.average > 0 ? b.average.toFixed(1) : '—',
                       sr: b.strikeRate > 0 ? b.strikeRate.toFixed(1) : '—',
@@ -789,7 +751,7 @@ export default function PlayersPage() {
                     const balls = Math.floor(bw.overs) * 6 + Math.round((bw.overs % 1) * 10)
                     const bowlSR = bw.wickets > 0 ? (balls / bw.wickets).toFixed(1) : '—'
                     bowlRows.push({
-                      label: 'T20 Career', isCareer: true, isMostRecent: false,
+                      label: 'T20', isCareer: true, isMostRecent: false,
                       mat: bw.matches, wkts: bw.wickets,
                       avg: bw.average > 0 ? bw.average.toFixed(1) : '—',
                       econ: bw.economyRate > 0 ? bw.economyRate.toFixed(1) : '—',
@@ -914,200 +876,6 @@ export default function PlayersPage() {
                   )
                 })()}
 
-                {/* Stats content — show when we have data */}
-                {!detailLoading && detail && hasData && (
-                  <>
-                    {/* Stat section */}
-                    <div style={{ padding: '8px 16px' }}>
-                      <div style={{
-                        fontSize: 9, fontWeight: 700, color: '#aaa',
-                        textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6,
-                      }}>
-                        {statsGrid.section}
-                      </div>
-                      <div style={{ display: 'flex', gap: 4 }}>
-                        {statsGrid.stats.map((s, i) => (
-                          <div key={i} style={{
-                            flex: 1, textAlign: 'center', padding: '6px 3px',
-                            background: '#f7f8fb', borderRadius: 8,
-                          }}>
-                            <div style={{ fontSize: 14, fontWeight: 800, color: '#222', fontVariantNumeric: 'tabular-nums' }}>
-                              {s.val}
-                            </div>
-                            <div style={{ fontSize: 8, color: '#aaa', fontWeight: 500, marginTop: 1 }}>
-                              {s.label}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Fielding section */}
-                    <div style={{ padding: '8px 16px', borderTop: '1px solid #f5f5f8' }}>
-                      <div style={{
-                        fontSize: 9, fontWeight: 700, color: '#aaa',
-                        textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6,
-                      }}>
-                        Fielding
-                      </div>
-                      <div style={{ display: 'flex', gap: 4 }}>
-                        {[
-                          { val: String(agg.catches), label: 'Catches' },
-                          { val: String(agg.runouts), label: 'Runouts' },
-                        ].map((s, i) => (
-                          <div key={i} style={{
-                            flex: 1, textAlign: 'center', padding: '6px 3px',
-                            background: '#f7f8fb', borderRadius: 8, maxWidth: 80,
-                          }}>
-                            <div style={{ fontSize: 14, fontWeight: 800, color: '#222', fontVariantNumeric: 'tabular-nums' }}>
-                              {s.val}
-                            </div>
-                            <div style={{ fontSize: 8, color: '#aaa', fontWeight: 500, marginTop: 1 }}>
-                              {s.label}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Fantasy Points Breakdown */}
-                    <div style={{ padding: '8px 16px', borderTop: '1px solid #f5f5f8' }}>
-                      <div style={{
-                        fontSize: 9, fontWeight: 700, color: '#aaa',
-                        textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6,
-                      }}>
-                        Fantasy Points
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 11 }}>
-                          <span style={{ color: '#666', fontWeight: 500 }}>Matches Played</span>
-                          <span style={{ color: '#333', fontWeight: 700 }}>{agg.matches}</span>
-                        </div>
-                        {agg.runs > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 11 }}>
-                            <span style={{ color: '#666', fontWeight: 500 }}>Runs ({agg.runs})</span>
-                            <span style={{ color: '#333', fontWeight: 700 }}>+{agg.runs}</span>
-                          </div>
-                        )}
-                        {agg.fours > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 11 }}>
-                            <span style={{ color: '#666', fontWeight: 500 }}>Fours ({agg.fours})</span>
-                            <span style={{ color: '#333', fontWeight: 700 }}>+{agg.fours}</span>
-                          </div>
-                        )}
-                        {agg.sixes > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 11 }}>
-                            <span style={{ color: '#666', fontWeight: 500 }}>Sixes ({agg.sixes})</span>
-                            <span style={{ color: '#333', fontWeight: 700 }}>+{agg.sixes}</span>
-                          </div>
-                        )}
-                        {agg.wickets > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 11 }}>
-                            <span style={{ color: '#666', fontWeight: 500 }}>Wickets ({agg.wickets})</span>
-                            <span style={{ color: '#333', fontWeight: 700 }}>+{agg.wickets * 25}</span>
-                          </div>
-                        )}
-                        {agg.dotBalls > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 11 }}>
-                            <span style={{ color: '#666', fontWeight: 500 }}>Dot Balls ({agg.dotBalls})</span>
-                            <span style={{ color: '#333', fontWeight: 700 }}>+{agg.dotBalls}</span>
-                          </div>
-                        )}
-                        {agg.catches > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 11 }}>
-                            <span style={{ color: '#666', fontWeight: 500 }}>Catches ({agg.catches})</span>
-                            <span style={{ color: '#333', fontWeight: 700 }}>+{agg.catches * 8}</span>
-                          </div>
-                        )}
-                        {agg.stumpings > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 11 }}>
-                            <span style={{ color: '#666', fontWeight: 500 }}>Stumpings ({agg.stumpings})</span>
-                            <span style={{ color: '#333', fontWeight: 700 }}>+{agg.stumpings * 12}</span>
-                          </div>
-                        )}
-                        {/* Total row */}
-                        <div style={{
-                          display: 'flex', justifyContent: 'space-between', padding: '6px 0 4px',
-                          borderTop: '2px solid #1a1a2e', marginTop: 4,
-                        }}>
-                          <span style={{ fontWeight: 800, color: '#1a1a2e', fontSize: 11 }}>Total</span>
-                          <span style={{ fontWeight: 800, color: '#1a1a2e', fontSize: 14 }}>{agg.fantasyPoints}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Recent Form — only on Season tab */}
-                    {activeGwTab === 'Season' && formData.values.length > 0 && (
-                      <div style={{ padding: '8px 16px', borderTop: '1px solid #f5f5f8', textAlign: 'center' }}>
-                        <div style={{
-                          fontSize: 9, fontWeight: 700, color: '#aaa',
-                          textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6,
-                          textAlign: 'left',
-                        }}>
-                          Recent Form
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 60, padding: '0 8px' }}>
-                          {formData.values.map((val, i) => {
-                            const isLast = i === formData.values.length - 1
-                            const isHot = i === formData.values.length - 2
-                            const pct = maxForm > 0 ? (val / maxForm) * 100 : 10
-                            return (
-                              <div key={i} style={{
-                                flex: 1,
-                                background: isLast ? '#004BA0' : isHot ? 'rgba(0,75,160,0.2)' : '#e8eaf0',
-                                borderRadius: '5px 5px 0 0',
-                                height: `${pct}%`,
-                                minHeight: 6,
-                                position: 'relative',
-                              }}>
-                                <span style={{
-                                  position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)',
-                                  fontSize: isLast ? 9 : 8, fontWeight: 700,
-                                  color: isLast ? '#004BA0' : '#999',
-                                }}>
-                                  {val}
-                                </span>
-                              </div>
-                            )
-                          })}
-                        </div>
-                        <div style={{
-                          display: 'flex', justifyContent: 'space-around', padding: '3px 8px 0',
-                          fontSize: 8, color: '#bbb', fontWeight: 500,
-                        }}>
-                          {formData.labels.map((gw) => (
-                            <span key={gw}>{gw}</span>
-                          ))}
-                        </div>
-                        <div style={{
-                          display: 'inline-block', marginTop: 6,
-                          fontSize: 10, fontWeight: 700,
-                          color: trendUp ? '#0d9e5f' : '#004BA0',
-                          background: trendUp ? 'rgba(13,158,95,0.08)' : 'rgba(0,75,160,0.08)',
-                          padding: '3px 10px', borderRadius: 6,
-                        }}>
-                          {trendUp ? '▲ Trending Up' : '● Consistent'}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Season tab with no form data */}
-                    {activeGwTab === 'Season' && formData.values.length === 0 && detail.performances.length > 0 && (
-                      <div style={{ padding: '8px 16px', borderTop: '1px solid #f5f5f8', textAlign: 'center' }}>
-                        <div style={{
-                          fontSize: 9, fontWeight: 700, color: '#aaa',
-                          textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6,
-                          textAlign: 'left',
-                        }}>
-                          Recent Form
-                        </div>
-                        <div style={{ padding: '16px 0', color: '#bbb', fontSize: 11, fontWeight: 500 }}>
-                          No gameweek data available
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
               </div>
             </div>
           </>
