@@ -47,7 +47,8 @@ export async function fetchScorecard(
   }
 }
 
-// Generate gameweek windows (Mon-Sun) covering the fixture dates
+// Generate gameweek windows (Sat-Fri) covering the fixture dates
+// Lock time = 1 hour before the earliest match in each gameweek
 export function generateGameweeks(
   fixtures: SportMonksFixture[]
 ): { number: number; startDate: Date; endDate: Date; lockTime: Date }[] {
@@ -59,10 +60,13 @@ export function generateGameweeks(
   const firstMatch = dates[0]
   const lastMatch = dates[dates.length - 1]
 
-  // Find the Monday before the first match
-  const firstMonday = new Date(firstMatch)
-  firstMonday.setDate(firstMonday.getDate() - ((firstMonday.getDay() + 6) % 7))
-  firstMonday.setHours(0, 0, 0, 0)
+  // Find the Saturday on or before the first match
+  // Saturday = day 6. Formula: shift so Saturday is day 0.
+  const firstSaturday = new Date(firstMatch)
+  const dayOfWeek = firstSaturday.getDay() // 0=Sun, 1=Mon, ..., 6=Sat
+  const daysToSubtract = (dayOfWeek + 1) % 7 // Sat=0, Sun=1, Mon=2, ..., Fri=6
+  firstSaturday.setDate(firstSaturday.getDate() - daysToSubtract)
+  firstSaturday.setHours(0, 0, 0, 0)
 
   const gameweeks: {
     number: number
@@ -71,24 +75,26 @@ export function generateGameweeks(
     lockTime: Date
   }[] = []
   let gwNum = 1
-  const current = new Date(firstMonday)
+  const current = new Date(firstSaturday)
 
   while (current <= lastMatch) {
     const start = new Date(current)
     const end = new Date(current)
-    end.setDate(end.getDate() + 6)
+    end.setDate(end.getDate() + 6) // Saturday + 6 = Friday
     end.setHours(23, 59, 59, 999)
 
-    // Lock time = earliest match in this GW window
+    // Find matches in this Sat-Fri window
     const gwFixtures = fixtures.filter((f) => {
       const d = new Date(f.starting_at)
       return d >= start && d <= end
     })
 
     if (gwFixtures.length > 0) {
-      const lockTime = gwFixtures
+      // Lock time = 1 hour before the earliest match in this gameweek
+      const firstMatchTime = gwFixtures
         .map((f) => new Date(f.starting_at))
         .sort((a, b) => a.getTime() - b.getTime())[0]
+      const lockTime = new Date(firstMatchTime.getTime() - 60 * 60 * 1000)
 
       gameweeks.push({ number: gwNum, startDate: start, endDate: end, lockTime })
       gwNum++
