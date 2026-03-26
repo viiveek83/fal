@@ -1125,6 +1125,129 @@ test('32. Save pitch view changes and verify persistence @user', async ({ page }
 })
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   33. Tap player name in list view opens stats sheet with C/VC controls
+   ═══════════════════════════════════════════════════════════════════════════ */
+test('33. Tap player name opens stats sheet with C/VC @user', async ({ page }) => {
+  test.setTimeout(60000)
+  await page.goto('/lineup')
+  await waitForApp(page)
+
+  const lockBadge = page.getByText('Lineup Locked')
+  if (await lockBadge.isVisible({ timeout: 2000 }).catch(() => false)) return
+
+  // Switch to list view
+  await page.getByText('List View').click()
+  await page.waitForTimeout(300)
+
+  // Find an XI player name — tap the name text (not the action buttons)
+  // Player names are inside the info area of list view rows
+  const playerNames = page.locator('div[style*="font-weight: 700"][style*="color: rgb(26, 26, 46)"]')
+  const firstName = playerNames.first()
+  if (await firstName.isVisible({ timeout: 3000 }).catch(() => false)) {
+    const nameText = await firstName.textContent()
+    await firstName.click()
+
+    // Stats sheet should open with player info
+    await page.waitForTimeout(500)
+
+    // Should show "Make Captain" or "Captain (current)" toggle
+    const captainToggle = page.getByText(/Make Captain|Captain \(current\)/)
+    await expect(captainToggle).toBeVisible({ timeout: 3000 })
+
+    // Should show "Make Vice Captain" or "Vice Captain (current)" toggle
+    const vcToggle = page.getByText(/Make Vice Captain|Vice Captain \(current\)/)
+    await expect(vcToggle).toBeVisible()
+
+    // Should show "2× points this GW" description
+    await expect(page.getByText('2× points this GW')).toBeVisible()
+
+    await expect(page).toHaveScreenshot('player-stats-sheet-cv.png')
+
+    // Close by tapping overlay
+    await page.locator('div[style*="position: fixed"][style*="inset: 0"]').first().click({ force: true })
+    await page.waitForTimeout(300)
+  }
+})
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   34. Select captain via stats sheet
+   ═══════════════════════════════════════════════════════════════════════════ */
+test('34. Select captain via stats sheet @user', async ({ page }) => {
+  test.setTimeout(60000)
+  await page.goto('/lineup')
+  await waitForApp(page)
+
+  const lockBadge = page.getByText('Lineup Locked')
+  if (await lockBadge.isVisible({ timeout: 2000 }).catch(() => false)) return
+
+  // Switch to list view
+  await page.getByText('List View').click()
+  await page.waitForTimeout(300)
+
+  // Find a non-captain XI player and tap their name
+  // The captain has a gold "C" badge — find a row WITHOUT it
+  const playerNames = page.locator('div[style*="font-weight: 700"][style*="color: rgb(26, 26, 46)"]')
+  const count = await playerNames.count()
+
+  // Tap the third player (likely not captain or VC)
+  if (count >= 3) {
+    await playerNames.nth(2).click()
+    await page.waitForTimeout(500)
+
+    // Should see "Make Captain" (not "Captain (current)")
+    const makeCaptain = page.getByText('Make Captain', { exact: false })
+    if (await makeCaptain.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await makeCaptain.click()
+      await page.waitForTimeout(300)
+
+      // Sheet should close, dirty state should be set, save button visible
+      const saveBtn = page.getByText('Save Lineup')
+      await expect(saveBtn).toBeVisible({ timeout: 3000 })
+    }
+  }
+
+  await expect(page).toHaveScreenshot('captain-via-stats-sheet.png')
+})
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   35. Bench player stats sheet shows "Move to XI" message
+   ═══════════════════════════════════════════════════════════════════════════ */
+test('35. Bench player stats sheet shows move to XI message @user', async ({ page }) => {
+  test.setTimeout(60000)
+  await page.goto('/lineup')
+  await waitForApp(page)
+
+  const lockBadge = page.getByText('Lineup Locked')
+  if (await lockBadge.isVisible({ timeout: 2000 }).catch(() => false)) return
+
+  // Switch to list view
+  await page.getByText('List View').click()
+  await page.waitForTimeout(300)
+
+  // Find a bench player name — bench section comes after "BENCH" label
+  const benchLabel = page.getByText(/BENCH/i).last()
+  if (await benchLabel.isVisible({ timeout: 3000 }).catch(() => false)) {
+    // Find player names after the bench label — try clicking one
+    const benchPlayerNames = page.locator('div[style*="font-weight: 700"][style*="color: rgb(26, 26, 46)"]')
+    const total = await benchPlayerNames.count()
+
+    // Last few players are bench (after the 11 XI players)
+    if (total > 11) {
+      await benchPlayerNames.nth(11).click()
+      await page.waitForTimeout(500)
+
+      // Should show "Move to Playing XI to assign Captain/VC"
+      await expect(page.getByText('Move to Playing XI to assign Captain/VC')).toBeVisible({ timeout: 3000 })
+
+      await expect(page).toHaveScreenshot('bench-stats-sheet.png')
+
+      // Close
+      await page.locator('div[style*="position: fixed"][style*="inset: 0"]').first().click({ force: true })
+    }
+  }
+})
+
+/* ═══════════════════════════════════════════════════════════════════════════
    22. Dashboard shows active gameweek with matches (mid-season)
    ═══════════════════════════════════════════════════════════════════════════ */
 test('22. Dashboard shows active gameweek with matches @user', async ({ page }) => {
