@@ -13,9 +13,9 @@ import { test, expect, Page } from '@playwright/test'
 
 /** Wait for the page to finish loading (network idle + no "Loading..." text). */
 async function waitForApp(page: Page) {
-  await page.waitForLoadState('networkidle')
-  // Give client-side hydration a moment
-  await expect(page.getByText('Loading...')).toBeHidden({ timeout: 15_000 }).catch(() => {})
+  await page.waitForLoadState('networkidle', { timeout: 30_000 }).catch(() => {})
+  // Give client-side hydration a moment (longer for Vercel cold starts)
+  await expect(page.getByText('Loading...')).toBeHidden({ timeout: 30_000 }).catch(() => {})
 }
 
 /** Bottom nav labels present on every authenticated page. */
