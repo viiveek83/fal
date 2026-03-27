@@ -404,8 +404,10 @@ export default function DashboardPage() {
   const avgPoints = standings.length > 0
     ? Math.round(standings.reduce((sum, s) => sum + s.totalPoints, 0) / standings.length)
     : 0
-  const topStanding = standings.length > 0 ? standings[0] : null
-  const highestPoints = topStanding?.totalPoints ?? 0
+  const topGwStanding = standings.length > 0
+    ? standings.reduce((best, s) => s.lastGwPoints > best.lastGwPoints ? s : best, standings[0])
+    : null
+  const highestPoints = topGwStanding?.lastGwPoints ?? 0
   const hasScores = standings.some(s => s.totalPoints > 0)
 
   // Deadline
@@ -519,8 +521,8 @@ export default function DashboardPage() {
 
           {/* Highest */}
           <Link
-            href={topStanding ? `/view-lineup/${topStanding.teamId}` : '#'}
-            style={{ flex: 1, textAlign: 'center', textDecoration: 'none', cursor: topStanding ? 'pointer' : 'default' }}
+            href={topGwStanding ? `/view-lineup/${topGwStanding.teamId}` : '#'}
+            style={{ flex: 1, textAlign: 'center', textDecoration: 'none', cursor: topGwStanding ? 'pointer' : 'default' }}
           >
             <div style={{ fontSize: 22, fontWeight: 700, color: 'rgba(255,255,255,0.9)', fontVariantNumeric: 'tabular-nums' }}>
               {hasScores ? formatNumber(highestPoints) : '\u2014'}
