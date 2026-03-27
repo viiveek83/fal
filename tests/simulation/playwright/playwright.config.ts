@@ -33,5 +33,19 @@ export default defineConfig({
       grep: /@noauth/,
       use: { storageState: undefined },
     },
+    {
+      name: 'appadmin-admin',
+      testMatch: 'app-admin.spec.ts',
+      grep: /@appadmin/,
+      use: { storageState: 'tests/simulation/playwright/.auth/appadmin.json' },
+      dependencies: ['setup'],
+    },
+    {
+      name: 'appadmin-user',
+      testMatch: 'app-admin.spec.ts',
+      grep: /@user/,
+      use: { storageState: 'tests/simulation/playwright/.auth/user1.json' },
+      dependencies: ['setup'],
+    },
   ],
 })

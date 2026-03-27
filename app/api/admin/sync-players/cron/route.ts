@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { syncMatchStatuses } from '@/lib/sportmonks/match-sync'
-import { runScoringPipeline } from '@/lib/scoring/pipeline'
+import { syncPlayerTeams } from '@/lib/sync-players'
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization')
@@ -9,14 +8,16 @@ export async function GET(request: Request) {
   }
 
   try {
-    const syncResult = await syncMatchStatuses()
-    const result = await runScoringPipeline()
+    const result = await syncPlayerTeams({ apply: true })
     return NextResponse.json({
-      ...result,
-      matchesTransitioned: syncResult.transitioned,
+      teamChanges: result.teamChanges.length,
+      newPlayers: result.newPlayers.length,
+      roleChanges: result.roleChanges.length,
+      updatedCount: result.updatedCount,
+      createdCount: result.createdCount,
     })
   } catch (error) {
-    console.error('Scoring cron error:', error)
+    console.error('Sync players cron error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Internal error' },
       { status: 500 }
