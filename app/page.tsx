@@ -258,6 +258,7 @@ function getChipName(chipCode: string | null): string {
   const map: Record<string, string> = {
     'POWER_PLAY_BAT': 'Power Play Bat',
     'BOWLING_BOOST': 'Bowling Boost',
+    // NOTE: New chips should be added to this map as they are introduced
   }
   return map[chipCode] || chipCode
 }
@@ -283,6 +284,7 @@ export default function DashboardPage() {
   const [gwPlayerScores, setGwPlayerScores] = useState<GwPlayerScore[]>([])
   const [gwScoresLoading, setGwScoresLoading] = useState(false)
   const [liveScoreResponse, setLiveScoreResponse] = useState<LiveScoreResponse | null>(null)
+  const [liveScoreFetched, setLiveScoreFetched] = useState(false)
   const [gwStatus, setGwStatus] = useState<'LIVE' | 'FINAL'>('FINAL')
 
   // Live GW state from leaderboard response
@@ -363,9 +365,14 @@ export default function DashboardPage() {
       if (res.ok) {
         const data: LiveScoreResponse = await res.json()
         setLiveScoreResponse(data)
+      } else if (res.status === 404) {
+        // No lineup submitted — leave liveScoreResponse as null
       }
     } catch {
       // silent
+    } finally {
+      // Mark that we've attempted the fetch (success or 404)
+      setLiveScoreFetched(true)
     }
   }, [league, currentGw, session?.user?.id])
 
@@ -384,10 +391,11 @@ export default function DashboardPage() {
 
   // Eager fetch live score when gwStatus becomes LIVE
   useEffect(() => {
-    if (gwStatus === 'LIVE' && !liveScoreResponse) {
+    if (gwStatus === 'LIVE' && !liveScoreFetched) {
+      setLiveScoreFetched(false)
       eagerFetchLiveScore()
     }
-  }, [gwStatus, liveScoreResponse, eagerFetchLiveScore])
+  }, [gwStatus, liveScoreFetched, eagerFetchLiveScore])
 
   /* ─── GW Score Detail fetch ─── */
   const openGwSheet = useCallback(async () => {
@@ -660,7 +668,7 @@ export default function DashboardPage() {
       `}</style>
 
       {/* Live GW Card */}
-      {activeGwNumber !== null && liveScoreResponse && (
+      {activeGwNumber !== null && liveScoreFetched && liveScoreResponse && (
         <div style={{ padding: '0 14px' }}>
           <div
             onClick={openGwSheet}
@@ -755,15 +763,34 @@ export default function DashboardPage() {
                 borderRadius: 8,
                 marginBottom: 8,
               }}>
-                ⚡ {liveScoreResponse.chipActive} +{liveScoreResponse.chipBonusPoints} pts
+                ⚡ {getChipName(liveScoreResponse.chipActive)} +{liveScoreResponse.chipBonusPoints} pts
               </div>
             )}
 
             {/* Footer message */}
-            <div style={{ fontSize: 10, color: '#999', marginTop: 8 }}>
-              {liveScoreResponse.status === 'LIVE'
-                ? 'Bench subs applied after final match'
-                : ''}
+            {liveScoreResponse.status === 'LIVE' && (
+              <div style={{ fontSize: 10, color: '#999', marginTop: 8 }}>
+                Bench subs applied after final match
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Fallback card when no lineup submitted */}
+      {activeGwNumber !== null && liveScoreFetched && !liveScoreResponse && (
+        <div style={{ padding: '0 14px' }}>
+          <div
+            style={{
+              background: '#fff',
+              border: '1px solid rgba(0,0,0,0.06)',
+              borderRadius: 16,
+              padding: 14,
+              boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+            }}
+          >
+            <div style={{ fontSize: 14, fontWeight: 500, color: '#666', textAlign: 'center' }}>
+              No lineup submitted for GW {activeGwNumber}
             </div>
           </div>
         </div>
@@ -1185,12 +1212,6 @@ export default function DashboardPage() {
                 {/* LIVE/FINAL badge */}
                 {liveScoreResponse.status === 'LIVE' ? (
                   <>
-                    <style>{`
-                      @keyframes pulse {
-                        0%, 100% { opacity: 1; }
-                        50% { opacity: 0.4; }
-                      }
-                    `}</style>
                     <div style={{
                       display: 'flex', alignItems: 'center', gap: 4,
                       background: 'rgba(13, 158, 95, 0.1)', borderRadius: 6,
@@ -1460,7 +1481,7 @@ export default function DashboardPage() {
                     </div>
                     <div style={{ textAlign: 'center' }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: '#333' }}>
-                        {liveScoreResponse.players.reduce((sum, p) => sum + (p.isCaptain || p.isVC ? p.basePoints : 0), 0)}
+                        {liveScoreResponse.players.reduce((sum, p) => sum + (p.isCaptain || p.isVC ? (p.multipliedPoints - p.basePoints) : 0), 0)}
                       </div>
                       <div style={{ fontSize: 9, color: '#aaa', fontWeight: 500, marginTop: 1 }}>C/VC Bonus</div>
                     </div>
