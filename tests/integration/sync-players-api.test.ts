@@ -1,5 +1,26 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll, vi, beforeEach } from 'vitest'
 import { PrismaClient } from '@prisma/client'
+
+// Mock auth at the top level
+const mockAuthNonAdmin = vi.fn(async () => ({
+  user: {
+    id: 'normal-user-id',
+    email: 'normaluser@test.vitest.syncplayers',
+    isAppAdmin: false,
+  },
+}))
+
+const mockAuthAdmin = vi.fn(async () => ({
+  user: {
+    id: 'admin-user-id',
+    email: 'appadmin@test.vitest.syncplayers',
+    isAppAdmin: true,
+  },
+}))
+
+vi.mock('@/lib/auth', () => ({
+  auth: vi.fn(),
+}))
 
 const prisma = new PrismaClient()
 const TEST_SUFFIX = '@test.vitest.syncplayers'
@@ -58,30 +79,69 @@ async function cleanup() {
 }
 
 describe('Sync Players API - Access Control (AC4.4)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('AC4.4: Non-app-admin user receives 403 on GET', async () => {
-    // Simulate what would happen if we call the API with a non-admin user
-    // In a real scenario, the auth() function would return session with isAppAdmin = false
-    // We verify the logic by checking that isAppAdmin would be false for normalUser
+    // Mock auth() to return a non-admin session
+    const { auth } = await import('@/lib/auth')
+    vi.mocked(auth).mockImplementation(mockAuthNonAdmin)
 
-    const { isAppAdmin } = await import('@/lib/app-admin')
-    const isAdmin = isAppAdmin(normalUser.email)
+    const { GET } = await import('@/app/api/admin/sync-players/route')
 
-    expect(isAdmin).toBe(false)
+    // Call GET handler
+    const response = await GET()
+
+    // Verify 403 status
+    expect(response.status).toBe(403)
+
+    const json = await response.json()
+    expect(json.error).toBe('Forbidden')
   })
 
   it('AC4.4: Non-app-admin user receives 403 on POST', async () => {
-    // Same test as above - normalUser is not in APP_ADMIN_EMAILS
-    const { isAppAdmin } = await import('@/lib/app-admin')
-    const isAdmin = isAppAdmin(normalUser.email)
+    // Mock auth() to return a non-admin session
+    const { auth } = await import('@/lib/auth')
+    vi.mocked(auth).mockImplementation(mockAuthNonAdmin)
 
-    expect(isAdmin).toBe(false)
+    const { POST } = await import('@/app/api/admin/sync-players/route')
+
+    // Call POST handler
+    const response = await POST()
+
+    // Verify 403 status
+    expect(response.status).toBe(403)
+
+    const json = await response.json()
+    expect(json.error).toBe('Forbidden')
   })
 
-  it('AC4.4: App-admin user would pass authorization', async () => {
-    // Verify that appAdminUser is recognized as app admin
-    const { isAppAdmin } = await import('@/lib/app-admin')
-    const isAdmin = isAppAdmin(appAdminUser.email)
+  it('AC4.4: App-admin user does not receive 403 on GET', async () => {
+    // Mock auth() to return an app-admin session
+    const { auth } = await import('@/lib/auth')
+    vi.mocked(auth).mockImplementation(mockAuthAdmin)
 
-    expect(isAdmin).toBe(true)
+    const { GET } = await import('@/app/api/admin/sync-players/route')
+
+    // Call GET handler
+    const response = await GET()
+
+    // Verify it doesn't return 403 (it should return 200 or 500, not 403)
+    expect(response.status).not.toBe(403)
+  })
+
+  it('AC4.4: App-admin user does not receive 403 on POST', async () => {
+    // Mock auth() to return an app-admin session
+    const { auth } = await import('@/lib/auth')
+    vi.mocked(auth).mockImplementation(mockAuthAdmin)
+
+    const { POST } = await import('@/app/api/admin/sync-players/route')
+
+    // Call POST handler
+    const response = await POST()
+
+    // Verify it doesn't return 403 (it should return 200 or 500, not 403)
+    expect(response.status).not.toBe(403)
   })
 })
