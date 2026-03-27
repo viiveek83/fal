@@ -5,9 +5,10 @@ import type { SportMonksFixture } from '@/lib/sportmonks/types'
 const mockState = {
   findMany: vi.fn(),
   update: vi.fn(),
+  sportmonksFetch: vi.fn(),
 }
 
-// Before any imports, set up module mocks - they will use the mockState object
+// Before any imports, set up module mocks
 vi.mock('@/lib/db', () => ({
   prisma: {
     match: {
@@ -17,18 +18,42 @@ vi.mock('@/lib/db', () => ({
   },
 }))
 
-// Stub global fetch
-const mockFetch = vi.fn()
-vi.stubGlobal('fetch', mockFetch)
+// Mock the sportmonks client to avoid SPORTMONKS_API_TOKEN requirement in CI
+vi.mock('@/lib/sportmonks/client', () => ({
+  sportmonks: {
+    fetch: (...args: any[]) => mockState.sportmonksFetch(...args),
+  },
+  SportMonksClient: vi.fn(),
+  getSportMonksClient: vi.fn(),
+}))
 
 // Import after all mocks are set up
 import { syncMatchStatuses } from '@/lib/sportmonks/match-sync'
 
+function makeFixture(overrides: Partial<SportMonksFixture> & { id: number; status: string }): SportMonksFixture {
+  return {
+    league_id: 4652,
+    season_id: 23453,
+    stage_id: 77083360,
+    round: '1',
+    localteam_id: 113,
+    visitorteam_id: 116,
+    starting_at: '2025-03-22T14:00:00Z',
+    type: 'T20',
+    note: null,
+    winner_team_id: null,
+    toss_won_team_id: null,
+    elected: null,
+    man_of_match_id: null,
+    super_over: false,
+    total_overs_played: null,
+    ...overrides,
+  }
+}
+
 describe('Match Status Sync - Unit Tests (AC2 Status Mapping)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockState.findMany.mockClear()
-    mockState.update.mockClear()
   })
 
   afterEach(() => {
@@ -36,41 +61,13 @@ describe('Match Status Sync - Unit Tests (AC2 Status Mapping)', () => {
   })
 
   it('AC2.1: SCHEDULED match with SportMonks status "Finished" transitions to COMPLETED', async () => {
-    const mockMatches = [
-      {
-        id: 'match-1',
-        apiMatchId: 1001,
-        localTeamName: 'Team A',
-        visitorTeamName: 'Team B',
-      },
-    ]
+    mockState.findMany.mockResolvedValueOnce([
+      { id: 'match-1', apiMatchId: 1001, localTeamName: 'Team A', visitorTeamName: 'Team B' },
+    ])
 
-    mockState.findMany.mockResolvedValueOnce(mockMatches)
-
-    const mockFixture: SportMonksFixture = {
-      id: 1001,
-      league_id: 4652,
-      season_id: 23453,
-      stage_id: 77083360,
-      round: '1',
-      localteam_id: 113,
-      visitorteam_id: 116,
-      starting_at: '2025-03-22T14:00:00Z',
-      type: 'T20',
-      status: 'Finished',
-      note: 'Team A won by 5 wickets',
-      winner_team_id: 113,
-      toss_won_team_id: 116,
-      elected: 'bat',
-      man_of_match_id: 5678,
-      super_over: false,
-      total_overs_played: 20,
-    }
-
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ data: mockFixture }),
-    })
+    mockState.sportmonksFetch.mockResolvedValueOnce(
+      makeFixture({ id: 1001, status: 'Finished', note: 'Team A won by 5 wickets', winner_team_id: 113, super_over: false })
+    )
 
     const result = await syncMatchStatuses()
 
@@ -98,41 +95,13 @@ describe('Match Status Sync - Unit Tests (AC2 Status Mapping)', () => {
   })
 
   it('AC2.2: SCHEDULED match with SportMonks status "Cancl." transitions to CANCELLED', async () => {
-    const mockMatches = [
-      {
-        id: 'match-2',
-        apiMatchId: 1002,
-        localTeamName: 'Team C',
-        visitorTeamName: 'Team D',
-      },
-    ]
+    mockState.findMany.mockResolvedValueOnce([
+      { id: 'match-2', apiMatchId: 1002, localTeamName: 'Team C', visitorTeamName: 'Team D' },
+    ])
 
-    mockState.findMany.mockResolvedValueOnce(mockMatches)
-
-    const mockFixture: SportMonksFixture = {
-      id: 1002,
-      league_id: 4652,
-      season_id: 23453,
-      stage_id: 77083360,
-      round: '2',
-      localteam_id: 113,
-      visitorteam_id: 116,
-      starting_at: '2025-03-23T14:00:00Z',
-      type: 'T20',
-      status: 'Cancl.',
-      note: 'Match cancelled due to weather',
-      winner_team_id: null,
-      toss_won_team_id: null,
-      elected: null,
-      man_of_match_id: null,
-      super_over: false,
-      total_overs_played: null,
-    }
-
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ data: mockFixture }),
-    })
+    mockState.sportmonksFetch.mockResolvedValueOnce(
+      makeFixture({ id: 1002, status: 'Cancl.', note: 'Match cancelled due to weather' })
+    )
 
     const result = await syncMatchStatuses()
 
@@ -150,41 +119,13 @@ describe('Match Status Sync - Unit Tests (AC2 Status Mapping)', () => {
   })
 
   it('AC2.2: SCHEDULED match with SportMonks status "Aban." transitions to CANCELLED', async () => {
-    const mockMatches = [
-      {
-        id: 'match-3',
-        apiMatchId: 1003,
-        localTeamName: 'Team E',
-        visitorTeamName: 'Team F',
-      },
-    ]
+    mockState.findMany.mockResolvedValueOnce([
+      { id: 'match-3', apiMatchId: 1003, localTeamName: 'Team E', visitorTeamName: 'Team F' },
+    ])
 
-    mockState.findMany.mockResolvedValueOnce(mockMatches)
-
-    const mockFixture: SportMonksFixture = {
-      id: 1003,
-      league_id: 4652,
-      season_id: 23453,
-      stage_id: 77083360,
-      round: '3',
-      localteam_id: 113,
-      visitorteam_id: 116,
-      starting_at: '2025-03-24T14:00:00Z',
-      type: 'T20',
-      status: 'Aban.',
-      note: 'Match abandoned',
-      winner_team_id: null,
-      toss_won_team_id: null,
-      elected: null,
-      man_of_match_id: null,
-      super_over: false,
-      total_overs_played: null,
-    }
-
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ data: mockFixture }),
-    })
+    mockState.sportmonksFetch.mockResolvedValueOnce(
+      makeFixture({ id: 1003, status: 'Aban.', note: 'Match abandoned' })
+    )
 
     const result = await syncMatchStatuses()
 
@@ -202,41 +143,13 @@ describe('Match Status Sync - Unit Tests (AC2 Status Mapping)', () => {
   })
 
   it('SCHEDULED match with SportMonks status "NS" remains SCHEDULED (no update)', async () => {
-    const mockMatches = [
-      {
-        id: 'match-4',
-        apiMatchId: 1004,
-        localTeamName: 'Team G',
-        visitorTeamName: 'Team H',
-      },
-    ]
+    mockState.findMany.mockResolvedValueOnce([
+      { id: 'match-4', apiMatchId: 1004, localTeamName: 'Team G', visitorTeamName: 'Team H' },
+    ])
 
-    mockState.findMany.mockResolvedValueOnce(mockMatches)
-
-    const mockFixture: SportMonksFixture = {
-      id: 1004,
-      league_id: 4652,
-      season_id: 23453,
-      stage_id: 77083360,
-      round: '4',
-      localteam_id: 113,
-      visitorteam_id: 116,
-      starting_at: '2025-03-25T14:00:00Z',
-      type: 'T20',
-      status: 'NS',
-      note: null,
-      winner_team_id: null,
-      toss_won_team_id: null,
-      elected: null,
-      man_of_match_id: null,
-      super_over: false,
-      total_overs_played: null,
-    }
-
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ data: mockFixture }),
-    })
+    mockState.sportmonksFetch.mockResolvedValueOnce(
+      makeFixture({ id: 1004, status: 'NS' })
+    )
 
     const result = await syncMatchStatuses()
 
@@ -247,113 +160,17 @@ describe('Match Status Sync - Unit Tests (AC2 Status Mapping)', () => {
   })
 
   it('handles multiple SCHEDULED matches with mixed status transitions', async () => {
-    const mockMatches = [
-      {
-        id: 'match-5',
-        apiMatchId: 1005,
-        localTeamName: 'Team I',
-        visitorTeamName: 'Team J',
-      },
-      {
-        id: 'match-6',
-        apiMatchId: 1006,
-        localTeamName: 'Team K',
-        visitorTeamName: 'Team L',
-      },
-      {
-        id: 'match-7',
-        apiMatchId: 1007,
-        localTeamName: 'Team M',
-        visitorTeamName: 'Team N',
-      },
-    ]
+    mockState.findMany.mockResolvedValueOnce([
+      { id: 'match-5', apiMatchId: 1005, localTeamName: 'Team I', visitorTeamName: 'Team J' },
+      { id: 'match-6', apiMatchId: 1006, localTeamName: 'Team K', visitorTeamName: 'Team L' },
+      { id: 'match-7', apiMatchId: 1007, localTeamName: 'Team M', visitorTeamName: 'Team N' },
+    ])
 
-    mockState.findMany.mockResolvedValueOnce(mockMatches)
-
-    const fixtures: Record<number, SportMonksFixture> = {
-      1005: {
-        id: 1005,
-        league_id: 4652,
-        season_id: 23453,
-        stage_id: 77083360,
-        round: '5',
-        localteam_id: 113,
-        visitorteam_id: 116,
-        starting_at: '2025-03-26T14:00:00Z',
-        type: 'T20',
-        status: 'Finished',
-        note: 'Team I won by 3 runs',
-        winner_team_id: 113,
-        toss_won_team_id: 116,
-        elected: 'bat',
-        man_of_match_id: 5678,
-        super_over: false,
-        total_overs_played: 40,
-      },
-      1006: {
-        id: 1006,
-        league_id: 4652,
-        season_id: 23453,
-        stage_id: 77083360,
-        round: '6',
-        localteam_id: 113,
-        visitorteam_id: 116,
-        starting_at: '2025-03-27T14:00:00Z',
-        type: 'T20',
-        status: 'Cancl.',
-        note: 'Match cancelled',
-        winner_team_id: null,
-        toss_won_team_id: null,
-        elected: null,
-        man_of_match_id: null,
-        super_over: false,
-        total_overs_played: null,
-      },
-      1007: {
-        id: 1007,
-        league_id: 4652,
-        season_id: 23453,
-        stage_id: 77083360,
-        round: '7',
-        localteam_id: 113,
-        visitorteam_id: 116,
-        starting_at: '2025-03-28T14:00:00Z',
-        type: 'T20',
-        status: 'InProgress',
-        note: null,
-        winner_team_id: null,
-        toss_won_team_id: null,
-        elected: null,
-        man_of_match_id: null,
-        super_over: false,
-        total_overs_played: null,
-      },
-    }
-
-    mockFetch.mockImplementation(async () => {
-      const lastCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1]
-      if (!lastCall || !lastCall[0]) return { ok: false }
-
-      const url = new URL(lastCall[0])
-      const pathMatch = url.pathname.match(/\/fixtures\/(\d+)/)
-      if (!pathMatch) return { ok: false }
-
-      const matchId = parseInt(pathMatch[1], 10)
-      const fixture = fixtures[matchId]
-
-      if (!fixture) {
-        return {
-          ok: false,
-          status: 404,
-          statusText: 'Not Found',
-        }
-      }
-
-      return {
-        ok: true,
-        json: async () => ({ data: fixture }),
-      }
-    })
+    // Return fixtures in order of calls
+    mockState.sportmonksFetch
+      .mockResolvedValueOnce(makeFixture({ id: 1005, status: 'Finished', note: 'Team I won by 3 runs', winner_team_id: 113, super_over: false }))
+      .mockResolvedValueOnce(makeFixture({ id: 1006, status: 'Cancl.', note: 'Match cancelled' }))
+      .mockResolvedValueOnce(makeFixture({ id: 1007, status: 'InProgress' }))
 
     const result = await syncMatchStatuses()
 
@@ -379,72 +196,15 @@ describe('Match Status Sync - Unit Tests (AC2 Status Mapping)', () => {
   })
 
   it('handles SportMonks API errors gracefully', async () => {
-    const mockMatches = [
-      {
-        id: 'match-8',
-        apiMatchId: 1008,
-        localTeamName: 'Team O',
-        visitorTeamName: 'Team P',
-      },
-      {
-        id: 'match-9',
-        apiMatchId: 1009,
-        localTeamName: 'Team Q',
-        visitorTeamName: 'Team R',
-      },
-    ]
+    mockState.findMany.mockResolvedValueOnce([
+      { id: 'match-8', apiMatchId: 1008, localTeamName: 'Team O', visitorTeamName: 'Team P' },
+      { id: 'match-9', apiMatchId: 1009, localTeamName: 'Team Q', visitorTeamName: 'Team R' },
+    ])
 
-    mockState.findMany.mockResolvedValueOnce(mockMatches)
-
-    mockFetch.mockImplementation(async () => {
-      const lastCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1]
-      if (!lastCall || !lastCall[0]) return { ok: false }
-
-      const url = new URL(lastCall[0])
-      const pathMatch = url.pathname.match(/\/fixtures\/(\d+)/)
-      if (!pathMatch) return { ok: false }
-
-      const matchId = parseInt(pathMatch[1], 10)
-
-      if (matchId === 1008) {
-        // Simulate API error
-        return {
-          ok: false,
-          status: 500,
-          statusText: 'Internal Server Error',
-        }
-      }
-
-      // 1009 succeeds
-      if (matchId === 1009) {
-        return {
-          ok: true,
-          json: async () => ({
-            data: {
-              id: 1009,
-              league_id: 4652,
-              season_id: 23453,
-              stage_id: 77083360,
-              round: '8',
-              localteam_id: 113,
-              visitorteam_id: 116,
-              starting_at: '2025-03-29T14:00:00Z',
-              type: 'T20',
-              status: 'Finished',
-              note: 'Team Q won by 2 wickets',
-              winner_team_id: 117,
-              toss_won_team_id: 116,
-              elected: 'bowl',
-              man_of_match_id: 1234,
-              super_over: false,
-              total_overs_played: 40,
-            } as SportMonksFixture,
-          }),
-        }
-      }
-
-      return { ok: false }
-    })
+    // First call throws, second succeeds
+    mockState.sportmonksFetch
+      .mockRejectedValueOnce(new Error('API Error'))
+      .mockResolvedValueOnce(makeFixture({ id: 1009, status: 'Finished', note: 'Team Q won by 2 wickets', winner_team_id: 117, super_over: false }))
 
     const result = await syncMatchStatuses()
 
@@ -463,7 +223,7 @@ describe('Match Status Sync - Unit Tests (AC2 Status Mapping)', () => {
     expect(result.checked).toBe(0)
     expect(result.transitioned).toBe(0)
     expect(result.changes).toHaveLength(0)
-    expect(mockFetch).not.toHaveBeenCalled()
+    expect(mockState.sportmonksFetch).not.toHaveBeenCalled()
     expect(mockState.update).not.toHaveBeenCalled()
   })
 })
