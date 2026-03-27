@@ -253,6 +253,15 @@ function getRoleKey(role: string): string {
   return map[role?.toUpperCase()] || 'BAT'
 }
 
+function getChipName(chipCode: string | null): string {
+  if (!chipCode) return ''
+  const map: Record<string, string> = {
+    'POWER_PLAY_BAT': 'Power Play Bat',
+    'BOWLING_BOOST': 'Bowling Boost',
+  }
+  return map[chipCode] || chipCode
+}
+
 export default function DashboardPage() {
   const { data: session, status: sessionStatus } = useSession()
   const pathname = usePathname()
@@ -1107,11 +1116,55 @@ export default function DashboardPage() {
 
         {/* Header */}
         <div style={{ padding: '12px 18px 10px', position: 'relative' }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#999', textTransform: 'uppercase', letterSpacing: 0.8 }}>
-            {currentGw ? `Gameweek ${currentGw.number} Breakdown` : 'Gameweek Breakdown'}
+          {/* GW label with LIVE/FINAL badge and match progress */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#999', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+              {currentGw ? `Gameweek ${currentGw.number}` : 'Gameweek'} Breakdown
+            </div>
+            {liveScoreResponse && (
+              <>
+                {/* LIVE/FINAL badge */}
+                {liveScoreResponse.status === 'LIVE' ? (
+                  <>
+                    <style>{`
+                      @keyframes pulse {
+                        0%, 100% { opacity: 1; }
+                        50% { opacity: 0.4; }
+                      }
+                    `}</style>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 4,
+                      background: 'rgba(13, 158, 95, 0.1)', borderRadius: 6,
+                      padding: '2px 6px', fontSize: 9, fontWeight: 700, color: '#0d9e5f',
+                    }}>
+                      <div style={{
+                        width: 5, height: 5, borderRadius: '50%', background: '#0d9e5f',
+                        animation: 'pulse 2s infinite',
+                      }} />
+                      LIVE
+                    </div>
+                    {/* Match progress */}
+                    <div style={{
+                      fontSize: 9, fontWeight: 600, color: '#999',
+                      background: '#f7f8fb', padding: '2px 6px', borderRadius: 6,
+                    }}>
+                      {liveScoreResponse.matchesScored}/{liveScoreResponse.matchesTotal}
+                    </div>
+                  </>
+                ) : (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 4,
+                    background: 'rgba(150, 150, 150, 0.1)', borderRadius: 6,
+                    padding: '2px 6px', fontSize: 9, fontWeight: 700, color: '#999',
+                  }}>
+                    FINAL
+                  </div>
+                )}
+              </>
+            )}
           </div>
           <div style={{ fontSize: 34, fontWeight: 800, color: '#1a1a2e', letterSpacing: -1.5, lineHeight: 1.1 }}>
-            {gwScoresLoading ? '\u2014' : gwScoreTotal} <span style={{ fontSize: 14, fontWeight: 500, color: '#999', letterSpacing: 0 }}>pts</span>
+            {gwScoresLoading ? '\u2014' : (liveScoreResponse?.totalPoints ?? gwScoreTotal)} <span style={{ fontSize: 14, fontWeight: 500, color: '#999', letterSpacing: 0 }}>pts</span>
           </div>
           {myStanding && (
             <div style={{ fontSize: 12, fontWeight: 600, color: '#0d9e5f', marginTop: 2 }}>
@@ -1189,75 +1242,179 @@ export default function DashboardPage() {
                 <div style={{ textAlign: 'center', padding: '30px 0', color: '#999', fontSize: 13 }}>
                   Loading scores...
                 </div>
-              ) : gwPlayerScores.length === 0 ? (
+              ) : !liveScoreResponse || liveScoreResponse.players.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '30px 0', color: '#999', fontSize: 13 }}>
-                  No player scores available yet
+                  {currentGw ? `No lineup submitted for GW ${currentGw.number}` : 'No player scores available yet'}
                 </div>
               ) : (
                 <>
-                  {/* Player rows */}
-                  {gwPlayerScores.map((ps) => {
-                    const roleKey = getRoleKey(ps.player.role)
-                    const iconStyle = roleIconStyles[roleKey] || roleIconStyles.BAT
-                    return (
-                      <div key={ps.id} style={{
-                        display: 'flex', alignItems: 'center', padding: '8px 18px', gap: 8,
-                      }}>
-                        {/* Role icon */}
-                        <div style={{
-                          width: 28, height: 28, borderRadius: 8,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 12, fontWeight: 800, flexShrink: 0,
-                          ...iconStyle,
-                        }}>
-                          {getRoleLabel(ps.player.role)}
-                        </div>
-                        {/* Info */}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{
-                            fontSize: 12, fontWeight: 600, color: '#222',
-                            display: 'flex', alignItems: 'center', gap: 4,
-                          }}>
-                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {ps.player.fullname}
-                            </span>
-                          </div>
-                          <div style={{ fontSize: 9.5, color: '#999', fontWeight: 500, marginTop: 1 }}>
-                            {ps.player.iplTeamCode || ''}
-                          </div>
-                        </div>
-                        {/* Points */}
-                        <div style={{
-                          fontSize: 14, fontWeight: 800, color: ps.totalPoints < 0 ? '#d63060' : '#1a1a2e',
-                          width: 36, textAlign: 'right', flexShrink: 0,
-                          fontVariantNumeric: 'tabular-nums',
-                        }}>
-                          {ps.totalPoints}
-                        </div>
-                      </div>
-                    )
-                  })}
+                  {/* Active chip badge (AC14.2) */}
+                  {liveScoreResponse.chipActive && (
+                    <div style={{
+                      margin: '8px 18px', padding: '8px 12px', borderRadius: 10,
+                      background: 'linear-gradient(135deg, rgba(0,75,160,0.08), rgba(14,177,162,0.08))',
+                      border: '1px solid rgba(0,75,160,0.15)',
+                      fontSize: 11, fontWeight: 700, color: '#004BA0',
+                      display: 'flex', alignItems: 'center', gap: 4,
+                    }}>
+                      <span>⚡</span>
+                      <span>{getChipName(liveScoreResponse.chipActive)} ACTIVE</span>
+                      <span style={{ marginLeft: 'auto', color: '#0d9e5f' }}>+{liveScoreResponse.chipBonusPoints} pts</span>
+                    </div>
+                  )}
 
-                  {/* Summary bar */}
+                  {/* XI section */}
+                  <div style={{ paddingTop: 8 }}>
+                    <div style={{
+                      fontSize: 9, fontWeight: 700, color: '#999', textTransform: 'uppercase',
+                      letterSpacing: 0.8, padding: '6px 18px',
+                    }}>
+                      Playing XI
+                    </div>
+                    {liveScoreResponse.players.filter(p => p.slotType === 'XI').map((player) => {
+                      const roleKey = getRoleKey(player.role)
+                      const iconStyle = roleIconStyles[roleKey] || roleIconStyles.BAT
+                      return (
+                        <div key={player.id} style={{
+                          display: 'flex', alignItems: 'center', padding: '8px 18px', gap: 8,
+                        }}>
+                          {/* Role icon */}
+                          <div style={{
+                            width: 28, height: 28, borderRadius: 8,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 12, fontWeight: 800, flexShrink: 0,
+                            ...iconStyle,
+                          }}>
+                            {getRoleLabel(player.role)}
+                          </div>
+                          {/* Info */}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{
+                              fontSize: 12, fontWeight: 600, color: '#222',
+                              display: 'flex', alignItems: 'center', gap: 4,
+                            }}>
+                              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {player.name}
+                              </span>
+                              {player.isCaptain && <span style={{ fontSize: 10, fontWeight: 700, color: '#004BA0' }}>(C)</span>}
+                              {player.isVC && <span style={{ fontSize: 10, fontWeight: 700, color: '#999' }}>(VC)</span>}
+                            </div>
+                            <div style={{ fontSize: 9.5, color: '#999', fontWeight: 500, marginTop: 1 }}>
+                              {player.iplTeamCode || ''}
+                            </div>
+                            {/* Chip progression (AC14.1) */}
+                            {player.chipBonus > 0 && (
+                              <div style={{ fontSize: 9, color: '#0d9e5f', fontWeight: 600, marginTop: 1 }}>
+                                {player.basePoints} → {player.multipliedPoints}
+                              </div>
+                            )}
+                          </div>
+                          {/* Points */}
+                          <div style={{
+                            fontSize: 14, fontWeight: 800, color: player.multipliedPoints < 0 ? '#d63060' : '#1a1a2e',
+                            width: 36, textAlign: 'right', flexShrink: 0,
+                            fontVariantNumeric: 'tabular-nums',
+                          }}>
+                            {player.matchesPlayed === 0 ? '\u2014' : player.multipliedPoints}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {/* Bench section */}
+                  {liveScoreResponse.players.some(p => p.slotType === 'BENCH') && (
+                    <div style={{ paddingTop: 8 }}>
+                      <div style={{
+                        fontSize: 9, fontWeight: 700, color: '#999', textTransform: 'uppercase',
+                        letterSpacing: 0.8, padding: '6px 18px',
+                      }}>
+                        Bench
+                      </div>
+                      {liveScoreResponse.players.filter(p => p.slotType === 'BENCH').map((player) => {
+                        const roleKey = getRoleKey(player.role)
+                        const iconStyle = roleIconStyles[roleKey] || roleIconStyles.BAT
+                        return (
+                          <div key={player.id} style={{
+                            display: 'flex', alignItems: 'center', padding: '8px 18px', gap: 8,
+                            opacity: 0.6,
+                            background: '#f7f8fb',
+                          }}>
+                            {/* Role icon */}
+                            <div style={{
+                              width: 28, height: 28, borderRadius: 8,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 12, fontWeight: 800, flexShrink: 0,
+                              ...iconStyle,
+                            }}>
+                              {getRoleLabel(player.role)}
+                            </div>
+                            {/* Info */}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{
+                                fontSize: 12, fontWeight: 600, color: '#222',
+                                display: 'flex', alignItems: 'center', gap: 4,
+                              }}>
+                                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {player.name}
+                                </span>
+                                <span style={{ fontSize: 9, fontWeight: 700, color: '#999' }}>BENCH</span>
+                              </div>
+                              <div style={{ fontSize: 9.5, color: '#999', fontWeight: 500, marginTop: 1 }}>
+                                {player.iplTeamCode || ''}
+                              </div>
+                            </div>
+                            {/* Points */}
+                            <div style={{
+                              fontSize: 14, fontWeight: 800, color: player.multipliedPoints < 0 ? '#d63060' : '#1a1a2e',
+                              width: 36, textAlign: 'right', flexShrink: 0,
+                              fontVariantNumeric: 'tabular-nums',
+                            }}>
+                              {player.matchesPlayed === 0 ? '\u2014' : player.multipliedPoints}
+                            </div>
+                          </div>
+                        )
+                      })}
+                      {/* Bench footer */}
+                      {liveScoreResponse.status === 'LIVE' && (
+                        <div style={{
+                          fontSize: 9, color: '#999', fontWeight: 500, padding: '8px 18px',
+                          textAlign: 'center', background: '#f7f8fb',
+                        }}>
+                          Bench subs applied at GW end
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Summary row */}
                   <div style={{
-                    margin: '10px 18px', padding: '10px 14px', borderRadius: 12,
+                    margin: '12px 18px', padding: '10px 14px', borderRadius: 12,
                     background: '#f7f8fb', border: '1px solid #eef0f5',
                     display: 'flex', justifyContent: 'space-between',
                   }}>
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: '#333' }}>{gwScoreTotal}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#333' }}>
+                        {liveScoreResponse.players.reduce((sum, p) => sum + (p.matchesPlayed > 0 ? p.basePoints : 0), 0)}
+                      </div>
                       <div style={{ fontSize: 9, color: '#aaa', fontWeight: 500, marginTop: 1 }}>Base Pts</div>
                     </div>
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: '#333' }}>0</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#333' }}>
+                        {liveScoreResponse.players.reduce((sum, p) => sum + (p.isCaptain || p.isVC ? p.basePoints : 0), 0)}
+                      </div>
                       <div style={{ fontSize: 9, color: '#aaa', fontWeight: 500, marginTop: 1 }}>C/VC Bonus</div>
                     </div>
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: '#333' }}>0</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#333' }}>
+                        {liveScoreResponse.chipBonusPoints}
+                      </div>
                       <div style={{ fontSize: 9, color: '#aaa', fontWeight: 500, marginTop: 1 }}>Chip Bonus</div>
                     </div>
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: '#004BA0' }}>{gwScoreTotal}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#004BA0' }}>
+                        {liveScoreResponse.totalPoints}
+                      </div>
                       <div style={{ fontSize: 9, color: '#aaa', fontWeight: 500, marginTop: 1 }}>Total</div>
                     </div>
                   </div>
@@ -1267,27 +1424,37 @@ export default function DashboardPage() {
           ) : (
             /* Pitch View — 4-3-4 Formation */
             (() => {
+              if (!liveScoreResponse) {
+                return (
+                  <div style={{ textAlign: 'center', padding: '30px 0', color: '#999', fontSize: 13 }}>
+                    No player scores available yet
+                  </div>
+                )
+              }
+
               const rolePriority: Record<string, number> = { WK: 0, BAT: 1, ALL: 2, BOWL: 3 }
-              const sorted = [...gwPlayerScores].sort((a, b) =>
-                (rolePriority[getRoleKey(a.player.role)] ?? 9) - (rolePriority[getRoleKey(b.player.role)] ?? 9)
+              const xiPlayers = liveScoreResponse.players.filter(p => p.slotType === 'XI')
+              const benchPlayers = liveScoreResponse.players.filter(p => p.slotType === 'BENCH')
+              const sorted = [...xiPlayers].sort((a, b) =>
+                (rolePriority[getRoleKey(a.role)] ?? 9) - (rolePriority[getRoleKey(b.role)] ?? 9)
               )
               const xi = sorted.slice(0, 11)
-              const bench = sorted.slice(11)
+              const bench = benchPlayers
               const rows: { label: string; players: typeof xi }[] = [
                 { label: 'Top Order', players: xi.slice(0, 4) },
                 { label: 'Middle Order', players: xi.slice(4, 7) },
                 { label: 'Lower Order', players: xi.slice(7, 11) },
               ]
 
-              const renderFigure = (ps: GwPlayerScore, size: 'normal' | 'bench' = 'normal') => {
-                const grad = teamGradients[ps.player.iplTeamCode || ''] || defaultGrad
+              const renderFigure = (player: LivePlayerScore, size: 'normal' | 'bench' = 'normal') => {
+                const grad = teamGradients[player.iplTeamCode || ''] || defaultGrad
                 const isBench = size === 'bench'
                 const headSize = isBench ? 14 : 18
                 const bodyW = isBench ? 22 : 28
                 const bodyH = isBench ? 12 : 16
                 const plateW = isBench ? 32 : 40
                 return (
-                  <div key={ps.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, width: isBench ? 56 : 68 }}>
+                  <div key={player.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, width: isBench ? 56 : 68 }}>
                     {/* Head */}
                     <div style={{
                       width: headSize, height: headSize, borderRadius: '50%',
@@ -1310,7 +1477,7 @@ export default function DashboardPage() {
                         textShadow: '0 1px 2px rgba(0,0,0,0.3)',
                         fontVariantNumeric: 'tabular-nums',
                       }}>
-                        {ps.totalPoints} pts
+                        {player.matchesPlayed === 0 ? '\u2014' : player.multipliedPoints} pts
                       </span>
                     </div>
                     {/* Name */}
@@ -1320,7 +1487,7 @@ export default function DashboardPage() {
                       maxWidth: isBench ? 54 : 66, overflow: 'hidden', textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap', lineHeight: 1.2,
                     }}>
-                      {ps.player.fullname.split(' ').pop()}
+                      {player.name.split(' ').pop()}
                     </div>
                   </div>
                 )
@@ -1330,9 +1497,9 @@ export default function DashboardPage() {
                 <div style={{ textAlign: 'center', padding: '30px 0', color: '#999', fontSize: 13 }}>
                   Loading scores...
                 </div>
-              ) : gwPlayerScores.length === 0 ? (
+              ) : liveScoreResponse.players.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '30px 0', color: '#999', fontSize: 13 }}>
-                  No player scores available yet
+                  {currentGw ? `No lineup submitted for GW ${currentGw.number}` : 'No player scores available yet'}
                 </div>
               ) : (
                 <div style={{
@@ -1366,7 +1533,7 @@ export default function DashboardPage() {
                       <div style={{
                         display: 'flex', justifyContent: 'center', gap: 4,
                       }}>
-                        {row.players.map((ps) => renderFigure(ps))}
+                        {row.players.map((player) => renderFigure(player))}
                       </div>
                     </div>
                   ))}
@@ -1382,7 +1549,7 @@ export default function DashboardPage() {
                         Bench
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'center', gap: 4 }}>
-                        {bench.map((ps) => renderFigure(ps, 'bench'))}
+                        {bench.map((player) => renderFigure(player, 'bench'))}
                       </div>
                     </div>
                   )}
