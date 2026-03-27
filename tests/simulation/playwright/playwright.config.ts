@@ -28,6 +28,13 @@ export default defineConfig({
       dependencies: ['setup'],
     },
     {
+      name: 'live-scores-user',
+      testMatch: 'live-scores.spec.ts',
+      grep: /@user/,
+      use: { storageState: 'tests/simulation/playwright/.auth/user1.json' },
+      dependencies: ['setup'],
+    },
+    {
       name: 'layer0-noauth',
       testMatch: 'layer0.spec.ts',
       grep: /@noauth/,

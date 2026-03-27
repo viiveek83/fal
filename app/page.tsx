@@ -671,6 +671,7 @@ export default function DashboardPage() {
       {activeGwNumber !== null && liveScoreFetched && liveScoreResponse && (
         <div style={{ padding: '0 14px' }}>
           <div
+            data-testid="live-gw-card"
             onClick={openGwSheet}
             style={{
               background: '#fff',
@@ -688,6 +689,7 @@ export default function DashboardPage() {
                   <>
                     {/* Pulsing green dot */}
                     <div
+                      data-testid="pulsing-dot"
                       style={{
                         width: 10,
                         height: 10,
@@ -698,6 +700,7 @@ export default function DashboardPage() {
                     />
                     {/* LIVE badge */}
                     <div
+                      data-testid="live-badge"
                       style={{
                         fontSize: 11,
                         fontWeight: 700,
@@ -714,6 +717,7 @@ export default function DashboardPage() {
                   <>
                     {/* FINAL badge */}
                     <div
+                      data-testid="final-badge"
                       style={{
                         fontSize: 11,
                         fontWeight: 700,
@@ -741,7 +745,7 @@ export default function DashboardPage() {
             )}
 
             {/* Large running total number */}
-            <div style={{
+            <div data-testid="live-gw-total" style={{
               fontSize: 36,
               fontWeight: 800,
               color: '#1a1a2e',
@@ -753,7 +757,7 @@ export default function DashboardPage() {
 
             {/* Chip badge (if chip active) */}
             {liveScoreResponse.chipActive && (
-              <div style={{
+              <div data-testid="card-chip-badge" style={{
                 fontSize: 11,
                 fontWeight: 600,
                 color: '#1a1a2e',
@@ -781,6 +785,7 @@ export default function DashboardPage() {
       {activeGwNumber !== null && liveScoreFetched && !liveScoreResponse && (
         <div style={{ padding: '0 14px' }}>
           <div
+            data-testid="no-lineup-card"
             style={{
               background: '#fff',
               border: '1px solid rgba(0,0,0,0.06)',
@@ -800,7 +805,7 @@ export default function DashboardPage() {
       <div style={{ padding: '14px 14px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
 
         {/* League Standings Card */}
-        <div style={{
+        <div data-testid="standings-card" style={{
           background: '#fff', border: '1px solid rgba(0,0,0,0.06)',
           borderRadius: 16, padding: 14,
           boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
@@ -812,6 +817,7 @@ export default function DashboardPage() {
                 <>
                   {/* Pulsing green dot */}
                   <div
+                    data-testid="standings-pulsing-dot"
                     style={{
                       width: 8,
                       height: 8,
@@ -823,7 +829,7 @@ export default function DashboardPage() {
                   />
                   {/* Match progress badge */}
                   {matchesScored !== null && matchesTotal !== null && (
-                    <div style={{
+                    <div data-testid="standings-match-progress" style={{
                       fontSize: 9,
                       fontWeight: 700,
                       color: '#22C55E',
@@ -896,7 +902,7 @@ export default function DashboardPage() {
                 return (
                   <Link href={`/view-lineup/${s.teamId}`} key={s.teamId} style={{...rowStyle, textDecoration: 'none'}}>
                     <div style={getRankStyle(s.rank, isYou)}>{s.rank}</div>
-                    <div style={{ fontSize: 10, fontWeight: 600, color: rankChangeColor, width: 16, textAlign: 'center' }}>
+                    <div data-testid="rank-change" style={{ fontSize: 10, fontWeight: 600, color: rankChangeColor, width: 16, textAlign: 'center' }}>
                       {rankChangeContent}
                     </div>
                     <div style={{ flex: 1, fontWeight: nameWeight, color: nameColor }}>
@@ -1185,7 +1191,7 @@ export default function DashboardPage() {
         }}
       />
       {/* Sheet */}
-      <div style={{
+      <div data-testid="gw-detail-sheet" style={{
         position: 'fixed', bottom: 0, left: '50%',
         width: '100%', maxWidth: 480,
         background: '#fff',
@@ -1212,7 +1218,7 @@ export default function DashboardPage() {
                 {/* LIVE/FINAL badge */}
                 {liveScoreResponse.status === 'LIVE' ? (
                   <>
-                    <div style={{
+                    <div data-testid="sheet-live-badge" style={{
                       display: 'flex', alignItems: 'center', gap: 4,
                       background: 'rgba(13, 158, 95, 0.1)', borderRadius: 6,
                       padding: '2px 6px', fontSize: 9, fontWeight: 700, color: '#0d9e5f',
@@ -1232,7 +1238,7 @@ export default function DashboardPage() {
                     </div>
                   </>
                 ) : (
-                  <div style={{
+                  <div data-testid="sheet-final-badge" style={{
                     display: 'flex', alignItems: 'center', gap: 4,
                     background: 'rgba(150, 150, 150, 0.1)', borderRadius: 6,
                     padding: '2px 6px', fontSize: 9, fontWeight: 700, color: '#999',
@@ -1330,7 +1336,7 @@ export default function DashboardPage() {
                 <>
                   {/* Active chip badge (AC14.2) */}
                   {liveScoreResponse.chipActive && (
-                    <div style={{
+                    <div data-testid="sheet-chip-badge" style={{
                       margin: '8px 18px', padding: '8px 12px', borderRadius: 10,
                       background: 'linear-gradient(135deg, rgba(0,75,160,0.08), rgba(14,177,162,0.08))',
                       border: '1px solid rgba(0,75,160,0.15)',
@@ -1384,7 +1390,7 @@ export default function DashboardPage() {
                             </div>
                             {/* Chip progression (AC14.1) */}
                             {player.chipBonus > 0 && (
-                              <div style={{ fontSize: 9, color: '#0d9e5f', fontWeight: 600, marginTop: 1 }}>
+                              <div data-testid="chip-progression" style={{ fontSize: 9, color: '#0d9e5f', fontWeight: 600, marginTop: 1 }}>
                                 {player.basePoints} → {player.multipliedPoints + player.chipBonus}
                               </div>
                             )}
