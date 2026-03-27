@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
+import { syncMatchStatuses } from '@/lib/sportmonks/match-sync'
 import { runScoringPipeline } from '@/lib/scoring/pipeline'
 
 export async function POST() {
@@ -14,8 +15,13 @@ export async function POST() {
   }
 
   try {
+    const syncResult = await syncMatchStatuses()
     const result = await runScoringPipeline()
-    return NextResponse.json(result)
+    return NextResponse.json({
+      ...result,
+      matchesTransitioned: syncResult.transitioned,
+      statusChanges: syncResult.changes,
+    })
   } catch (error) {
     console.error('Scoring pipeline error:', error)
     return NextResponse.json(
