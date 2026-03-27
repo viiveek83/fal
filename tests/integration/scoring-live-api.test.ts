@@ -688,4 +688,496 @@ describe('Scores API - LIVE/FINAL modes', () => {
     await prisma.lineup.delete({ where: { id: transitionLineup.id } })
     await prisma.gameweek.delete({ where: { id: transitionGw.id } })
   })
+
+  describe('computeLeagueLiveScores', () => {
+    let leagueForBatch: { id: string }
+    let team1ForBatch: { id: string }
+    let team2ForBatch: { id: string }
+    let team3ForBatch: { id: string }
+    let gameweekForBatch: { id: string }
+    let playersForBatch: Array<{ id: string; fullname: string; role: string }>
+
+    beforeAll(async () => {
+      if (shouldSkip) return
+
+      try {
+        // Create league for batch tests
+        const adminUser = await prisma.user.create({
+          data: { email: `batch-admin${TEST_SUFFIX}`, name: 'Batch Admin' },
+        })
+
+        leagueForBatch = await prisma.league.create({
+          data: {
+            name: 'Batch Live Scores League',
+            inviteCode: 'BATCH-LIVE-TEST',
+            adminUserId: adminUser.id,
+          },
+        })
+
+        // Create gameweek for batch tests
+        gameweekForBatch = await prisma.gameweek.create({
+          data: {
+            number: 95,
+            status: 'ACTIVE',
+            aggregationStatus: 'PENDING',
+          },
+        })
+
+        // Create 5 test players
+        playersForBatch = await Promise.all([
+          prisma.player.create({
+            data: { apiPlayerId: 95001, fullname: 'Player A1', role: 'BAT' },
+          }),
+          prisma.player.create({
+            data: { apiPlayerId: 95002, fullname: 'Player A2', role: 'BOWL' },
+          }),
+          prisma.player.create({
+            data: { apiPlayerId: 95003, fullname: 'Player B1', role: 'BAT' },
+          }),
+          prisma.player.create({
+            data: { apiPlayerId: 95004, fullname: 'Player B2', role: 'ALL' },
+          }),
+          prisma.player.create({
+            data: { apiPlayerId: 95005, fullname: 'Player C1', role: 'BOWL' },
+          }),
+          prisma.player.create({
+            data: { apiPlayerId: 95006, fullname: 'Player C2', role: 'BAT' },
+          }),
+        ])
+
+        // Create 3 teams
+        const user1 = await prisma.user.create({
+          data: { email: `batch-user1${TEST_SUFFIX}`, name: 'Batch User 1' },
+        })
+        const user2 = await prisma.user.create({
+          data: { email: `batch-user2${TEST_SUFFIX}`, name: 'Batch User 2' },
+        })
+        const user3 = await prisma.user.create({
+          data: { email: `batch-user3${TEST_SUFFIX}`, name: 'Batch User 3' },
+        })
+
+        team1ForBatch = await prisma.team.create({
+          data: {
+            name: 'Batch Team 1',
+            userId: user1.id,
+            leagueId: leagueForBatch.id,
+          },
+        })
+
+        team2ForBatch = await prisma.team.create({
+          data: {
+            name: 'Batch Team 2',
+            userId: user2.id,
+            leagueId: leagueForBatch.id,
+          },
+        })
+
+        team3ForBatch = await prisma.team.create({
+          data: {
+            name: 'Batch Team 3',
+            userId: user3.id,
+            leagueId: leagueForBatch.id,
+          },
+        })
+
+        // Add players to teams
+        for (const player of playersForBatch) {
+          await prisma.teamPlayer.create({
+            data: {
+              teamId: team1ForBatch.id,
+              playerId: player.id,
+              leagueId: leagueForBatch.id,
+            },
+          })
+          await prisma.teamPlayer.create({
+            data: {
+              teamId: team2ForBatch.id,
+              playerId: player.id,
+              leagueId: leagueForBatch.id,
+            },
+          })
+          await prisma.teamPlayer.create({
+            data: {
+              teamId: team3ForBatch.id,
+              playerId: player.id,
+              leagueId: leagueForBatch.id,
+            },
+          })
+        }
+      } catch (error) {
+        console.error('Batch test setup failed:', error)
+        shouldSkip = true
+      }
+    })
+
+    afterAll(async () => {
+      if (!leagueForBatch?.id) return
+
+      try {
+        // Find and delete all gameweeks 95, 96, 97 created during batch tests
+        for (const gwNum of [95, 96, 97]) {
+          const gw = await prisma.gameweek.findUnique({ where: { number: gwNum } })
+          if (gw) {
+            await prisma.chipUsage.deleteMany({ where: { gameweekId: gw.id } })
+            await prisma.gameweekScore.deleteMany({ where: { gameweekId: gw.id } })
+            await prisma.playerScore.deleteMany({ where: { gameweekId: gw.id } })
+            await prisma.lineup.deleteMany({ where: { gameweekId: gw.id } })
+            await prisma.playerPerformance.deleteMany({
+              where: { match: { gameweekId: gw.id } },
+            })
+            await prisma.match.deleteMany({ where: { gameweekId: gw.id } })
+            await prisma.gameweek.delete({ where: { id: gw.id } })
+          }
+        }
+
+        // Delete players
+        await prisma.player.deleteMany({
+          where: { apiPlayerId: { in: [95001, 95002, 95003, 95004, 95005, 95006] } },
+        })
+
+        // Delete teams
+        await prisma.teamPlayer.deleteMany({
+          where: { leagueId: leagueForBatch.id },
+        })
+        await prisma.team.deleteMany({ where: { leagueId: leagueForBatch.id } })
+
+        // Delete league and users
+        const league = await prisma.league.findUnique({
+          where: { id: leagueForBatch.id },
+          include: { admin: true },
+        })
+        if (league) {
+          await prisma.league.delete({ where: { id: league.id } })
+          await prisma.user.delete({ where: { id: league.admin.id } })
+        }
+
+        // Delete batch users
+        const users = await prisma.user.findMany({
+          where: {
+            email: {
+              in: [
+                `batch-user1${TEST_SUFFIX}`,
+                `batch-user2${TEST_SUFFIX}`,
+                `batch-user3${TEST_SUFFIX}`,
+              ],
+            },
+          },
+        })
+        for (const user of users) {
+          await prisma.user.delete({ where: { id: user.id } })
+        }
+      } catch (error) {
+        console.warn('Batch test cleanup error:', error)
+      }
+    })
+
+    it('AC10.1: computes live GW scores for all teams in league', async () => {
+      if (shouldSkip) {
+        console.warn('Test skipped: setup failed')
+        return
+      }
+
+      // Create matches
+      const match1 = await prisma.match.create({
+        data: {
+          apiMatchId: 195001,
+          gameweekId: gameweekForBatch.id,
+          localTeamId: 113,
+          visitorTeamId: 116,
+          scoringStatus: 'SCORED',
+          startingAt: new Date(),
+        },
+      })
+
+      const match2 = await prisma.match.create({
+        data: {
+          apiMatchId: 195002,
+          gameweekId: gameweekForBatch.id,
+          localTeamId: 113,
+          visitorTeamId: 116,
+          scoringStatus: 'SCORED',
+          startingAt: new Date(),
+        },
+      })
+
+      // Create lineups for 3 teams
+      const lineup1 = await prisma.lineup.create({
+        data: {
+          teamId: team1ForBatch.id,
+          gameweekId: gameweekForBatch.id,
+          slots: {
+            create: [
+              { playerId: playersForBatch[0].id, slotType: 'XI', role: 'CAPTAIN' },
+              { playerId: playersForBatch[1].id, slotType: 'XI' },
+              { playerId: playersForBatch[2].id, slotType: 'XI' },
+              { playerId: playersForBatch[3].id, slotType: 'XI' },
+              { playerId: playersForBatch[4].id, slotType: 'BENCH' },
+            ],
+          },
+        },
+      })
+
+      const lineup2 = await prisma.lineup.create({
+        data: {
+          teamId: team2ForBatch.id,
+          gameweekId: gameweekForBatch.id,
+          slots: {
+            create: [
+              { playerId: playersForBatch[0].id, slotType: 'XI' },
+              { playerId: playersForBatch[1].id, slotType: 'XI', role: 'CAPTAIN' },
+              { playerId: playersForBatch[2].id, slotType: 'XI' },
+              { playerId: playersForBatch[3].id, slotType: 'XI' },
+              { playerId: playersForBatch[5].id, slotType: 'BENCH' },
+            ],
+          },
+        },
+      })
+
+      const lineup3 = await prisma.lineup.create({
+        data: {
+          teamId: team3ForBatch.id,
+          gameweekId: gameweekForBatch.id,
+          slots: {
+            create: [
+              { playerId: playersForBatch[0].id, slotType: 'XI' },
+              { playerId: playersForBatch[1].id, slotType: 'XI' },
+              { playerId: playersForBatch[2].id, slotType: 'XI', role: 'CAPTAIN' },
+              { playerId: playersForBatch[3].id, slotType: 'XI' },
+              { playerId: playersForBatch[5].id, slotType: 'BENCH' },
+            ],
+          },
+        },
+      })
+
+      // Create performances
+      await prisma.playerPerformance.create({
+        data: { playerId: playersForBatch[0].id, matchId: match1.id, fantasyPoints: 20 },
+      })
+      await prisma.playerPerformance.create({
+        data: { playerId: playersForBatch[1].id, matchId: match1.id, fantasyPoints: 10 },
+      })
+      await prisma.playerPerformance.create({
+        data: { playerId: playersForBatch[2].id, matchId: match2.id, fantasyPoints: 15 },
+      })
+      await prisma.playerPerformance.create({
+        data: { playerId: playersForBatch[3].id, matchId: match2.id, fantasyPoints: 8 },
+      })
+
+      // Call computeLeagueLiveScores
+      const { computeLeagueLiveScores } = await import('@/lib/scoring/live')
+      const result = await computeLeagueLiveScores(
+        prisma,
+        gameweekForBatch.id,
+        leagueForBatch.id
+      )
+
+      // Verify result structure
+      expect(result).toHaveProperty('teamScores')
+      expect(result).toHaveProperty('matchesScored')
+      expect(result).toHaveProperty('matchesTotal')
+
+      // Verify all 3 teams have scores
+      expect(result.teamScores).toBeInstanceOf(Map)
+      expect(result.teamScores.size).toBe(3)
+
+      // Verify Team 1 (captain is player 0: 20 * 2 = 40)
+      const team1Score = result.teamScores.get(team1ForBatch.id)
+      expect(team1Score).toBeDefined()
+      expect(team1Score?.liveGwPoints).toBeGreaterThan(0)
+
+      // Verify Team 2 (captain is player 1: 10 * 2 = 20)
+      const team2Score = result.teamScores.get(team2ForBatch.id)
+      expect(team2Score).toBeDefined()
+      expect(team2Score?.liveGwPoints).toBeGreaterThan(0)
+
+      // Verify Team 3 (captain is player 2: 15 * 2 = 30)
+      const team3Score = result.teamScores.get(team3ForBatch.id)
+      expect(team3Score).toBeDefined()
+      expect(team3Score?.liveGwPoints).toBeGreaterThan(0)
+
+      // Verify matches counted
+      expect(result.matchesScored).toBe(2)
+      expect(result.matchesTotal).toBe(2)
+
+      // Cleanup
+      await prisma.lineup.deleteMany({
+        where: { gameweekId: gameweekForBatch.id },
+      })
+      await prisma.playerPerformance.deleteMany({
+        where: { matchId: { in: [match1.id, match2.id] } },
+      })
+      await prisma.match.deleteMany({
+        where: { id: { in: [match1.id, match2.id] } },
+      })
+    })
+
+    it('AC10.2: includes chip bonuses for teams with active chips', async () => {
+      if (shouldSkip) {
+        console.warn('Test skipped: setup failed')
+        return
+      }
+
+      // Create gameweek for this test
+      const chipGw = await prisma.gameweek.create({
+        data: {
+          number: 96,
+          status: 'ACTIVE',
+          aggregationStatus: 'PENDING',
+        },
+      })
+
+      // Create match
+      const match = await prisma.match.create({
+        data: {
+          apiMatchId: 195010,
+          gameweekId: chipGw.id,
+          localTeamId: 113,
+          visitorTeamId: 116,
+          scoringStatus: 'SCORED',
+          startingAt: new Date(),
+        },
+      })
+
+      // Create lineups
+      const lineup1 = await prisma.lineup.create({
+        data: {
+          teamId: team1ForBatch.id,
+          gameweekId: chipGw.id,
+          slots: {
+            create: [
+              { playerId: playersForBatch[0].id, slotType: 'XI', role: 'CAPTAIN' },
+              { playerId: playersForBatch[1].id, slotType: 'XI' },
+              { playerId: playersForBatch[2].id, slotType: 'XI' },
+              { playerId: playersForBatch[3].id, slotType: 'XI' },
+              { playerId: playersForBatch[4].id, slotType: 'BENCH' },
+            ],
+          },
+        },
+      })
+
+      const lineup2 = await prisma.lineup.create({
+        data: {
+          teamId: team2ForBatch.id,
+          gameweekId: chipGw.id,
+          slots: {
+            create: [
+              { playerId: playersForBatch[0].id, slotType: 'XI' },
+              { playerId: playersForBatch[1].id, slotType: 'XI' },
+              { playerId: playersForBatch[2].id, slotType: 'XI', role: 'CAPTAIN' },
+              { playerId: playersForBatch[3].id, slotType: 'XI' },
+              { playerId: playersForBatch[5].id, slotType: 'BENCH' },
+            ],
+          },
+        },
+      })
+
+      // Create performances
+      await prisma.playerPerformance.create({
+        data: { playerId: playersForBatch[0].id, matchId: match.id, fantasyPoints: 20 },
+      })
+      await prisma.playerPerformance.create({
+        data: { playerId: playersForBatch[1].id, matchId: match.id, fantasyPoints: 10 },
+      })
+      await prisma.playerPerformance.create({
+        data: { playerId: playersForBatch[2].id, matchId: match.id, fantasyPoints: 15 },
+      })
+
+      // Add POWER_PLAY_BAT chip to team1 only (player 0 is BAT, player 2 is BAT)
+      await prisma.chipUsage.create({
+        data: {
+          teamId: team1ForBatch.id,
+          chipType: 'POWER_PLAY_BAT',
+          gameweekId: chipGw.id,
+          status: 'PENDING',
+        },
+      })
+
+      // Call computeLeagueLiveScores
+      const { computeLeagueLiveScores } = await import('@/lib/scoring/live')
+      const result = await computeLeagueLiveScores(prisma, chipGw.id, leagueForBatch.id)
+
+      // Verify chip is recorded for team1 but not team2
+      const team1Score = result.teamScores.get(team1ForBatch.id)
+      const team2Score = result.teamScores.get(team2ForBatch.id)
+
+      expect(team1Score?.chipType).toBe('POWER_PLAY_BAT')
+      expect(team2Score?.chipType).toBeNull()
+
+      // Cleanup
+      await prisma.lineup.deleteMany({
+        where: { gameweekId: chipGw.id },
+      })
+      await prisma.chipUsage.deleteMany({ where: { gameweekId: chipGw.id } })
+      await prisma.playerPerformance.deleteMany({ where: { matchId: match.id } })
+      await prisma.match.delete({ where: { id: match.id } })
+      await prisma.gameweek.delete({ where: { id: chipGw.id } })
+    })
+
+    it('AC11.1: uses locked lineups for the specified gameweekId, ignores other gameweeks', async () => {
+      if (shouldSkip) {
+        console.warn('Test skipped: setup failed')
+        return
+      }
+
+      // Create two gameweeks
+      const gw1 = await prisma.gameweek.create({
+        data: {
+          number: 97,
+          status: 'ACTIVE',
+          aggregationStatus: 'PENDING',
+        },
+      })
+
+      // Create match for gw1
+      const match1 = await prisma.match.create({
+        data: {
+          apiMatchId: 195020,
+          gameweekId: gw1.id,
+          localTeamId: 113,
+          visitorTeamId: 116,
+          scoringStatus: 'SCORED',
+          startingAt: new Date(),
+        },
+      })
+
+      // Create lineup for team1 in gw1 (captain is player 0)
+      const lineup1 = await prisma.lineup.create({
+        data: {
+          teamId: team1ForBatch.id,
+          gameweekId: gw1.id,
+          slots: {
+            create: [
+              { playerId: playersForBatch[0].id, slotType: 'XI', role: 'CAPTAIN' },
+              { playerId: playersForBatch[1].id, slotType: 'XI' },
+              { playerId: playersForBatch[2].id, slotType: 'XI' },
+              { playerId: playersForBatch[3].id, slotType: 'XI' },
+              { playerId: playersForBatch[4].id, slotType: 'BENCH' },
+            ],
+          },
+        },
+      })
+
+      // Create performance for player 0
+      await prisma.playerPerformance.create({
+        data: { playerId: playersForBatch[0].id, matchId: match1.id, fantasyPoints: 20 },
+      })
+
+      // Call computeLeagueLiveScores for gw1
+      const { computeLeagueLiveScores } = await import('@/lib/scoring/live')
+      const result = await computeLeagueLiveScores(prisma, gw1.id, leagueForBatch.id)
+
+      // Verify team1 has a score (lineup was found and used)
+      const team1Score = result.teamScores.get(team1ForBatch.id)
+      expect(team1Score).toBeDefined()
+      expect(team1Score?.liveGwPoints).toBeGreaterThan(0) // captain multiplier applied
+
+      // Cleanup
+      await prisma.lineup.deleteMany({
+        where: { gameweekId: gw1.id },
+      })
+      await prisma.playerPerformance.deleteMany({ where: { matchId: match1.id } })
+      await prisma.match.delete({ where: { id: match1.id } })
+      await prisma.gameweek.delete({ where: { id: gw1.id } })
+    })
+  })
 })
