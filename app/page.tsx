@@ -597,6 +597,7 @@ export default function DashboardPage() {
               {hasScores ? formatNumber(avgPoints) : '\u2014'}
             </div>
             <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.6)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: 0.8, marginTop: 1 }}>Average</div>
+            {gwStatus === 'LIVE' && <div style={{ fontSize: 7, color: 'rgba(255,255,255,0.5)', marginTop: 2, fontWeight: 500 }}>(before bench subs)</div>}
           </div>
 
           {/* Your Points (center) — tappable */}
@@ -623,6 +624,7 @@ export default function DashboardPage() {
               {hasScores ? formatNumber(highestPoints) : '\u2014'}
             </div>
             <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.6)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: 0.8, marginTop: 1 }}>Highest</div>
+            {gwStatus === 'LIVE' && <div style={{ fontSize: 7, color: 'rgba(255,255,255,0.5)', marginTop: 2, fontWeight: 500 }}>(before bench subs)</div>}
           </Link>
         </div>
 
@@ -778,7 +780,40 @@ export default function DashboardPage() {
         }}>
           {/* Section header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e', letterSpacing: -0.2 }}>League Standings</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {gwStatus === 'LIVE' && (
+                <>
+                  {/* Pulsing green dot */}
+                  <div
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      background: '#22C55E',
+                      animation: 'pulse 2s infinite',
+                      flexShrink: 0,
+                    }}
+                  />
+                  {/* Match progress badge */}
+                  {matchesScored !== null && matchesTotal !== null && (
+                    <div style={{
+                      fontSize: 9,
+                      fontWeight: 700,
+                      color: '#22C55E',
+                      background: 'rgba(34, 197, 94, 0.1)',
+                      padding: '2px 6px',
+                      borderRadius: 4,
+                      flexShrink: 0,
+                    }}>
+                      {matchesScored}/{matchesTotal}
+                    </div>
+                  )}
+                </>
+              )}
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e', letterSpacing: -0.2 }}>
+                {gwStatus === 'LIVE' ? 'Live Standings' : 'League Standings'}
+              </div>
+            </div>
             <Link href="/standings" style={{ fontSize: 11, fontWeight: 600, color: '#004BA0', textDecoration: 'none' }}>
               Full Standings &rarr;
             </Link>
@@ -796,6 +831,7 @@ export default function DashboardPage() {
                 color: '#aaa', textTransform: 'uppercase' as const, letterSpacing: 0.5, gap: 8,
               }}>
                 <div style={{ width: 22 }}>#</div>
+                <div style={{ width: 16 }}></div>
                 <div style={{ flex: 1 }}>Team</div>
                 <div style={{ width: 36, textAlign: 'right' }}>GW</div>
                 <div style={{ width: 42, textAlign: 'right' }}>Total</div>
@@ -819,13 +855,29 @@ export default function DashboardPage() {
                 const nameColor = isYou ? '#111' : isFirst ? '#222' : '#555'
                 const nameWeight = isYou ? 700 : isFirst ? 600 : 500
 
+                // Rank change indicator
+                let rankChangeContent = '—'
+                let rankChangeColor = '#999'
+                if (s.rankChange > 0) {
+                  rankChangeContent = `↑${s.rankChange}`
+                  rankChangeColor = '#22C55E'
+                } else if (s.rankChange < 0) {
+                  rankChangeContent = `↓${Math.abs(s.rankChange)}`
+                  rankChangeColor = '#EF4444'
+                }
+
                 return (
                   <Link href={`/view-lineup/${s.teamId}`} key={s.teamId} style={{...rowStyle, textDecoration: 'none'}}>
                     <div style={getRankStyle(s.rank, isYou)}>{s.rank}</div>
+                    <div style={{ fontSize: 10, fontWeight: 600, color: rankChangeColor, width: 16, textAlign: 'center' }}>
+                      {rankChangeContent}
+                    </div>
                     <div style={{ flex: 1, fontWeight: nameWeight, color: nameColor }}>
                       {s.teamName}{isYou ? ' (You)' : ''}
                     </div>
-                    <div style={{ fontSize: 11, color: '#999', fontWeight: 500, fontVariantNumeric: 'tabular-nums', width: 36, textAlign: 'right' }}>{s.lastGwPoints}</div>
+                    <div style={{ fontSize: 11, color: '#999', fontWeight: 500, fontVariantNumeric: 'tabular-nums', width: 36, textAlign: 'right' }}>
+                      {gwStatus === 'LIVE' && s.liveGwPoints !== null ? s.liveGwPoints : s.lastGwPoints}
+                    </div>
                     <div style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: ptsColor, width: 42, textAlign: 'right' }}>{formatNumber(s.totalPoints)}</div>
                   </Link>
                 )
@@ -851,6 +903,13 @@ export default function DashboardPage() {
               <div style={{ fontSize: 9, color: '#bbb', textAlign: 'center', marginTop: 6, fontWeight: 500 }}>
                 Tap a team to view their lineup
               </div>
+
+              {/* Footer for LIVE mode */}
+              {gwStatus === 'LIVE' && (
+                <div style={{ fontSize: 9, color: '#999', textAlign: 'center', marginTop: 8, fontWeight: 500 }}>
+                  Provisional — bench subs not yet applied
+                </div>
+              )}
             </>
           )}
         </div>
