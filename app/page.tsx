@@ -80,6 +80,10 @@ interface Standing {
   lastGwPoints: number
   lastGwNumber: number | null
   chipUsed: string | null
+  rankChange: number
+  liveGwPoints: number | null
+  chipActive: string | null
+  storedTotalPoints: number
 }
 
 interface GwPlayerScore {
@@ -91,6 +95,41 @@ interface GwPlayerScore {
     role: string
     iplTeamCode: string | null
   }
+}
+
+interface LivePlayerScore {
+  id: string
+  name: string
+  role: string
+  iplTeamCode: string | null
+  slotType: 'XI' | 'BENCH'
+  basePoints: number
+  chipBonus: number
+  isCaptain: boolean
+  isVC: boolean
+  multipliedPoints: number
+  matchesPlayed: number
+}
+
+interface LiveScoreResponse {
+  gameweekId: string
+  gameweekNumber: number
+  status: 'LIVE' | 'FINAL'
+  matchesScored: number
+  matchesTotal: number
+  totalPoints: number
+  chipActive: string | null
+  chipBonusPoints: number
+  players: LivePlayerScore[]
+}
+
+interface LeaderboardResponse {
+  standings: Standing[]
+  leagueId: string
+  gwStatus: 'LIVE' | 'FINAL'
+  activeGwNumber: number | null
+  matchesScored: number | null
+  matchesTotal: number | null
 }
 
 /* ─── Team gradients (for pitch view figures) ─── */
@@ -234,6 +273,8 @@ export default function DashboardPage() {
   const [gwSheetView, setGwSheetView] = useState<'list' | 'pitch'>('list')
   const [gwPlayerScores, setGwPlayerScores] = useState<GwPlayerScore[]>([])
   const [gwScoresLoading, setGwScoresLoading] = useState(false)
+  const [liveScoreResponse, setLiveScoreResponse] = useState<LiveScoreResponse | null>(null)
+  const [gwStatus, setGwStatus] = useState<'LIVE' | 'FINAL'>('FINAL')
 
   // Join league
   const [joinFormOpen, setJoinFormOpen] = useState(false)
