@@ -6,6 +6,7 @@ declare module 'next-auth' {
       id: string
       role: 'USER' | 'ADMIN'
       activeLeagueId: string | null
+      isAppAdmin: boolean
     } & DefaultSession['user']
   }
 
@@ -19,5 +20,6 @@ declare module '@auth/core/jwt' {
   interface JWT {
     role: 'USER' | 'ADMIN'
     activeLeagueId: string | null
+    isAppAdmin: boolean
   }
 }
