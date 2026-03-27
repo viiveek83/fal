@@ -301,106 +301,17 @@ Loaded from `GET /api/scoring/status` on page load.
 
 ## Phase 6: Live Mid-Gameweek Scores
 
-### Why
+See **[live-mid-gameweek-scores-plan.md](live-mid-gameweek-scores-plan.md)** for full details including API design, dashboard UI mockups, score sheet integration, live leaderboard, and edge cases.
 
-PRD Section 8 states: **"Live updates within a gameweek (recalculates after each match is scored)."**
-
-Currently, users see nothing on their dashboard until the entire gameweek is aggregated (all matches scored + bench subs + captain/VC + chips applied). In a gameweek with 7 matches across 4 days, users wait days to see any team score. This violates the PRD requirement.
-
-### Current Flow (broken)
-
-```
-Match 1 scored → PlayerPerformance created → user sees nothing on dashboard
-Match 2 scored → PlayerPerformance created → user sees nothing on dashboard
-...
-Match 7 scored → aggregateGameweek() runs → GameweekScore created → user finally sees team score
-```
-
-### Proposed Flow (live)
-
-```
-Match 1 scored → PlayerPerformance created → running total computed on-the-fly → user sees partial score
-Match 2 scored → PlayerPerformance created → running total updated → user sees updated score
-...
-Match 7 scored → aggregateGameweek() runs → final GameweekScore with bench subs/chips → user sees final score
-```
-
-### 6.1 Live scores API — `app/api/teams/[teamId]/scores/live/[gameweekId]/route.ts` (CREATE)
-
-Computes a **running total** from already-scored matches without waiting for full aggregation.
-
-**Logic:**
-1. Fetch team's lineup for this gameweek (XI + bench + captain/VC)
-2. Fetch all `PlayerPerformance` records for this GW's scored matches
-3. Sum each lineup player's fantasy points across scored matches
-4. Apply captain 2x multiplier (if captain has performances = played)
-5. Return per-player breakdown + team running total
-
-**What it does NOT apply** (these only apply at final aggregation):
-- Bench auto-substitutions (can't know who's absent until GW is fully over)
-- Chip effects (chip doubles are final-score calculations)
-- VC promotion (can't know if captain is absent until GW is over)
-
-**Response:**
-```typescript
-{
-  gameweekNumber: 3,
-  status: 'IN_PROGRESS',           // vs 'FINAL' when aggregated
-  matchesScored: 4,
-  matchesTotal: 7,
-  runningTotal: 342,               // sum of XI player points + captain 2x
-  finalTotal: null,                // null until aggregated, then from GameweekScore
-  players: [
-    { id: '...', name: 'Virat Kohli', role: 'BAT', points: 67, isCaptain: true, multipliedPoints: 134 },
-    { id: '...', name: 'Jasprit Bumrah', role: 'BOWL', points: 45, isCaptain: false, multipliedPoints: 45 },
-    ...
-  ],
-  notes: [
-    'Bench substitutions and chip effects are applied after the final match.'
-  ]
-}
-```
-
-### 6.2 Dashboard integration — modify `app/page.tsx`
-
-**Current**: Dashboard "Your Points" section shows `GameweekScore.totalPoints` — empty until aggregation.
-
-**Change**: If no `GameweekScore` exists for the active GW, fall back to the live scores API:
-- Show running total with a label: **"Live • 4/7 matches scored"**
-- After aggregation completes, switch to final score: **"Final • GW 3"**
-
-**Visual distinction:**
-- Live score: shown with a pulsing dot or "LIVE" badge, slightly faded to indicate it's provisional
-- Final score: shown normally (no badge)
-- Subtext under live score: *"Bench subs and chip effects applied after final match"*
-
-### 6.3 GW Score Sheet integration — modify existing score detail sheet
-
-When user taps their GW score on the dashboard:
-- **If GW aggregated**: show final breakdown (current behavior, no change)
-- **If GW in progress**: show live per-player breakdown from the live API
-  - Each player row shows points from scored matches
-  - Players with no performances yet show "—" or "0"
-  - Captain shows 2x badge with doubled points
-  - Bottom note: *"Bench subs and chip effects applied after final match"*
-
-### 6.4 Leaderboard during live GW
-
-**Current**: Leaderboard shows nothing for the active GW until aggregation.
-
-**Change**: Show provisional rankings based on live running totals:
-- Label: **"Live Standings"** (vs **"Final Standings"** after aggregation)
-- Sort by running total descending
-- Subtext: *"Provisional — bench subs and chips not yet applied"*
+**Summary**: PRD requires live updates within a gameweek after each match is scored. Currently users see nothing until full GW aggregation. The plan adds a live scores API that computes running totals on-the-fly (captain 2x applied, bench subs + chips deferred to final aggregation), with a "LIVE" badge on the dashboard and provisional leaderboard rankings.
 
 ### Files for Phase 6
 
 | File | Action | Purpose |
 |------|--------|---------|
 | `app/api/teams/[teamId]/scores/live/[gameweekId]/route.ts` | CREATE | Live running total API |
-| `app/page.tsx` | MODIFY | Fall back to live scores when no GameweekScore |
-| `app/page.tsx` | MODIFY | "LIVE" badge + provisional label on dashboard |
-| `app/api/leaderboard/[leagueId]/route.ts` | MODIFY | Include live running totals for active GW |
+| `app/page.tsx` | MODIFY | Live score fallback + LIVE badge |
+| `app/api/leaderboard/[leagueId]/route.ts` | MODIFY | Live standings for active GW |
 
 ---
 
