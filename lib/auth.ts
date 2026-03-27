@@ -1,6 +1,7 @@
 import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import { prisma } from './db'
+import { isAppAdmin } from './app-admin'
 
 // Re-verify user ID against DB every 30 minutes to handle DB resets
 const RESYNC_INTERVAL_MS = 30 * 60 * 1000
@@ -32,6 +33,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token?.sub) session.user.id = token.sub
       session.user.role = token.role
       session.user.activeLeagueId = token.activeLeagueId ?? null
+      session.user.isAppAdmin = (token.isAppAdmin as boolean) ?? false
       return session
     },
     async jwt({ token, user }) {
@@ -41,6 +43,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.role = user.role
         token.activeLeagueId = user.activeLeagueId ?? null
         token.lastVerified = Date.now()
+        token.isAppAdmin = isAppAdmin(user.email)
       }
 
       // Always re-read activeLeagueId from DB so league switches take
@@ -60,6 +63,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 token.role = dbUser.role
               }
               token.activeLeagueId = dbUser.activeLeagueId || null
+              token.isAppAdmin = isAppAdmin(token.email as string)
               token.lastVerified = Date.now()
             } else {
               token.sub = undefined
