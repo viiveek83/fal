@@ -35,6 +35,13 @@ export default defineConfig({
       dependencies: ['setup'],
     },
     {
+      name: 'lifecycle-user',
+      testMatch: 'lifecycle.spec.ts',
+      grep: /@user/,
+      use: { storageState: 'tests/simulation/playwright/.auth/user1.json' },
+      dependencies: ['setup'],
+    },
+    {
       name: 'layer0-noauth',
       testMatch: 'layer0.spec.ts',
       grep: /@noauth/,
