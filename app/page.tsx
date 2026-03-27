@@ -640,6 +640,124 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* CSS for pulsing animation */}
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
+      `}</style>
+
+      {/* Live GW Card */}
+      {activeGwNumber !== null && liveScoreResponse && (
+        <div style={{ padding: '0 14px' }}>
+          <div
+            onClick={openGwSheet}
+            style={{
+              background: '#fff',
+              border: '1px solid rgba(0,0,0,0.06)',
+              borderRadius: 16,
+              padding: 14,
+              boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+              cursor: 'pointer',
+            }}
+          >
+            {/* Header with status badge and GW label */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                {liveScoreResponse.status === 'LIVE' ? (
+                  <>
+                    {/* Pulsing green dot */}
+                    <div
+                      style={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: '50%',
+                        background: '#22C55E',
+                        animation: 'pulse 2s infinite',
+                      }}
+                    />
+                    {/* LIVE badge */}
+                    <div
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: '#fff',
+                        background: '#22C55E',
+                        padding: '3px 8px',
+                        borderRadius: 6,
+                      }}
+                    >
+                      LIVE
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* FINAL badge */}
+                    <div
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: '#fff',
+                        background: '#6B7280',
+                        padding: '3px 8px',
+                        borderRadius: 6,
+                      }}
+                    >
+                      FINAL
+                    </div>
+                  </>
+                )}
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#666' }}>
+                GW {liveScoreResponse.gameweekNumber}
+              </div>
+            </div>
+
+            {/* Match progress (LIVE only) */}
+            {liveScoreResponse.status === 'LIVE' && (
+              <div style={{ fontSize: 11, color: '#999', marginBottom: 8 }}>
+                {liveScoreResponse.matchesScored}/{liveScoreResponse.matchesTotal} matches scored
+              </div>
+            )}
+
+            {/* Large running total number */}
+            <div style={{
+              fontSize: 36,
+              fontWeight: 800,
+              color: '#1a1a2e',
+              marginBottom: 8,
+              fontVariantNumeric: 'tabular-nums',
+            }}>
+              {formatNumber(liveScoreResponse.totalPoints)}
+            </div>
+
+            {/* Chip badge (if chip active) */}
+            {liveScoreResponse.chipActive && (
+              <div style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: '#1a1a2e',
+                background: 'rgba(249,205,5,0.15)',
+                border: '1px solid rgba(249,205,5,0.3)',
+                padding: '6px 10px',
+                borderRadius: 8,
+                marginBottom: 8,
+              }}>
+                ⚡ {liveScoreResponse.chipActive} +{liveScoreResponse.chipBonusPoints} pts
+              </div>
+            )}
+
+            {/* Footer message */}
+            <div style={{ fontSize: 10, color: '#999', marginTop: 8 }}>
+              {liveScoreResponse.status === 'LIVE'
+                ? 'Bench subs applied after final match'
+                : ''}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* CONTENT */}
       <div style={{ padding: '14px 14px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
 
