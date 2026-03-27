@@ -67,23 +67,11 @@ Both create real `Lineup` + `LineupSlot` records so:
 **Logic:**
 
 1. Fetch all `TeamPlayer` records for the team, joined with `Player` to get roles
-2. Sort players into role buckets: BAT, BOWL, ALL, WK
-3. Select the Playing XI (11 players) with role balance:
-   - All WK players (typically 1-2)
-   - All ALL-rounders (typically 2-4)
-   - Fill remaining slots: BAT first, then BOWL
-   - If more than 11 after this: trim BOWL, then BAT from the end
-4. Remaining players (up to 4) become bench with priority 1, 2, 3, 4
-5. Select Captain and Vice Captain:
-   - **Primary:** Use cumulative `PlayerPerformance.fantasyPoints` across all scored matches. Highest = Captain, second highest = VC. This picks the objectively best-performing player.
-   - **Fallback (no performance data, e.g., GW1 before any matches scored):** Pick by role priority: ALL > BAT > WK > BOWL. Within same role, pick alphabetically by name for determinism.
+2. Sort all 15 players by `purchasePrice` descending (highest value first)
+3. Top 11 = Playing XI, remaining 4 = Bench (priority 1-4 by descending price)
+4. Captain = highest `purchasePrice` player, Vice Captain = second highest
 
-**Why this ordering:**
-- ALL-rounders earn points from batting, bowling, AND fielding — highest expected value
-- WK players earn batting + keeping bonus
-- BAT players earn batting points only
-- BOWL players earn bowling points only
-- This matches standard fantasy cricket strategy
+**Why auction price:** The purchase price is the user's own valuation of each player — the player they spent the most on is who they valued most. No complex role logic needed, and it reflects the user's intent from the auction.
 
 **Squad size assumption:** Teams have exactly 15 players (enforced by auction). XI = 11, Bench = 4.
 
@@ -145,9 +133,9 @@ async function ensureLineups(
 
 1. **Carry-forward creates correct lineup** — mock team with GW1 lineup, call `ensureLineups` for GW2, verify slots match GW1 exactly (same players, roles, bench priorities)
 2. **Carry-forward picks most recent GW** — team has GW1 and GW2 lineups, GW3 missing → carries GW2 forward
-3. **Auto-generate picks correct XI** — mock squad of 15 players with known roles, verify 11 XI + 4 bench with role balance
-4. **Auto-generate captain selection** — mock performance data, verify highest-scoring player is captain
-5. **Auto-generate captain fallback** — no performance data, verify ALL-rounder selected as captain
+3. **Auto-generate picks correct XI** — mock squad of 15 players with known prices, verify top 11 by price in XI, bottom 4 on bench
+4. **Auto-generate captain selection** — verify highest `purchasePrice` player is captain, second highest is VC
+5. **Auto-generate bench priority** — verify bench ordered by descending price (priority 1 = most expensive bench player)
 6. **Skips teams with existing lineup** — team already has lineup for this GW → no changes
 7. **Skips teams with no squad** — team has 0 TeamPlayers → no lineup created
 8. **Handles removed players** — previous lineup has player not in current squad → slot skipped
