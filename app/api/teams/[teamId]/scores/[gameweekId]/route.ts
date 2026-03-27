@@ -107,12 +107,18 @@ export async function GET(
           role: ps.player.role,
           iplTeamCode: ps.player.iplTeamCode,
           slotType: slotInfo?.slotType || 'XI',
-          basePoints: ps.totalPoints, // In FINAL mode, stored totalPoints is the final value
+          // TODO: In FINAL mode, we store the total (basePoints * multiplier + chipBonus) as totalPoints.
+          // To properly break down basePoints vs multipliedPoints, we'd need separate fields in PlayerScore.
+          // For now, both are set to totalPoints as a known limitation.
+          basePoints: ps.totalPoints,
           chipBonus: 0, // Not tracked separately in stored data; would need separate PlayerChipBonus table for granular tracking
           isCaptain: slotInfo?.isCaptain ?? false,
           isVC: slotInfo?.isVC ?? false,
           multipliedPoints: ps.totalPoints,
-          matchesPlayed: 1, // Placeholder; not tracked in current schema
+          // TODO: matchesPlayed is not tracked in the current schema for FINAL mode.
+          // In LIVE mode, this is available from computeLiveTeamScore's matchesPlayedMap,
+          // but stored data does not preserve this per-player information.
+          matchesPlayed: 1,
         }
       })
 
@@ -155,6 +161,24 @@ export async function GET(
 
       const playerDataMap = new Map(playerData.map((p) => [p.id, p]))
 
+      // Build matchesPlayedMap for LIVE mode: count distinct scored matches per player
+      const allMatches = await prisma.match.findMany({
+        where: { gameweekId },
+        select: { id: true, scoringStatus: true },
+      })
+      const scoredMatches = allMatches.filter((m) => m.scoringStatus === 'SCORED')
+      const performances = await prisma.playerPerformance.findMany({
+        where: { matchId: { in: scoredMatches.map((m) => m.id) } },
+        select: { playerId: true, matchId: true },
+      })
+      const matchesPlayedMap = new Map<string, number>()
+      for (const playerId of new Set(performances.map((p) => p.playerId))) {
+        const distinctMatches = new Set(
+          performances.filter((p) => p.playerId === playerId).map((p) => p.matchId)
+        )
+        matchesPlayedMap.set(playerId, distinctMatches.size)
+      }
+
       const enrichedPlayers = liveResult.players.map((p) => {
         const playerInfo = playerDataMap.get(p.playerId)
         return {
@@ -168,7 +192,7 @@ export async function GET(
           isCaptain: p.isCaptain,
           isVC: p.isVC,
           multipliedPoints: p.multipliedPoints,
-          matchesPlayed: 1, // Placeholder; not tracked in current implementation
+          matchesPlayed: matchesPlayedMap.get(p.playerId) || 0,
         }
       })
 
