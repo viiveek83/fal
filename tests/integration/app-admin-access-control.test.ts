@@ -1,14 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { PrismaClient } from '@prisma/client'
-import { NextResponse } from 'next/server'
+import { isAppAdmin } from '@/lib/app-admin'
 
 const prisma = new PrismaClient()
 const TEST_SUFFIX = '@test.vitest.appadmin'
-
-// Mock the auth() function to return a session
-const createMockAuth = (session: any) => {
-  return async () => session
-}
 
 interface TestUser {
   id: string
@@ -77,55 +72,21 @@ async function cleanup() {
 
 describe('App Admin Access Control (AC1)', () => {
   it('AC1.3: Non-app-admin user receives 403 on /api/scoring/import', async () => {
-    // Simulate what the route does: check if session.user.isAppAdmin is true
-    const sessionWithoutAppAdmin = {
-      user: {
-        id: normalUser.id,
-        email: normalUser.email,
-        role: 'USER' as const,
-        isAppAdmin: false,
-      },
-    }
-
-    // This is the check the route should do
-    if (!sessionWithoutAppAdmin.user.isAppAdmin) {
-      // Route should return 403
-      expect(true).toBe(true) // Placeholder - actual route will do the check
-    }
+    // normalUser is not in APP_ADMIN_EMAILS, so isAppAdmin() should return false
+    const isAdmin = isAppAdmin(normalUser.email)
+    expect(isAdmin).toBe(false)
   })
 
   it('AC1.4: League admin (UserRole.ADMIN) NOT in APP_ADMIN_EMAILS receives 403', async () => {
     // leagueAdminUser has role='ADMIN' but is NOT in APP_ADMIN_EMAILS
-    const sessionWithLeagueAdmin = {
-      user: {
-        id: leagueAdminUser.id,
-        email: leagueAdminUser.email,
-        role: 'ADMIN' as const,
-        isAppAdmin: false, // NOT in APP_ADMIN_EMAILS
-      },
-    }
-
-    // Route should check isAppAdmin, not role
-    if (!sessionWithLeagueAdmin.user.isAppAdmin) {
-      // Route should return 403
-      expect(true).toBe(true) // Placeholder
-    }
+    // isAppAdmin should check the email list, not the role field
+    const isAdmin = isAppAdmin(leagueAdminUser.email)
+    expect(isAdmin).toBe(false)
   })
 
   it('AC1.1: App admin user in APP_ADMIN_EMAILS can access scoring operations', async () => {
-    // appAdminUser is in APP_ADMIN_EMAILS
-    const sessionWithAppAdmin = {
-      user: {
-        id: appAdminUser.id,
-        email: appAdminUser.email,
-        role: 'USER' as const,
-        isAppAdmin: true, // In APP_ADMIN_EMAILS
-      },
-    }
-
-    // Route should allow access
-    if (sessionWithAppAdmin.user.isAppAdmin) {
-      expect(true).toBe(true) // Would proceed with scoring operation
-    }
+    // appAdminUser is in APP_ADMIN_EMAILS, so isAppAdmin() should return true
+    const isAdmin = isAppAdmin(appAdminUser.email)
+    expect(isAdmin).toBe(true)
   })
 })

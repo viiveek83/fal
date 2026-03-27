@@ -1,10 +1,14 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { isAppAdmin } from '@/lib/app-admin'
 
 describe('isAppAdmin', () => {
-  const originalEnv = process.env.APP_ADMIN_EMAILS
+  let originalEnv: string | undefined
 
-  afterAll(() => {
+  beforeEach(() => {
+    originalEnv = process.env.APP_ADMIN_EMAILS
+  })
+
+  afterEach(() => {
     process.env.APP_ADMIN_EMAILS = originalEnv
   })
 
