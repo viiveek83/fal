@@ -604,8 +604,8 @@ export default function DashboardPage() {
             {gwLabel}
           </div>
           {gwStatus === 'LIVE' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <div style={{
+            <div data-testid="hero-live-badge" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div data-testid="hero-pulsing-dot" style={{
                 width: 6, height: 6, borderRadius: '50%', background: '#22C55E',
                 animation: 'pulse 2s infinite',
               }} />
@@ -616,13 +616,13 @@ export default function DashboardPage() {
             </div>
           )}
           {gwStatus === 'FINAL' && activeGwNumber !== null && (
-            <div style={{
+            <div data-testid="hero-final-badge" style={{
               fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.6)',
               background: 'rgba(255,255,255,0.1)', padding: '2px 5px', borderRadius: 4,
             }}>FINAL</div>
           )}
           {gwStatus === 'LIVE' && matchesScored !== null && matchesTotal !== null && (
-            <div style={{
+            <div data-testid="hero-match-progress" style={{
               fontSize: 9, fontWeight: 600, color: 'rgba(255,255,255,0.5)',
             }}>
               {matchesScored}/{matchesTotal} matches
@@ -642,6 +642,7 @@ export default function DashboardPage() {
 
           {/* Your Points (center) — tappable to open GW sheet */}
           <div
+            data-testid="hero-your-points"
             onClick={openGwSheet}
             style={{ flex: 1.3, textAlign: 'center', position: 'relative', cursor: 'pointer' }}
           >
