@@ -51,7 +51,7 @@ beforeAll(async () => {
   // Create two gameweeks
   gw1 = await prisma.gameweek.create({
     data: {
-      number: 9998,
+      number: 8888,
       lockTime: new Date(Date.now() - 48 * 60 * 60 * 1000),
       status: 'ACTIVE',
       aggregationStatus: 'PENDING',
@@ -60,7 +60,7 @@ beforeAll(async () => {
 
   gw2 = await prisma.gameweek.create({
     data: {
-      number: 9999,
+      number: 8889,
       lockTime: new Date(Date.now() - 24 * 60 * 60 * 1000),
       status: 'ACTIVE',
       aggregationStatus: 'PENDING',
@@ -124,7 +124,7 @@ beforeAll(async () => {
   // Create match for GW2 with some players from our squad
   match = await prisma.match.create({
     data: {
-      apiMatchId: 99999,
+      apiMatchId: 88888,
       gameweekId: gw2.id,
       localTeamId: 999,
       visitorTeamId: 998,
@@ -165,7 +165,7 @@ async function cleanup() {
 
   // Get gameweeks first
   const testGameweeks = await prisma.gameweek.findMany({
-    where: { number: { in: [9998, 9999] } },
+    where: { number: { in: [8888, 8889] } },
     select: { id: true },
   })
   const gwIds = testGameweeks.map((g) => g.id)
@@ -218,7 +218,7 @@ async function cleanup() {
     // Now delete gameweeks
     await prisma.gameweek.deleteMany({
       where: {
-        number: { in: [9998, 9999] },
+        number: { in: [8888, 8889] },
       },
     })
   }

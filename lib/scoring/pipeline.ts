@@ -553,6 +553,7 @@ export async function ensureLineups(
     console.log(`ensureLineups: carried forward ${team.name} from GW${prevLineup.gameweek.number}`)
 
     // Push the new lineup into team.lineups array so scoring loop picks it up
+    // Type widening needed: create return matches lineup shape but not the filtered query type
     team.lineups.push(newLineup as any)
 
     carriedForward++
