@@ -163,15 +163,33 @@ async function cleanup() {
   // Delete test data in FK order
   const testEmails = [adminEmail, `user${TEST_SUFFIX}`]
 
-  // Get gameweeks first
+  // Get gameweeks for main test (8888, 8889) - primary test gameweeks
   const testGameweeks = await prisma.gameweek.findMany({
     where: { number: { in: [8888, 8889] } },
     select: { id: true },
   })
   const gwIds = testGameweeks.map((g) => g.id)
 
-  // Clean matches and performances first (depends on gameweek)
+  // Also find and delete orphaned lineups/slots for these gameweeks from previous failed runs
+  // This prevents FK violations when teams still reference these gameweeks
   if (gwIds.length > 0) {
+    // Delete lineup slots first (depends on lineup)
+    await prisma.lineupSlot.deleteMany({
+      where: {
+        lineup: {
+          gameweekId: { in: gwIds },
+        },
+      },
+    })
+
+    // Delete lineups for these gameweeks (may be from orphaned teams)
+    await prisma.lineup.deleteMany({
+      where: {
+        gameweekId: { in: gwIds },
+      },
+    })
+
+    // Clean matches and performances (depends on gameweek)
     await prisma.playerPerformance.deleteMany({
       where: {
         match: {
@@ -181,22 +199,6 @@ async function cleanup() {
     })
 
     await prisma.match.deleteMany({
-      where: {
-        gameweekId: { in: gwIds },
-      },
-    })
-
-    // Clean lineup slots (depends on lineup)
-    await prisma.lineupSlot.deleteMany({
-      where: {
-        lineup: {
-          gameweekId: { in: gwIds },
-        },
-      },
-    })
-
-    // Clean lineups
-    await prisma.lineup.deleteMany({
       where: {
         gameweekId: { in: gwIds },
       },

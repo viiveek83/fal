@@ -32,10 +32,6 @@ describe('ensureLineups - Unit Tests', () => {
     vi.clearAllMocks()
   })
 
-  afterEach(() => {
-    vi.clearAllMocks()
-  })
-
   // AC1.1: Team with previous GW lineup gets it cloned
   it('AC1.1: carries forward previous lineup when current GW has no lineup', async () => {
     const team = {
