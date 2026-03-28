@@ -146,7 +146,58 @@ export async function GET(
         liveResult = await computeLiveTeamScore(prisma, teamId, gameweekId)
       } catch (error) {
         if (error instanceof Error && error.message.includes('No lineup found')) {
-          return Response.json({ error: 'No lineup submitted' }, { status: 404 })
+          // No lineup saved yet — return raw performances so frontend can show mid-GW points
+          const allMatches = await prisma.match.findMany({
+            where: { gameweekId },
+            select: { id: true, scoringStatus: true },
+          })
+          const matchIds = allMatches.map((m) => m.id)
+          const performances = await prisma.playerPerformance.findMany({
+            where: {
+              matchId: { in: matchIds },
+              player: { teamPlayers: { some: { teamId } } },
+            },
+            include: {
+              player: { select: { id: true, fullname: true, role: true, iplTeamCode: true } },
+            },
+          })
+
+          // Sum fantasy points per player
+          const pointsMap = new Map<string, number>()
+          for (const perf of performances) {
+            pointsMap.set(perf.playerId, (pointsMap.get(perf.playerId) || 0) + perf.fantasyPoints)
+          }
+
+          const players = [...pointsMap.entries()].map(([playerId, pts]) => {
+            const perf = performances.find((p) => p.playerId === playerId)!
+            return {
+              id: playerId,
+              name: perf.player.fullname,
+              role: perf.player.role,
+              iplTeamCode: perf.player.iplTeamCode,
+              slotType: 'XI' as const,
+              basePoints: pts,
+              chipBonus: 0,
+              isCaptain: false,
+              isVC: false,
+              multipliedPoints: pts,
+              matchesPlayed: performances.filter((p) => p.playerId === playerId).length,
+            }
+          })
+
+          const totalPoints = [...pointsMap.values()].reduce((sum, pts) => sum + pts, 0)
+
+          return Response.json({
+            gameweekId,
+            gameweekNumber: (await prisma.gameweek.findUnique({ where: { id: gameweekId } }))?.number,
+            status: 'LIVE' as const,
+            matchesScored: allMatches.filter((m) => m.scoringStatus === 'SCORED').length,
+            matchesTotal: allMatches.length,
+            totalPoints,
+            chipActive: null,
+            chipBonusPoints: 0,
+            players,
+          })
         }
         throw error
       }

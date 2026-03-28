@@ -175,7 +175,7 @@ function PlayerFigure({ player, isCaptain, isVC, isBench, points }: {
   const plateMaxW = isBench ? 72 : 90
   const platePx = isBench ? '2px 5px 1px' : '4px 8px'
   const nameFs = isBench ? 11 : 12
-  const valueFs = isBench ? 9 : 10
+  const valueFs = isBench ? 10 : 12
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -253,7 +253,7 @@ function PlayerFigure({ player, isCaptain, isVC, isBench, points }: {
           {shortName}
         </div>
         <div style={{
-          fontSize: valueFs, fontWeight: 600,
+          fontSize: valueFs, fontWeight: 700,
           color: light ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.8)',
           marginTop: 2, lineHeight: '1.55',
           display: 'flex', alignItems: 'center', gap: 2,
