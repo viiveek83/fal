@@ -278,6 +278,7 @@ model ChipUsage {
   createdAt  DateTime   @default(now())
 
   @@unique([teamId, chipType])
+  @@unique([teamId, gameweekId])
 }
 
 model GameweekScore {

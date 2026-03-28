@@ -105,6 +105,17 @@ export async function POST(
       )
     }
 
+    // Check if a different chip is already active for this gameweek
+    const pendingChipThisGw = await prisma.chipUsage.findFirst({
+      where: { teamId, gameweekId, status: 'PENDING' },
+    })
+    if (pendingChipThisGw) {
+      return Response.json(
+        { error: `Already have ${pendingChipThisGw.chipType} active for this gameweek. Deactivate it first.` },
+        { status: 409 }
+      )
+    }
+
     // Create chip usage
     const chipUsage = await prisma.chipUsage.create({
       data: { teamId, chipType, gameweekId, status: 'PENDING' },
