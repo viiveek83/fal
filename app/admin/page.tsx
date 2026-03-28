@@ -1033,7 +1033,7 @@ export default function AdminPage() {
                               )}
                             </div>
                             <span style={{ fontSize: 12, color: '#888', fontFamily: 'monospace' }}>
-                              {p.purchasePrice > 0 ? `${p.purchasePrice} Cr` : '-'}
+                              {p.purchasePrice > 0 ? `$${p.purchasePrice}M` : '-'}
                             </span>
                           </div>
                         ))}

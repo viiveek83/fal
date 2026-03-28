@@ -75,7 +75,18 @@ export async function GET(
       orderBy: { fantasyPoints: 'desc' },
     })
 
-    return Response.json({ playerScores, performances, matches })
+    // Get pre-computed team GW total (includes captain multiplier, bench subs, chips)
+    const gameweekScore = await prisma.gameweekScore.findUnique({
+      where: { teamId_gameweekId: { teamId, gameweekId } },
+      select: { totalPoints: true, chipUsed: true },
+    })
+
+    return Response.json({
+      playerScores,
+      performances,
+      matches,
+      gameweekScore: gameweekScore ?? null,
+    })
   } catch (error) {
     console.error('GET /api/teams/[teamId]/scores/[gameweekId] error:', error)
     return Response.json({ error: 'Internal server error' }, { status: 500 })
