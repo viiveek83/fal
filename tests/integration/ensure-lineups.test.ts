@@ -457,6 +457,10 @@ describe('Ensure Lineups - Integration Test', () => {
     expect(benchPriorities).toEqual([1, 2, 3, 4])
 
     // Cleanup - must delete in correct order due to FKs
+    // Delete ALL lineups for this team (parallel tests may create lineups for other GWs)
+    await prisma.lineupSlot.deleteMany({ where: { lineup: { teamId: testTeam.id } } })
+    await prisma.lineup.deleteMany({ where: { teamId: testTeam.id } })
+    // Delete all data for this gameweek (other teams' lineups created by ensureLineups)
     await prisma.lineupSlot.deleteMany({ where: { lineup: { gameweekId: gw3.id } } })
     await prisma.lineup.deleteMany({ where: { gameweekId: gw3.id } })
     await prisma.gameweekScore.deleteMany({ where: { gameweekId: gw3.id } })
@@ -537,13 +541,14 @@ describe('Ensure Lineups - Integration Test', () => {
     expect(lineupsAfter).toHaveLength(0)
 
     // Cleanup - must delete in correct order due to FKs
-    // Delete scores first (they reference both team and gameweek)
+    // Delete ALL lineups for this team (parallel tests may create lineups for other GWs)
+    await prisma.lineupSlot.deleteMany({ where: { lineup: { teamId: testTeam.id } } })
+    await prisma.lineup.deleteMany({ where: { teamId: testTeam.id } })
+    // Delete all data for this gameweek (other teams' lineups created by ensureLineups)
+    await prisma.lineupSlot.deleteMany({ where: { lineup: { gameweekId: gw4.id } } })
+    await prisma.lineup.deleteMany({ where: { gameweekId: gw4.id } })
     await prisma.playerScore.deleteMany({ where: { gameweekId: gw4.id } })
     await prisma.gameweekScore.deleteMany({ where: { gameweekId: gw4.id } })
-    // Delete lineup slots by gameweek
-    await prisma.lineupSlot.deleteMany({ where: { lineup: { gameweekId: gw4.id } } })
-    // Delete lineups by gameweek
-    await prisma.lineup.deleteMany({ where: { gameweekId: gw4.id } })
     await prisma.teamPlayer.deleteMany({ where: { leagueId: testLeague.id } })
     await prisma.team.delete({ where: { id: testTeam.id } })
     await prisma.league.delete({ where: { id: testLeague.id } })
