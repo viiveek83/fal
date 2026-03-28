@@ -422,14 +422,26 @@ export default function ViewLineupPage() {
         const scoresData = await scoresRes.json()
         const pointsMap: Record<string, number> = {}
         // New format: scoresData.players[] with { id, multipliedPoints }
-        if (Array.isArray(scoresData.players)) {
+        if (Array.isArray(scoresData.players) && scoresData.players.length > 0) {
           for (const p of scoresData.players) {
             pointsMap[p.id] = p.multipliedPoints ?? 0
+          }
+        } else if (Array.isArray(scoresData.performances) && scoresData.performances.length > 0) {
+          // Mid-GW fallback: sum per-match fantasy points from PlayerPerformance
+          for (const perf of scoresData.performances) {
+            const pid = perf.player.id
+            pointsMap[pid] = (pointsMap[pid] || 0) + perf.fantasyPoints
           }
         }
         setPlayerPoints(pointsMap)
         // totalPoints at top level (both LIVE and FINAL modes)
-        setGwTotal(scoresData.totalPoints ?? 0)
+        if (scoresData.totalPoints !== undefined) {
+          setGwTotal(scoresData.totalPoints)
+        } else {
+          // Mid-GW fallback: sum all live points
+          const liveTotal = Object.values(pointsMap).reduce((sum: number, pts) => sum + (pts as number), 0)
+          setGwTotal(liveTotal)
+        }
       } else {
         setPlayerPoints({})
         setGwTotal(0)
@@ -510,14 +522,23 @@ export default function ViewLineupPage() {
             if (scoresRes.ok) {
               const scoresData = await scoresRes.json()
               const pointsMap: Record<string, number> = {}
-              if (Array.isArray(scoresData.players)) {
+              if (Array.isArray(scoresData.players) && scoresData.players.length > 0) {
                 for (const p of scoresData.players) {
                   pointsMap[p.id] = p.multipliedPoints ?? 0
+                }
+              } else if (Array.isArray(scoresData.performances) && scoresData.performances.length > 0) {
+                // Mid-GW fallback: sum per-match fantasy points from PlayerPerformance
+                for (const perf of scoresData.performances) {
+                  const pid = perf.player.id
+                  pointsMap[pid] = (pointsMap[pid] || 0) + perf.fantasyPoints
                 }
               }
               setPlayerPoints(pointsMap)
               if (scoresData.totalPoints !== undefined) {
                 setGwTotal(scoresData.totalPoints)
+              } else {
+                const liveTotal = Object.values(pointsMap).reduce((sum: number, pts) => sum + (pts as number), 0)
+                setGwTotal(liveTotal)
               }
             }
           } catch {
