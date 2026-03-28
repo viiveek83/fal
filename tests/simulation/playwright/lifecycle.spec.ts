@@ -3,10 +3,17 @@ import { test, expect, Page } from '@playwright/test'
 /**
  * Full Gameweek Lifecycle E2E Test
  *
- * Tests the complete transition: pre-scores → LIVE scoring → settlement → FINAL
+ * Tests the complete transition through 7 stages:
+ *   1. Pre-scores (0 matches → LIVE, 0 pts)
+ *   2. Partial scoring (2 matches → LIVE, running total verified against DB)
+ *   3. Chip activation (POWER_PLAY_BAT → chip badge, progression arrows)
+ *   4. All scored (N/N matches → LIVE, full total with chip bonus)
+ *   5. Settlement (GameweekScore → FINAL badge, stored score)
+ *   6. GW completed (aggregationStatus DONE → League Standings)
+ *   7. Cleanup verification (state restored)
  *
- * Strategy: Uses the existing GW6 (ACTIVE) simulation data. Manipulates DB state
- * between stages to simulate the lifecycle, then restores original state.
+ * Strategy: Uses existing GW6 (ACTIVE) simulation data. Manipulates DB state
+ * between stages, then restores original state in afterAll.
  *
  * Tags: @user — logged in as sim-user-1@fal-test.com
  */
@@ -36,6 +43,53 @@ function dbExec(statement: string): void {
   runDbScript(statement)
 }
 
+/**
+ * Compute expected live score from DB state.
+ * Mirrors the logic in computeLiveTeamScore: sum performances for scored matches,
+ * apply captain 2x, apply chip bonus for qualifying XI players.
+ */
+function computeExpectedScore(
+  teamId: string,
+  gwId: string,
+  chipType: string | null = null
+): { totalPoints: number; chipBonusPoints: number } {
+  const result = runDbScript(`
+    const lineup = await p.lineup.findFirst({
+      where: { teamId: '${teamId}', gameweekId: '${gwId}' },
+      include: { slots: { include: { player: { select: { id: true, role: true } } } } }
+    });
+    const scoredMatches = await p.match.findMany({
+      where: { gameweekId: '${gwId}', scoringStatus: 'SCORED' },
+      select: { id: true }
+    });
+    const matchIds = scoredMatches.map(m => m.id);
+    const perfs = await p.playerPerformance.findMany({
+      where: { playerId: { in: lineup.slots.map(s => s.playerId) }, matchId: { in: matchIds } },
+      select: { playerId: true, fantasyPoints: true }
+    });
+    const baseMap = new Map();
+    for (const perf of perfs) {
+      baseMap.set(perf.playerId, (baseMap.get(perf.playerId) || 0) + perf.fantasyPoints);
+    }
+    let total = 0;
+    let chipBonus = 0;
+    for (const slot of lineup.slots) {
+      if (slot.slotType !== 'XI') continue;
+      const base = baseMap.get(slot.playerId) || 0;
+      const isCaptain = slot.role === 'CAPTAIN';
+      const multiplied = isCaptain && base > 0 ? base * 2 : base;
+      let bonus = 0;
+      const chipType = ${chipType ? `'${chipType}'` : 'null'};
+      if (chipType === 'POWER_PLAY_BAT' && slot.player.role === 'BAT') bonus = multiplied;
+      if (chipType === 'BOWLING_BOOST' && slot.player.role === 'BOWL') bonus = multiplied;
+      total += multiplied + bonus;
+      chipBonus += bonus;
+    }
+    console.log(JSON.stringify({ totalPoints: total, chipBonusPoints: chipBonus }));
+  `)
+  return JSON.parse(result.split('\n').pop()!)
+}
+
 /* ─── Helpers ─── */
 
 async function waitForApp(page: Page) {
@@ -50,6 +104,7 @@ interface OriginalState {
   gameweekScore: any | null
   matchStatuses: Array<{ id: string; scoringStatus: string }>
   aggregationStatus: string
+  chipUsage: any | null
 }
 
 let originalState: OriginalState
@@ -81,15 +136,18 @@ test.describe('Full Gameweek Lifecycle @user', () => {
     // Save original match statuses
     const matches = dbQuery(`p.match.findMany({ where: { gameweekId: '${activeGwId}' }, select: { id: true, scoringStatus: true } })`)
 
+    // Save original chip usage
+    const chip = dbQuery(`p.chipUsage.findFirst({ where: { teamId: '${teamId}', gameweekId: '${activeGwId}' } })`)
+
     originalState = {
       gameweekScore: gs,
       matchStatuses: matches,
       aggregationStatus: gw.aggregationStatus,
+      chipUsage: chip,
     }
   })
 
   test.afterAll(() => {
-    // Restore original state
     try {
       // Restore match statuses
       for (const m of originalState.matchStatuses) {
@@ -105,6 +163,13 @@ test.describe('Full Gameweek Lifecycle @user', () => {
       } else {
         dbExec(`await p.gameweekScore.deleteMany({ where: { teamId: '${teamId}', gameweekId: '${activeGwId}' } })`)
       }
+
+      // Restore chip usage
+      if (originalState.chipUsage) {
+        dbExec(`await p.chipUsage.upsert({ where: { id: '${originalState.chipUsage.id}' }, create: { teamId: '${teamId}', chipType: '${originalState.chipUsage.chipType}', gameweekId: '${activeGwId}', status: '${originalState.chipUsage.status}' }, update: { status: '${originalState.chipUsage.status}' } })`)
+      } else {
+        dbExec(`await p.chipUsage.deleteMany({ where: { teamId: '${teamId}', gameweekId: '${activeGwId}' } })`)
+      }
     } catch (e) {
       console.error('Cleanup failed:', e)
     }
@@ -112,11 +177,10 @@ test.describe('Full Gameweek Lifecycle @user', () => {
 
   /* ─── Stage 1: Pre-scores (0 scored matches → LIVE with 0 points) ─── */
   test('Stage 1: Pre-scores — LIVE mode with 0 points', async ({ page }) => {
-    // Set all matches to SCHEDULED and remove GameweekScore
+    // Set all matches to SCHEDULED and remove GameweekScore + chip
     dbExec(`await p.match.updateMany({ where: { gameweekId: '${activeGwId}' }, data: { scoringStatus: 'SCHEDULED' } })`)
-    dbExec(`await p.gameweekScore.deleteMany({ where: { teamId: '${teamId}', gameweekId: '${activeGwId}' } })`)
-    // Delete ALL GameweekScores for this GW so leaderboard also goes LIVE
     dbExec(`await p.gameweekScore.deleteMany({ where: { gameweekId: '${activeGwId}' } })`)
+    dbExec(`await p.chipUsage.deleteMany({ where: { teamId: '${teamId}', gameweekId: '${activeGwId}' } })`)
     dbExec(`await p.gameweek.update({ where: { id: '${activeGwId}' }, data: { aggregationStatus: 'PENDING' } })`)
 
     await page.goto('/')
@@ -130,68 +194,62 @@ test.describe('Full Gameweek Lifecycle @user', () => {
     await expect(liveBadge).toBeVisible()
     await expect(liveBadge).toHaveText('LIVE')
 
-    // Score should be 0 (no scored matches)
-    const total = liveCard.getByTestId('live-gw-total')
-    await expect(total).toHaveText('0')
+    // Score should be exactly 0 (no scored matches = no performances to count)
+    await expect(liveCard.getByTestId('live-gw-total')).toHaveText('0')
 
     // Match progress should show 0/N
     await expect(liveCard.getByText(/0\/\d+ matches scored/)).toBeVisible()
 
-    // Standings should say "Live Standings"
+    // No chip badge (none activated)
+    await expect(liveCard.getByTestId('card-chip-badge')).toBeHidden()
+
+    // Standings: "Live Standings" + provisional footer
     const standingsCard = page.getByTestId('standings-card')
     await expect(standingsCard.getByText('Live Standings')).toBeVisible()
-
-    // Provisional footer
     await expect(standingsCard.getByText('Provisional — bench subs not yet applied')).toBeVisible()
 
     await page.screenshot({ path: 'test-results/lifecycle-stage1-prescores.png' })
   })
 
-  /* ─── Stage 2: Partial scoring (some matches scored → LIVE with points) ─── */
-  test('Stage 2: Partial scoring — LIVE mode with running total', async ({ page }) => {
-    // Score first 2 matches (set to SCORED)
+  /* ─── Stage 2: Partial scoring — score accuracy verified against DB ─── */
+  test('Stage 2: Partial scoring — score matches computed expectation', async ({ page }) => {
+    // Score first 2 matches
     const matches = dbQuery(`p.match.findMany({ where: { gameweekId: '${activeGwId}' }, select: { id: true }, take: 2 })`)
     for (const m of matches) {
       dbExec(`await p.match.update({ where: { id: '${m.id}' }, data: { scoringStatus: 'SCORED' } })`)
     }
 
+    // Compute expected score from DB (no chip)
+    const expected = computeExpectedScore(teamId, activeGwId, null)
+
     await page.goto('/')
     await waitForApp(page)
 
-    // Still LIVE (no GameweekScore yet)
     const liveCard = page.getByTestId('live-gw-card')
     await expect(liveCard).toBeVisible({ timeout: 15_000 })
+    await expect(liveCard.getByTestId('live-badge')).toBeVisible()
 
-    const liveBadge = liveCard.getByTestId('live-badge')
-    await expect(liveBadge).toBeVisible()
-    await expect(liveBadge).toHaveText('LIVE')
-
-    // Match progress should show 2/N
+    // Match progress: 2/N
     await expect(liveCard.getByText(/2\/\d+ matches scored/)).toBeVisible()
 
-    // Score should be > 0 now (players have performances from earlier scoring)
-    const totalText = await liveCard.getByTestId('live-gw-total').textContent()
-    const totalPoints = parseInt(totalText?.replace(/,/g, '') || '0')
-    // Points could be 0 if the 2 scored matches don't have performances for this team's players
-    // Just verify the card renders a number
-    expect(totalText).toMatch(/^\d[\d,]*$/)
-
-    // Standings should show live GW points for teams
-    const standingsCard = page.getByTestId('standings-card')
-    await expect(standingsCard.getByText('Live Standings')).toBeVisible()
-
-    // Rank change indicators should be present
-    const rankChanges = standingsCard.getByTestId('rank-change')
-    const count = await rankChanges.count()
-    expect(count).toBeGreaterThan(0)
+    // Verify displayed score matches expected computation
+    const displayedText = await liveCard.getByTestId('live-gw-total').textContent()
+    const displayed = parseInt(displayedText?.replace(/,/g, '') || '-1')
+    expect(displayed).toBe(expected.totalPoints)
 
     await page.screenshot({ path: 'test-results/lifecycle-stage2-partial.png' })
   })
 
-  /* ─── Stage 3: All matches scored (still LIVE, full running total) ─── */
-  test('Stage 3: All scored — LIVE mode with full running total', async ({ page }) => {
-    // Set ALL matches to SCORED
+  /* ─── Stage 3: Chip activation — POWER_PLAY_BAT boosts BAT players ─── */
+  test('Stage 3: Chip activation — chip badge and progression arrows', async ({ page }) => {
+    // Score ALL matches so BAT players have performances (they only play in certain matches)
     dbExec(`await p.match.updateMany({ where: { gameweekId: '${activeGwId}' }, data: { scoringStatus: 'SCORED' } })`)
+
+    // Activate POWER_PLAY_BAT for this team
+    dbExec(`await p.chipUsage.create({ data: { teamId: '${teamId}', chipType: 'POWER_PLAY_BAT', gameweekId: '${activeGwId}', status: 'PENDING' } })`)
+
+    // Compute expected score WITH chip (all matches scored)
+    const expected = computeExpectedScore(teamId, activeGwId, 'POWER_PLAY_BAT')
 
     await page.goto('/')
     await waitForApp(page)
@@ -199,83 +257,131 @@ test.describe('Full Gameweek Lifecycle @user', () => {
     const liveCard = page.getByTestId('live-gw-card')
     await expect(liveCard).toBeVisible({ timeout: 15_000 })
 
-    // Still LIVE (aggregation hasn't run)
+    // Chip badge should appear on the card
+    const chipBadge = liveCard.getByTestId('card-chip-badge')
+    await expect(chipBadge).toBeVisible()
+    await expect(chipBadge).toContainText('Power Play Bat')
+    await expect(chipBadge).toContainText('pts')
+
+    // Verify score includes chip bonus
+    const displayedText = await liveCard.getByTestId('live-gw-total').textContent()
+    const displayed = parseInt(displayedText?.replace(/,/g, '') || '-1')
+    expect(displayed).toBe(expected.totalPoints)
+
+    // Chip bonus should be > 0 (Nitish Rana and Yashasvi Jaiswal are BAT with points)
+    expect(expected.chipBonusPoints).toBeGreaterThan(0)
+
+    // Open detail sheet to verify chip progression
+    await liveCard.click()
+    const gwSheet = page.getByTestId('gw-detail-sheet')
+    await expect(gwSheet).toBeVisible({ timeout: 10_000 })
+
+    // Chip badge in sheet
+    const sheetChip = gwSheet.getByTestId('sheet-chip-badge')
+    await expect(sheetChip).toBeVisible()
+    await expect(sheetChip).toContainText('Power Play Bat')
+    await expect(sheetChip).toContainText('ACTIVE')
+
+    // Chip progression arrows (N → M) should be visible for BAT players
+    const progressions = gwSheet.getByTestId('chip-progression')
+    const progressionCount = await progressions.count()
+    expect(progressionCount).toBeGreaterThan(0)
+
+    // Each progression should show "N → M" where M > N
+    for (let i = 0; i < progressionCount; i++) {
+      const text = await progressions.nth(i).textContent()
+      expect(text).toMatch(/\d+ → \d+/)
+      const [base, boosted] = text!.match(/(\d+) → (\d+)/)!.slice(1).map(Number)
+      expect(boosted).toBeGreaterThan(base)
+    }
+
+    await page.screenshot({ path: 'test-results/lifecycle-stage3-chip.png' })
+
+    // Close sheet
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(500)
+  })
+
+  /* ─── Stage 4: All scored — verify detail sheet with chip ─── */
+  test('Stage 4: All scored — detail sheet with captain and chip', async ({ page }) => {
+    // All matches already SCORED from Stage 3, chip still active
+    const expected = computeExpectedScore(teamId, activeGwId, 'POWER_PLAY_BAT')
+
+    await page.goto('/')
+    await waitForApp(page)
+
+    const liveCard = page.getByTestId('live-gw-card')
+    await expect(liveCard).toBeVisible({ timeout: 15_000 })
     await expect(liveCard.getByTestId('live-badge')).toBeVisible()
 
-    // Match progress should show N/N (all scored)
+    // All matches scored: N/N
     const progressText = await liveCard.getByText(/\d+\/\d+ matches scored/).textContent()
     const [scored, total] = progressText!.match(/(\d+)\/(\d+)/)!.slice(1).map(Number)
     expect(scored).toBe(total)
 
-    // Score should reflect all matches
-    const totalText = await liveCard.getByTestId('live-gw-total').textContent()
-    expect(totalText).toMatch(/^\d[\d,]*$/)
+    // Verify score accuracy
+    const displayedText = await liveCard.getByTestId('live-gw-total').textContent()
+    const displayed = parseInt(displayedText?.replace(/,/g, '') || '-1')
+    expect(displayed).toBe(expected.totalPoints)
 
-    // Open detail sheet to verify player breakdown
+    // Hero section should show "(before bench subs)" during LIVE
+    await expect(page.getByText('(before bench subs)').first()).toBeVisible()
+
+    // Open sheet — verify captain indicator and Playing XI
     await liveCard.click()
     const gwSheet = page.getByTestId('gw-detail-sheet')
     await expect(gwSheet).toBeVisible({ timeout: 10_000 })
-
-    // Should show LIVE badge in sheet
     await expect(gwSheet.getByTestId('sheet-live-badge')).toBeVisible()
-
-    // Should show Playing XI
     await expect(gwSheet.getByText('Playing XI')).toBeVisible()
-
-    // Should show captain indicator
     await expect(gwSheet.getByText('(C)')).toBeVisible()
 
-    await page.screenshot({ path: 'test-results/lifecycle-stage3-allscored.png' })
+    await page.screenshot({ path: 'test-results/lifecycle-stage4-allscored.png' })
 
-    // Close sheet by clicking overlay
-    await page.locator('[data-testid="gw-detail-sheet"]').press('Escape')
+    await page.keyboard.press('Escape')
     await page.waitForTimeout(500)
   })
 
-  /* ─── Stage 4: Settlement (GameweekScore created → FINAL score card) ─── */
-  test('Stage 4: Settlement — FINAL mode with stored score', async ({ page }) => {
-    // Create GameweekScore for user's team to trigger FINAL mode on the scores API.
-    // Keep aggregationStatus: 'PENDING' so leaderboard still detects an active GW
-    // (the query is: status=ACTIVE, aggregationStatus != DONE).
-    // This simulates the state right after aggregation creates GameweekScores
-    // but before the GW status is flipped to COMPLETED.
-    dbExec(`await p.gameweekScore.upsert({ where: { teamId_gameweekId: { teamId: '${teamId}', gameweekId: '${activeGwId}' } }, create: { teamId: '${teamId}', gameweekId: '${activeGwId}', totalPoints: 474 }, update: { totalPoints: 474 } })`)
+  /* ─── Stage 5: Settlement — FINAL with stored score ─── */
+  test('Stage 5: Settlement — FINAL mode with stored score', async ({ page }) => {
+    const settledPoints = 474
+    dbExec(`await p.gameweekScore.upsert({ where: { teamId_gameweekId: { teamId: '${teamId}', gameweekId: '${activeGwId}' } }, create: { teamId: '${teamId}', gameweekId: '${activeGwId}', totalPoints: ${settledPoints}, chipUsed: 'POWER_PLAY_BAT' }, update: { totalPoints: ${settledPoints}, chipUsed: 'POWER_PLAY_BAT' } })`)
 
     await page.goto('/')
     await waitForApp(page)
 
-    // Card should now show FINAL (scores API finds GameweekScore)
     const liveCard = page.getByTestId('live-gw-card')
     await expect(liveCard).toBeVisible({ timeout: 15_000 })
 
-    const finalBadge = liveCard.getByTestId('final-badge')
-    await expect(finalBadge).toBeVisible()
-    await expect(finalBadge).toHaveText('FINAL')
+    // FINAL badge
+    await expect(liveCard.getByTestId('final-badge')).toBeVisible()
+    await expect(liveCard.getByTestId('final-badge')).toHaveText('FINAL')
 
     // No match progress in FINAL mode
     await expect(liveCard.getByText(/matches scored/)).toBeHidden()
 
-    // No "Bench subs applied" footer in FINAL mode
+    // No "Bench subs applied" footer
     await expect(liveCard.getByText('Bench subs applied after final match')).toBeHidden()
 
-    // Open detail sheet — should show FINAL badge
+    // Open detail sheet — FINAL badge, no LIVE badge
     await liveCard.click()
     const gwSheet = page.getByTestId('gw-detail-sheet')
     await expect(gwSheet).toBeVisible({ timeout: 10_000 })
     await expect(gwSheet.getByTestId('sheet-final-badge')).toBeVisible()
+    await expect(gwSheet.getByTestId('sheet-live-badge')).toBeHidden()
 
-    await page.screenshot({ path: 'test-results/lifecycle-stage4-final.png' })
+    await page.screenshot({ path: 'test-results/lifecycle-stage5-final.png' })
+
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(500)
   })
 
-  /* ─── Stage 5: GW fully completed (aggregationStatus DONE → standings go FINAL) ─── */
-  test('Stage 5: GW completed — standings revert to League Standings', async ({ page }) => {
-    // Now mark aggregation as DONE — leaderboard switches to FINAL mode
+  /* ─── Stage 6: GW completed — standings go FINAL ─── */
+  test('Stage 6: GW completed — League Standings, no rank changes', async ({ page }) => {
     dbExec(`await p.gameweek.update({ where: { id: '${activeGwId}' }, data: { aggregationStatus: 'DONE' } })`)
 
     await page.goto('/')
     await waitForApp(page)
 
-    // Standings should say "League Standings" (not "Live")
     const standingsCard = page.getByTestId('standings-card')
     await expect(standingsCard.getByText('League Standings')).toBeVisible()
 
@@ -285,13 +391,16 @@ test.describe('Full Gameweek Lifecycle @user', () => {
     // No pulsing dot
     await expect(standingsCard.getByTestId('standings-pulsing-dot')).toBeHidden()
 
-    // All rank changes should be — (no live comparison)
+    // All rank changes should be — (no active GW for comparison)
     const rankChanges = standingsCard.getByTestId('rank-change')
     const count = await rankChanges.count()
     for (let i = 0; i < count; i++) {
       await expect(rankChanges.nth(i)).toHaveText('—')
     }
 
-    await page.screenshot({ path: 'test-results/lifecycle-stage5-completed.png' })
+    // Hero should NOT show "(before bench subs)" in FINAL
+    await expect(page.getByText('(before bench subs)')).toBeHidden()
+
+    await page.screenshot({ path: 'test-results/lifecycle-stage6-completed.png' })
   })
 })
