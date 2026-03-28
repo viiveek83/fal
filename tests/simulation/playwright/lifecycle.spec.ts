@@ -103,6 +103,7 @@ async function waitForApp(page: Page) {
 interface OriginalState {
   gameweekScore: any | null
   matchStatuses: Array<{ id: string; scoringStatus: string }>
+  gwStatus: string
   aggregationStatus: string
   chipUsage: any | null
 }
@@ -142,6 +143,7 @@ test.describe('Full Gameweek Lifecycle @user', () => {
     originalState = {
       gameweekScore: gs,
       matchStatuses: matches,
+      gwStatus: 'ACTIVE',
       aggregationStatus: gw.aggregationStatus,
       chipUsage: chip,
     }
@@ -154,8 +156,8 @@ test.describe('Full Gameweek Lifecycle @user', () => {
         dbExec(`await p.match.update({ where: { id: '${m.id}' }, data: { scoringStatus: '${m.scoringStatus}' } })`)
       }
 
-      // Restore aggregation status
-      dbExec(`await p.gameweek.update({ where: { id: '${activeGwId}' }, data: { aggregationStatus: '${originalState.aggregationStatus}' } })`)
+      // Restore GW status and aggregation status
+      dbExec(`await p.gameweek.update({ where: { id: '${activeGwId}' }, data: { status: '${originalState.gwStatus}', aggregationStatus: '${originalState.aggregationStatus}' } })`)
 
       // Restore GameweekScore
       if (originalState.gameweekScore) {
@@ -329,8 +331,14 @@ test.describe('Full Gameweek Lifecycle @user', () => {
 
     // Verify GW column in standings shows user's live GW points
     const standingsCard = page.getByTestId('standings-card')
+    // Expand standings if user's team is outside top 7
+    const showAll = standingsCard.getByText(/Show all \d+/)
+    if (await showAll.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await showAll.click()
+      await page.waitForTimeout(500)
+    }
     const yourRow = standingsCard.locator('a', { hasText: '(You)' })
-    await expect(yourRow).toBeVisible()
+    await expect(yourRow).toBeVisible({ timeout: 5000 })
     const gwCell = yourRow.getByTestId('gw-points')
     const gwText = await gwCell.textContent()
     const gwPoints = parseInt(gwText?.replace(/,/g, '') || '-1')
