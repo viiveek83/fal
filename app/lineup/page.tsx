@@ -258,12 +258,49 @@ export default function LineupPage() {
     return () => { cancelled = true }
   }, [playerStatsSheet])
 
-  /* ─── Fetch current gameweek ─── */
+  /* ─── Fetch the gameweek to edit ─── */
+  // If the current (ACTIVE) GW is locked, advance to the next upcoming GW for editing.
+  // The locked GW's lineup is viewable via /view-lineup (read-only).
   useEffect(() => {
-    fetch('/api/gameweeks/current')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data && !data.error) setCurrentGW(data) })
-      .catch(() => {})
+    (async () => {
+      try {
+        const currentRes = await fetch('/api/gameweeks/current')
+        if (!currentRes.ok) return
+        const current = await currentRes.json()
+        if (!current || current.error) return
+
+        // Check if the current GW is locked
+        const locked = current.lockTime ? new Date() >= new Date(current.lockTime) : false
+
+        if (!locked) {
+          // Current GW is unlocked — edit this one
+          setCurrentGW(current)
+          return
+        }
+
+        // Current GW is locked — find the next upcoming GW for editing
+        const allRes = await fetch('/api/gameweeks')
+        if (!allRes.ok) { setCurrentGW(current); return }
+        const allGws = await allRes.json()
+        const nextGw = (allGws as { id: string; number: number; status: string; lockTime: string | null; matches: unknown[] }[])
+          .filter(gw => gw.number > current.number && (gw.status === 'UPCOMING' || gw.status === 'ACTIVE'))
+          .sort((a, b) => a.number - b.number)[0]
+
+        if (nextGw) {
+          setCurrentGW({
+            id: nextGw.id,
+            number: nextGw.number,
+            status: nextGw.status,
+            lockTime: nextGw.lockTime ?? null,
+          })
+        } else {
+          // No next GW — show the locked one (read-only)
+          setCurrentGW(current)
+        }
+      } catch {
+        // silent
+      }
+    })()
   }, [])
 
   const activeLeagueId = session?.user?.activeLeagueId
