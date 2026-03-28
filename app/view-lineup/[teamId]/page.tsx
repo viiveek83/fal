@@ -417,22 +417,19 @@ export default function ViewLineupPage() {
         setNoLineupForGW(true)
       }
 
-      // Parse player scores + pre-computed GW total
+      // Parse player scores + server-computed GW total (LIVE/FINAL unified format)
       if (scoresRes.ok) {
         const scoresData = await scoresRes.json()
         const pointsMap: Record<string, number> = {}
-        if (Array.isArray(scoresData.playerScores)) {
-          for (const ps of scoresData.playerScores) {
-            pointsMap[ps.player.id] = ps.totalPoints ?? 0
+        // New format: scoresData.players[] with { id, multipliedPoints }
+        if (Array.isArray(scoresData.players)) {
+          for (const p of scoresData.players) {
+            pointsMap[p.id] = p.multipliedPoints ?? 0
           }
         }
         setPlayerPoints(pointsMap)
-        // Use server-computed total (includes captain multiplier, bench subs, chips)
-        if (scoresData.gameweekScore?.totalPoints !== undefined) {
-          setGwTotal(scoresData.gameweekScore.totalPoints)
-        } else {
-          setGwTotal(0)
-        }
+        // totalPoints at top level (both LIVE and FINAL modes)
+        setGwTotal(scoresData.totalPoints ?? 0)
       } else {
         setPlayerPoints({})
         setGwTotal(0)
@@ -509,18 +506,18 @@ export default function ViewLineupPage() {
               }
             }
 
-            // Parse initial scores + pre-computed GW total
+            // Parse initial scores + server-computed GW total (LIVE/FINAL unified format)
             if (scoresRes.ok) {
               const scoresData = await scoresRes.json()
               const pointsMap: Record<string, number> = {}
-              if (Array.isArray(scoresData.playerScores)) {
-                for (const ps of scoresData.playerScores) {
-                  pointsMap[ps.player.id] = ps.totalPoints ?? 0
+              if (Array.isArray(scoresData.players)) {
+                for (const p of scoresData.players) {
+                  pointsMap[p.id] = p.multipliedPoints ?? 0
                 }
               }
               setPlayerPoints(pointsMap)
-              if (scoresData.gameweekScore?.totalPoints !== undefined) {
-                setGwTotal(scoresData.gameweekScore.totalPoints)
+              if (scoresData.totalPoints !== undefined) {
+                setGwTotal(scoresData.totalPoints)
               }
             }
           } catch {

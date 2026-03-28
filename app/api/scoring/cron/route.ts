@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { syncMatchStatuses } from '@/lib/sportmonks/match-sync'
 import { runScoringPipeline } from '@/lib/scoring/pipeline'
 
 export async function GET(request: Request) {
@@ -8,8 +9,12 @@ export async function GET(request: Request) {
   }
 
   try {
+    const syncResult = await syncMatchStatuses()
     const result = await runScoringPipeline()
-    return NextResponse.json(result)
+    return NextResponse.json({
+      ...result,
+      matchesTransitioned: syncResult.transitioned,
+    })
   } catch (error) {
     console.error('Scoring cron error:', error)
     return NextResponse.json(

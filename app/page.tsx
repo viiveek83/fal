@@ -3,6 +3,7 @@
 import { useSession } from 'next-auth/react'
 import { useState, useCallback, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { AppFrame } from '@/app/components/AppFrame'
 
 /* ─── IPL team colors ─── */
@@ -79,6 +80,10 @@ interface Standing {
   lastGwPoints: number
   lastGwNumber: number | null
   chipUsed: string | null
+  rankChange: number
+  liveGwPoints: number | null
+  chipActive: string | null
+  storedTotalPoints: number
 }
 
 interface GwPlayerScore {
@@ -90,6 +95,41 @@ interface GwPlayerScore {
     role: string
     iplTeamCode: string | null
   }
+}
+
+interface LivePlayerScore {
+  id: string
+  name: string
+  role: string
+  iplTeamCode: string | null
+  slotType: 'XI' | 'BENCH'
+  basePoints: number
+  chipBonus: number
+  isCaptain: boolean
+  isVC: boolean
+  multipliedPoints: number
+  matchesPlayed: number
+}
+
+interface LiveScoreResponse {
+  gameweekId: string
+  gameweekNumber: number
+  status: 'LIVE' | 'FINAL'
+  matchesScored: number
+  matchesTotal: number
+  totalPoints: number
+  chipActive: string | null
+  chipBonusPoints: number
+  players: LivePlayerScore[]
+}
+
+interface LeaderboardResponse {
+  standings: Standing[]
+  leagueId: string
+  gwStatus: 'LIVE' | 'FINAL'
+  activeGwNumber: number | null
+  matchesScored: number | null
+  matchesTotal: number | null
 }
 
 /* ─── Team gradients (for pitch view figures) ─── */
@@ -130,6 +170,11 @@ const IconLeague = () => (
   <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
     <circle cx="12" cy="12" r="3" />
     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+  </svg>
+)
+const IconShield = () => (
+  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
   </svg>
 )
 
@@ -208,8 +253,19 @@ function getRoleKey(role: string): string {
   return map[role?.toUpperCase()] || 'BAT'
 }
 
+function getChipName(chipCode: string | null): string {
+  if (!chipCode) return ''
+  const map: Record<string, string> = {
+    'POWER_PLAY_BAT': 'Power Play Bat',
+    'BOWLING_BOOST': 'Bowling Boost',
+    // NOTE: New chips should be added to this map as they are introduced
+  }
+  return map[chipCode] || chipCode
+}
+
 export default function DashboardPage() {
   const { data: session, status: sessionStatus } = useSession()
+  const pathname = usePathname()
 
   const [league, setLeague] = useState<League | null>(null)
   const [initialLoad, setInitialLoad] = useState(true)
@@ -227,6 +283,14 @@ export default function DashboardPage() {
   const [gwSheetView, setGwSheetView] = useState<'list' | 'pitch'>('list')
   const [gwPlayerScores, setGwPlayerScores] = useState<GwPlayerScore[]>([])
   const [gwScoresLoading, setGwScoresLoading] = useState(false)
+  const [liveScoreResponse, setLiveScoreResponse] = useState<LiveScoreResponse | null>(null)
+  const [liveScoreFetched, setLiveScoreFetched] = useState(false)
+  const [gwStatus, setGwStatus] = useState<'LIVE' | 'FINAL'>('FINAL')
+
+  // Live GW state from leaderboard response
+  const [activeGwNumber, setActiveGwNumber] = useState<number | null>(null)
+  const [matchesScored, setMatchesScored] = useState<number | null>(null)
+  const [matchesTotal, setMatchesTotal] = useState<number | null>(null)
 
   // Join league
   const [joinFormOpen, setJoinFormOpen] = useState(false)
@@ -276,12 +340,41 @@ export default function DashboardPage() {
     try {
       const res = await fetch(`/api/leaderboard/${leagueId}`)
       if (!res.ok) return
-      const data = await res.json()
+      const data: LeaderboardResponse = await res.json()
       setStandings(data.standings || [])
+      setGwStatus(data.gwStatus)
+      setActiveGwNumber(data.activeGwNumber)
+      setMatchesScored(data.matchesScored)
+      setMatchesTotal(data.matchesTotal)
     } catch {
       // silent
     }
   }, [])
+
+  /* ─── Eager fetch live score on page load ─── */
+  const eagerFetchLiveScore = useCallback(async () => {
+    if (!league || !currentGw) return
+
+    // Find user's team in this league
+    const userId = session?.user?.id
+    const myTeam = league.teams?.find(t => t.userId === userId)
+    if (!myTeam) return
+
+    try {
+      const res = await fetch(`/api/teams/${myTeam.id}/scores/${currentGw.id}`)
+      if (res.ok) {
+        const data: LiveScoreResponse = await res.json()
+        setLiveScoreResponse(data)
+      } else if (res.status === 404) {
+        // No lineup submitted — leave liveScoreResponse as null
+      }
+    } catch {
+      // silent
+    } finally {
+      // Mark that we've attempted the fetch (success or 404)
+      setLiveScoreFetched(true)
+    }
+  }, [league, currentGw, session?.user?.id])
 
   useEffect(() => {
     if (sessionStatus === 'authenticated') {
@@ -295,6 +388,14 @@ export default function DashboardPage() {
       }).finally(() => setInitialLoad(false))
     }
   }, [sessionStatus, fetchLeague, fetchCurrentGw, fetchStandings])
+
+  // Eager fetch live score when gwStatus becomes LIVE
+  useEffect(() => {
+    if (gwStatus === 'LIVE' && !liveScoreFetched) {
+      setLiveScoreFetched(false)
+      eagerFetchLiveScore()
+    }
+  }, [gwStatus, liveScoreFetched, eagerFetchLiveScore])
 
   /* ─── GW Score Detail fetch ─── */
   const openGwSheet = useCallback(async () => {
@@ -311,8 +412,10 @@ export default function DashboardPage() {
     try {
       const res = await fetch(`/api/teams/${myTeam.id}/scores/${currentGw.id}`)
       if (res.ok) {
-        const data = await res.json()
-        setGwPlayerScores(data.playerScores || [])
+        const data: LiveScoreResponse = await res.json()
+        setLiveScoreResponse(data)
+        setGwStatus(data.status)
+        setGwPlayerScores([]) // Clear legacy playerScores
       }
     } catch {
       // silent
@@ -397,18 +500,25 @@ export default function DashboardPage() {
   // Gameweek label
   const gwLabel = seasonStarted ? `Gameweek ${currentGw!.number}` : 'Season not started'
 
-  // Score trio
+  // Score trio — during LIVE mode, show GW-level scores; during FINAL, show season totals
   const userId = session.user?.id
   const myStanding = standings.find(s => s.managerId === userId)
-  const yourPoints = myStanding?.totalPoints ?? 0
+
+  // GW-level scores from standings (liveGwPoints during LIVE, lastGwPoints during FINAL)
+  const getGwPoints = (s: Standing) => gwStatus === 'LIVE' && s.liveGwPoints !== null ? s.liveGwPoints : (s.lastGwPoints ?? 0)
+  const yourGwPoints = myStanding ? getGwPoints(myStanding) : 0
+  const yourPoints = yourGwPoints
   const avgPoints = standings.length > 0
-    ? Math.round(standings.reduce((sum, s) => sum + s.totalPoints, 0) / standings.length)
+    ? Math.round(standings.reduce((sum, s) => sum + getGwPoints(s), 0) / standings.length)
     : 0
   const topGwStanding = standings.length > 0
-    ? standings.reduce((best, s) => s.lastGwPoints > best.lastGwPoints ? s : best, standings[0])
+    ? standings.reduce((best, s) => getGwPoints(s) > getGwPoints(best) ? s : best, standings[0])
     : null
-  const highestPoints = topGwStanding?.lastGwPoints ?? 0
-  const hasScores = standings.some(s => s.totalPoints > 0)
+  const highestPoints = topGwStanding ? getGwPoints(topGwStanding) : 0
+  const hasScores = standings.some(s => getGwPoints(s) > 0 || s.totalPoints > 0)
+
+  // GW score total from live response or legacy playerScores
+  const gwScoreTotal = liveScoreResponse?.totalPoints ?? gwPlayerScores.reduce((sum, s) => sum + s.totalPoints, 0)
 
   // Deadline
   const nextGwNumber = currentGw ? currentGw.number + 1 : null
@@ -422,9 +532,6 @@ export default function DashboardPage() {
 
   // Standings for display
   const visibleStandings = showAllStandings ? standings : standings.slice(0, 7)
-
-  // GW score total from player scores
-  const gwScoreTotal = gwPlayerScores.reduce((sum, s) => sum + s.totalPoints, 0)
 
   return (
     <AppFrame>
@@ -485,13 +592,42 @@ export default function DashboardPage() {
           <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>Dashboard</div>
         </div>
 
-        {/* Gameweek label */}
+        {/* Gameweek label with LIVE/FINAL badge */}
         <div style={{
-          textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.6)',
-          fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase' as const, marginBottom: 2,
-          marginTop: 6,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          marginTop: 6, marginBottom: 2,
         }}>
-          {gwLabel}
+          <div style={{
+            fontSize: 10, color: 'rgba(255,255,255,0.6)',
+            fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase' as const,
+          }}>
+            {gwLabel}
+          </div>
+          {gwStatus === 'LIVE' && (
+            <div data-testid="hero-live-badge" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div data-testid="hero-pulsing-dot" style={{
+                width: 6, height: 6, borderRadius: '50%', background: '#22C55E',
+                animation: 'pulse 2s infinite',
+              }} />
+              <div style={{
+                fontSize: 9, fontWeight: 700, color: '#22C55E',
+                background: 'rgba(34,197,94,0.15)', padding: '2px 5px', borderRadius: 4,
+              }}>LIVE</div>
+            </div>
+          )}
+          {gwStatus === 'FINAL' && activeGwNumber !== null && (
+            <div data-testid="hero-final-badge" style={{
+              fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.6)',
+              background: 'rgba(255,255,255,0.1)', padding: '2px 5px', borderRadius: 4,
+            }}>FINAL</div>
+          )}
+          {gwStatus === 'LIVE' && matchesScored !== null && matchesTotal !== null && (
+            <div data-testid="hero-match-progress" style={{
+              fontSize: 9, fontWeight: 600, color: 'rgba(255,255,255,0.5)',
+            }}>
+              {matchesScored}/{matchesTotal} matches
+            </div>
+          )}
         </div>
 
         {/* Score Trio */}
@@ -504,8 +640,9 @@ export default function DashboardPage() {
             <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.6)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: 0.8, marginTop: 1 }}>Average</div>
           </div>
 
-          {/* Your Points (center) — tappable */}
+          {/* Your Points (center) — tappable to view lineup (PR #20 behavior) */}
           <Link
+            data-testid="hero-your-points"
             href={myStanding ? `/view-lineup/${myStanding.teamId}` : '#'}
             style={{ flex: 1.3, textAlign: 'center', position: 'relative', cursor: 'pointer', textDecoration: 'none' }}
           >
@@ -554,18 +691,60 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* CSS for pulsing animation */}
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
+      `}</style>
+
       {/* CONTENT */}
       <div style={{ padding: '14px 14px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
 
         {/* League Standings Card */}
-        <div style={{
+        <div data-testid="standings-card" style={{
           background: '#fff', border: '1px solid rgba(0,0,0,0.06)',
           borderRadius: 16, padding: 14,
           boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
         }}>
           {/* Section header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e', letterSpacing: -0.2 }}>League Standings</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {gwStatus === 'LIVE' && (
+                <>
+                  {/* Pulsing green dot */}
+                  <div
+                    data-testid="standings-pulsing-dot"
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      background: '#22C55E',
+                      animation: 'pulse 2s infinite',
+                      flexShrink: 0,
+                    }}
+                  />
+                  {/* Match progress badge */}
+                  {matchesScored !== null && matchesTotal !== null && (
+                    <div data-testid="standings-match-progress" style={{
+                      fontSize: 9,
+                      fontWeight: 700,
+                      color: '#22C55E',
+                      background: 'rgba(34, 197, 94, 0.1)',
+                      padding: '2px 6px',
+                      borderRadius: 4,
+                      flexShrink: 0,
+                    }}>
+                      {matchesScored}/{matchesTotal}
+                    </div>
+                  )}
+                </>
+              )}
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e', letterSpacing: -0.2 }}>
+                {gwStatus === 'LIVE' ? 'Live Standings' : 'League Standings'}
+              </div>
+            </div>
             <Link href="/standings" style={{ fontSize: 11, fontWeight: 600, color: '#004BA0', textDecoration: 'none' }}>
               Full Standings &rarr;
             </Link>
@@ -583,6 +762,7 @@ export default function DashboardPage() {
                 color: '#aaa', textTransform: 'uppercase' as const, letterSpacing: 0.5, gap: 8,
               }}>
                 <div style={{ width: 22 }}>#</div>
+                <div style={{ width: 16 }}></div>
                 <div style={{ flex: 1 }}>Team</div>
                 <div style={{ width: 36, textAlign: 'right' }}>GW</div>
                 <div style={{ width: 42, textAlign: 'right' }}>Total</div>
@@ -606,13 +786,29 @@ export default function DashboardPage() {
                 const nameColor = isYou ? '#111' : isFirst ? '#222' : '#555'
                 const nameWeight = isYou ? 700 : isFirst ? 600 : 500
 
+                // Rank change indicator
+                let rankChangeContent = '—'
+                let rankChangeColor = '#999'
+                if (s.rankChange > 0) {
+                  rankChangeContent = `↑${s.rankChange}`
+                  rankChangeColor = '#22C55E'
+                } else if (s.rankChange < 0) {
+                  rankChangeContent = `↓${Math.abs(s.rankChange)}`
+                  rankChangeColor = '#EF4444'
+                }
+
                 return (
                   <Link href={`/view-lineup/${s.teamId}`} key={s.teamId} style={{...rowStyle, textDecoration: 'none'}}>
                     <div style={getRankStyle(s.rank, isYou)}>{s.rank}</div>
+                    <div data-testid="rank-change" style={{ fontSize: 10, fontWeight: 600, color: rankChangeColor, width: 16, textAlign: 'center' }}>
+                      {rankChangeContent}
+                    </div>
                     <div style={{ flex: 1, fontWeight: nameWeight, color: nameColor }}>
                       {s.teamName}{isYou ? ' (You)' : ''}
                     </div>
-                    <div style={{ fontSize: 11, color: '#999', fontWeight: 500, fontVariantNumeric: 'tabular-nums', width: 36, textAlign: 'right' }}>{s.lastGwPoints}</div>
+                    <div data-testid="gw-points" style={{ fontSize: 11, color: '#999', fontWeight: 500, fontVariantNumeric: 'tabular-nums', width: 36, textAlign: 'right' }}>
+                      {gwStatus === 'LIVE' && s.liveGwPoints !== null ? s.liveGwPoints : s.lastGwPoints}
+                    </div>
                     <div style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: ptsColor, width: 42, textAlign: 'right' }}>{formatNumber(s.totalPoints)}</div>
                   </Link>
                 )
@@ -638,6 +834,13 @@ export default function DashboardPage() {
               <div style={{ fontSize: 9, color: '#bbb', textAlign: 'center', marginTop: 6, fontWeight: 500 }}>
                 Tap a team to view their lineup
               </div>
+
+              {/* Footer for LIVE mode */}
+              {gwStatus === 'LIVE' && (
+                <div style={{ fontSize: 9, color: '#999', textAlign: 'center', marginTop: 8, fontWeight: 500 }}>
+                  Provisional — bench subs not yet applied
+                </div>
+              )}
             </>
           )}
         </div>
@@ -886,7 +1089,7 @@ export default function DashboardPage() {
         }}
       />
       {/* Sheet */}
-      <div style={{
+      <div data-testid="gw-detail-sheet" style={{
         position: 'fixed', bottom: 0, left: '50%',
         width: '100%', maxWidth: 480,
         background: '#fff',
@@ -903,11 +1106,49 @@ export default function DashboardPage() {
 
         {/* Header */}
         <div style={{ padding: '12px 18px 10px', position: 'relative' }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#999', textTransform: 'uppercase', letterSpacing: 0.8 }}>
-            {currentGw ? `Gameweek ${currentGw.number} Breakdown` : 'Gameweek Breakdown'}
+          {/* GW label with LIVE/FINAL badge and match progress */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#999', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+              {currentGw ? `Gameweek ${currentGw.number}` : 'Gameweek'} Breakdown
+            </div>
+            {liveScoreResponse && (
+              <>
+                {/* LIVE/FINAL badge */}
+                {liveScoreResponse.status === 'LIVE' ? (
+                  <>
+                    <div data-testid="sheet-live-badge" style={{
+                      display: 'flex', alignItems: 'center', gap: 4,
+                      background: 'rgba(13, 158, 95, 0.1)', borderRadius: 6,
+                      padding: '2px 6px', fontSize: 9, fontWeight: 700, color: '#0d9e5f',
+                    }}>
+                      <div style={{
+                        width: 5, height: 5, borderRadius: '50%', background: '#0d9e5f',
+                        animation: 'pulse 2s infinite',
+                      }} />
+                      LIVE
+                    </div>
+                    {/* Match progress */}
+                    <div style={{
+                      fontSize: 9, fontWeight: 600, color: '#999',
+                      background: '#f7f8fb', padding: '2px 6px', borderRadius: 6,
+                    }}>
+                      {liveScoreResponse.matchesScored}/{liveScoreResponse.matchesTotal}
+                    </div>
+                  </>
+                ) : (
+                  <div data-testid="sheet-final-badge" style={{
+                    display: 'flex', alignItems: 'center', gap: 4,
+                    background: 'rgba(150, 150, 150, 0.1)', borderRadius: 6,
+                    padding: '2px 6px', fontSize: 9, fontWeight: 700, color: '#999',
+                  }}>
+                    FINAL
+                  </div>
+                )}
+              </>
+            )}
           </div>
           <div style={{ fontSize: 34, fontWeight: 800, color: '#1a1a2e', letterSpacing: -1.5, lineHeight: 1.1 }}>
-            {gwScoresLoading ? '\u2014' : gwScoreTotal} <span style={{ fontSize: 14, fontWeight: 500, color: '#999', letterSpacing: 0 }}>pts</span>
+            {gwScoresLoading ? '\u2014' : (liveScoreResponse?.totalPoints ?? gwScoreTotal)} <span style={{ fontSize: 14, fontWeight: 500, color: '#999', letterSpacing: 0 }}>pts</span>
           </div>
           {myStanding && (
             <div style={{ fontSize: 12, fontWeight: 600, color: '#0d9e5f', marginTop: 2 }}>
@@ -985,75 +1226,179 @@ export default function DashboardPage() {
                 <div style={{ textAlign: 'center', padding: '30px 0', color: '#999', fontSize: 13 }}>
                   Loading scores...
                 </div>
-              ) : gwPlayerScores.length === 0 ? (
+              ) : !liveScoreResponse || liveScoreResponse.players.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '30px 0', color: '#999', fontSize: 13 }}>
-                  No player scores available yet
+                  {currentGw ? `No lineup submitted for GW ${currentGw.number}` : 'No player scores available yet'}
                 </div>
               ) : (
                 <>
-                  {/* Player rows */}
-                  {gwPlayerScores.map((ps) => {
-                    const roleKey = getRoleKey(ps.player.role)
-                    const iconStyle = roleIconStyles[roleKey] || roleIconStyles.BAT
-                    return (
-                      <div key={ps.id} style={{
-                        display: 'flex', alignItems: 'center', padding: '8px 18px', gap: 8,
-                      }}>
-                        {/* Role icon */}
-                        <div style={{
-                          width: 28, height: 28, borderRadius: 8,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 12, fontWeight: 800, flexShrink: 0,
-                          ...iconStyle,
-                        }}>
-                          {getRoleLabel(ps.player.role)}
-                        </div>
-                        {/* Info */}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{
-                            fontSize: 12, fontWeight: 600, color: '#222',
-                            display: 'flex', alignItems: 'center', gap: 4,
-                          }}>
-                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {ps.player.fullname}
-                            </span>
-                          </div>
-                          <div style={{ fontSize: 9.5, color: '#999', fontWeight: 500, marginTop: 1 }}>
-                            {ps.player.iplTeamCode || ''}
-                          </div>
-                        </div>
-                        {/* Points */}
-                        <div style={{
-                          fontSize: 14, fontWeight: 800, color: ps.totalPoints < 0 ? '#d63060' : '#1a1a2e',
-                          width: 36, textAlign: 'right', flexShrink: 0,
-                          fontVariantNumeric: 'tabular-nums',
-                        }}>
-                          {ps.totalPoints}
-                        </div>
-                      </div>
-                    )
-                  })}
+                  {/* Active chip badge (AC14.2) */}
+                  {liveScoreResponse.chipActive && (
+                    <div data-testid="sheet-chip-badge" style={{
+                      margin: '8px 18px', padding: '8px 12px', borderRadius: 10,
+                      background: 'linear-gradient(135deg, rgba(0,75,160,0.08), rgba(14,177,162,0.08))',
+                      border: '1px solid rgba(0,75,160,0.15)',
+                      fontSize: 11, fontWeight: 700, color: '#004BA0',
+                      display: 'flex', alignItems: 'center', gap: 4,
+                    }}>
+                      <span>⚡</span>
+                      <span>{getChipName(liveScoreResponse.chipActive)} ACTIVE</span>
+                      <span style={{ marginLeft: 'auto', color: '#0d9e5f' }}>+{liveScoreResponse.chipBonusPoints} pts</span>
+                    </div>
+                  )}
 
-                  {/* Summary bar */}
+                  {/* XI section */}
+                  <div style={{ paddingTop: 8 }}>
+                    <div style={{
+                      fontSize: 9, fontWeight: 700, color: '#999', textTransform: 'uppercase',
+                      letterSpacing: 0.8, padding: '6px 18px',
+                    }}>
+                      Playing XI
+                    </div>
+                    {liveScoreResponse.players.filter(p => p.slotType === 'XI').map((player) => {
+                      const roleKey = getRoleKey(player.role)
+                      const iconStyle = roleIconStyles[roleKey] || roleIconStyles.BAT
+                      return (
+                        <div key={player.id} style={{
+                          display: 'flex', alignItems: 'center', padding: '8px 18px', gap: 8,
+                        }}>
+                          {/* Role icon */}
+                          <div style={{
+                            width: 28, height: 28, borderRadius: 8,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 12, fontWeight: 800, flexShrink: 0,
+                            ...iconStyle,
+                          }}>
+                            {getRoleLabel(player.role)}
+                          </div>
+                          {/* Info */}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{
+                              fontSize: 12, fontWeight: 600, color: '#222',
+                              display: 'flex', alignItems: 'center', gap: 4,
+                            }}>
+                              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {player.name}
+                              </span>
+                              {player.isCaptain && <span style={{ fontSize: 10, fontWeight: 700, color: '#004BA0' }}>(C)</span>}
+                              {player.isVC && <span style={{ fontSize: 10, fontWeight: 700, color: '#999' }}>(VC)</span>}
+                            </div>
+                            <div style={{ fontSize: 9.5, color: '#999', fontWeight: 500, marginTop: 1 }}>
+                              {player.iplTeamCode || ''}
+                            </div>
+                            {/* Chip progression (AC14.1) */}
+                            {player.chipBonus > 0 && (
+                              <div data-testid="chip-progression" style={{ fontSize: 9, color: '#0d9e5f', fontWeight: 600, marginTop: 1 }}>
+                                {player.basePoints} → {player.multipliedPoints + player.chipBonus}
+                              </div>
+                            )}
+                          </div>
+                          {/* Points */}
+                          <div style={{
+                            fontSize: 14, fontWeight: 800, color: player.multipliedPoints < 0 ? '#d63060' : '#1a1a2e',
+                            width: 36, textAlign: 'right', flexShrink: 0,
+                            fontVariantNumeric: 'tabular-nums',
+                          }}>
+                            {player.matchesPlayed === 0 ? '\u2014' : player.multipliedPoints}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {/* Bench section */}
+                  {liveScoreResponse.players.some(p => p.slotType === 'BENCH') && (
+                    <div style={{ paddingTop: 8 }}>
+                      <div style={{
+                        fontSize: 9, fontWeight: 700, color: '#999', textTransform: 'uppercase',
+                        letterSpacing: 0.8, padding: '6px 18px',
+                      }}>
+                        Bench
+                      </div>
+                      {liveScoreResponse.players.filter(p => p.slotType === 'BENCH').map((player) => {
+                        const roleKey = getRoleKey(player.role)
+                        const iconStyle = roleIconStyles[roleKey] || roleIconStyles.BAT
+                        return (
+                          <div key={player.id} style={{
+                            display: 'flex', alignItems: 'center', padding: '8px 18px', gap: 8,
+                            opacity: 0.6,
+                            background: '#f7f8fb',
+                          }}>
+                            {/* Role icon */}
+                            <div style={{
+                              width: 28, height: 28, borderRadius: 8,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 12, fontWeight: 800, flexShrink: 0,
+                              ...iconStyle,
+                            }}>
+                              {getRoleLabel(player.role)}
+                            </div>
+                            {/* Info */}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{
+                                fontSize: 12, fontWeight: 600, color: '#222',
+                                display: 'flex', alignItems: 'center', gap: 4,
+                              }}>
+                                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {player.name}
+                                </span>
+                                <span style={{ fontSize: 9, fontWeight: 700, color: '#999' }}>BENCH</span>
+                              </div>
+                              <div style={{ fontSize: 9.5, color: '#999', fontWeight: 500, marginTop: 1 }}>
+                                {player.iplTeamCode || ''}
+                              </div>
+                            </div>
+                            {/* Points */}
+                            <div style={{
+                              fontSize: 14, fontWeight: 800, color: player.multipliedPoints < 0 ? '#d63060' : '#1a1a2e',
+                              width: 36, textAlign: 'right', flexShrink: 0,
+                              fontVariantNumeric: 'tabular-nums',
+                            }}>
+                              {player.matchesPlayed === 0 ? '\u2014' : player.multipliedPoints}
+                            </div>
+                          </div>
+                        )
+                      })}
+                      {/* Bench footer */}
+                      {liveScoreResponse.status === 'LIVE' && (
+                        <div style={{
+                          fontSize: 9, color: '#999', fontWeight: 500, padding: '8px 18px',
+                          textAlign: 'center', background: '#f7f8fb',
+                        }}>
+                          Bench subs applied at GW end
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Summary row */}
                   <div style={{
-                    margin: '10px 18px', padding: '10px 14px', borderRadius: 12,
+                    margin: '12px 18px', padding: '10px 14px', borderRadius: 12,
                     background: '#f7f8fb', border: '1px solid #eef0f5',
                     display: 'flex', justifyContent: 'space-between',
                   }}>
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: '#333' }}>{gwScoreTotal}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#333' }}>
+                        {liveScoreResponse.players.reduce((sum, p) => sum + (p.matchesPlayed > 0 ? p.basePoints : 0), 0)}
+                      </div>
                       <div style={{ fontSize: 9, color: '#aaa', fontWeight: 500, marginTop: 1 }}>Base Pts</div>
                     </div>
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: '#333' }}>0</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#333' }}>
+                        {liveScoreResponse.players.reduce((sum, p) => sum + (p.isCaptain || p.isVC ? (p.multipliedPoints - p.basePoints) : 0), 0)}
+                      </div>
                       <div style={{ fontSize: 9, color: '#aaa', fontWeight: 500, marginTop: 1 }}>C/VC Bonus</div>
                     </div>
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: '#333' }}>0</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#333' }}>
+                        {liveScoreResponse.chipBonusPoints}
+                      </div>
                       <div style={{ fontSize: 9, color: '#aaa', fontWeight: 500, marginTop: 1 }}>Chip Bonus</div>
                     </div>
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: '#004BA0' }}>{gwScoreTotal}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#004BA0' }}>
+                        {liveScoreResponse.totalPoints}
+                      </div>
                       <div style={{ fontSize: 9, color: '#aaa', fontWeight: 500, marginTop: 1 }}>Total</div>
                     </div>
                   </div>
@@ -1063,27 +1408,37 @@ export default function DashboardPage() {
           ) : (
             /* Pitch View — 4-3-4 Formation */
             (() => {
+              if (!liveScoreResponse) {
+                return (
+                  <div style={{ textAlign: 'center', padding: '30px 0', color: '#999', fontSize: 13 }}>
+                    No player scores available yet
+                  </div>
+                )
+              }
+
               const rolePriority: Record<string, number> = { WK: 0, BAT: 1, ALL: 2, BOWL: 3 }
-              const sorted = [...gwPlayerScores].sort((a, b) =>
-                (rolePriority[getRoleKey(a.player.role)] ?? 9) - (rolePriority[getRoleKey(b.player.role)] ?? 9)
+              const xiPlayers = liveScoreResponse.players.filter(p => p.slotType === 'XI')
+              const benchPlayers = liveScoreResponse.players.filter(p => p.slotType === 'BENCH')
+              const sorted = [...xiPlayers].sort((a, b) =>
+                (rolePriority[getRoleKey(a.role)] ?? 9) - (rolePriority[getRoleKey(b.role)] ?? 9)
               )
               const xi = sorted.slice(0, 11)
-              const bench = sorted.slice(11)
+              const bench = benchPlayers
               const rows: { label: string; players: typeof xi }[] = [
                 { label: 'Top Order', players: xi.slice(0, 4) },
                 { label: 'Middle Order', players: xi.slice(4, 7) },
                 { label: 'Lower Order', players: xi.slice(7, 11) },
               ]
 
-              const renderFigure = (ps: GwPlayerScore, size: 'normal' | 'bench' = 'normal') => {
-                const grad = teamGradients[ps.player.iplTeamCode || ''] || defaultGrad
+              const renderFigure = (player: LivePlayerScore, size: 'normal' | 'bench' = 'normal') => {
+                const grad = teamGradients[player.iplTeamCode || ''] || defaultGrad
                 const isBench = size === 'bench'
                 const headSize = isBench ? 14 : 18
                 const bodyW = isBench ? 22 : 28
                 const bodyH = isBench ? 12 : 16
                 const plateW = isBench ? 32 : 40
                 return (
-                  <div key={ps.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, width: isBench ? 56 : 68 }}>
+                  <div key={player.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, width: isBench ? 56 : 68 }}>
                     {/* Head */}
                     <div style={{
                       width: headSize, height: headSize, borderRadius: '50%',
@@ -1106,7 +1461,7 @@ export default function DashboardPage() {
                         textShadow: '0 1px 2px rgba(0,0,0,0.3)',
                         fontVariantNumeric: 'tabular-nums',
                       }}>
-                        {ps.totalPoints} pts
+                        {player.matchesPlayed === 0 ? '\u2014' : player.multipliedPoints} pts
                       </span>
                     </div>
                     {/* Name */}
@@ -1116,7 +1471,7 @@ export default function DashboardPage() {
                       maxWidth: isBench ? 54 : 66, overflow: 'hidden', textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap', lineHeight: 1.2,
                     }}>
-                      {ps.player.fullname.split(' ').pop()}
+                      {player.name.split(' ').pop()}
                     </div>
                   </div>
                 )
@@ -1126,9 +1481,9 @@ export default function DashboardPage() {
                 <div style={{ textAlign: 'center', padding: '30px 0', color: '#999', fontSize: 13 }}>
                   Loading scores...
                 </div>
-              ) : gwPlayerScores.length === 0 ? (
+              ) : liveScoreResponse.players.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '30px 0', color: '#999', fontSize: 13 }}>
-                  No player scores available yet
+                  {currentGw ? `No lineup submitted for GW ${currentGw.number}` : 'No player scores available yet'}
                 </div>
               ) : (
                 <div style={{
@@ -1162,7 +1517,7 @@ export default function DashboardPage() {
                       <div style={{
                         display: 'flex', justifyContent: 'center', gap: 4,
                       }}>
-                        {row.players.map((ps) => renderFigure(ps))}
+                        {row.players.map((player) => renderFigure(player))}
                       </div>
                     </div>
                   ))}
@@ -1178,7 +1533,7 @@ export default function DashboardPage() {
                         Bench
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'center', gap: 4 }}>
-                        {bench.map((ps) => renderFigure(ps, 'bench'))}
+                        {bench.map((player) => renderFigure(player, 'bench'))}
                       </div>
                     </div>
                   )}
@@ -1223,6 +1578,16 @@ export default function DashboardPage() {
           </div>
           League
         </Link>
+        {session?.user?.isAppAdmin && (
+          <Link href="/app-admin" style={{
+            textDecoration: 'none', textAlign: 'center', fontSize: 10, color: pathname === '/app-admin' ? '#004BA0' : '#8e8e93', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, fontWeight: pathname === '/app-admin' ? 600 : 500
+          }}>
+            <div style={{ width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', background: pathname === '/app-admin' ? 'rgba(0,75,160,0.08)' : undefined, borderRadius: 7 }}>
+              <IconShield />
+            </div>
+            Admin
+          </Link>
+        )}
       </nav>
     </div>
     </AppFrame>

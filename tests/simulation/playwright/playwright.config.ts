@@ -28,10 +28,38 @@ export default defineConfig({
       dependencies: ['setup'],
     },
     {
+      name: 'live-scores-user',
+      testMatch: 'live-scores.spec.ts',
+      grep: /@user/,
+      use: { storageState: 'tests/simulation/playwright/.auth/user1.json' },
+      dependencies: ['setup'],
+    },
+    {
+      name: 'lifecycle-user',
+      testMatch: 'lifecycle.spec.ts',
+      grep: /@user/,
+      use: { storageState: 'tests/simulation/playwright/.auth/user1.json' },
+      dependencies: ['setup'],
+    },
+    {
       name: 'layer0-noauth',
       testMatch: 'layer0.spec.ts',
       grep: /@noauth/,
       use: { storageState: undefined },
+    },
+    {
+      name: 'appadmin-admin',
+      testMatch: 'app-admin.spec.ts',
+      grep: /@appadmin/,
+      use: { storageState: 'tests/simulation/playwright/.auth/appadmin.json' },
+      dependencies: ['setup'],
+    },
+    {
+      name: 'appadmin-user',
+      testMatch: 'app-admin.spec.ts',
+      grep: /@user/,
+      use: { storageState: 'tests/simulation/playwright/.auth/user1.json' },
+      dependencies: ['setup'],
     },
   ],
 })
