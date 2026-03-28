@@ -168,8 +168,42 @@ export async function GET(
             pointsMap.set(perf.playerId, (pointsMap.get(perf.playerId) || 0) + perf.fantasyPoints)
           }
 
+          // Determine default captain/VC from squad ordering (WK > BAT > ALL > BOWL, then alphabetical)
+          // Must match frontend: squad API returns alphabetically, frontend re-sorts by role
+          const squadPlayers = await prisma.teamPlayer.findMany({
+            where: { teamId },
+            include: { player: { select: { id: true, role: true, fullname: true } } },
+            orderBy: { player: { fullname: 'asc' } },
+          })
+          // Must match frontend normalizeRole + priority exactly
+          const normalizeRole = (r: string): string => {
+            const u = r?.toUpperCase() || 'BAT'
+            if (u.includes('WK')) return 'WK'
+            if (u.includes('ALL')) return 'ALL'
+            if (u.includes('BOWL')) return 'BOWL'
+            return 'BAT'
+          }
+          const rolePriority: Record<string, number> = { WK: 0, BAT: 1, ALL: 2, BOWL: 3 }
+          const sorted = squadPlayers.sort((a, b) =>
+            (rolePriority[normalizeRole(a.player.role)] ?? 1) - (rolePriority[normalizeRole(b.player.role)] ?? 1)
+          )
+          const defaultCaptainId = sorted[0]?.player.id ?? null
+          const defaultVcId = sorted[1]?.player.id ?? null
+
+          // Check if captain played, apply multiplier
+          const capPlayed = defaultCaptainId && pointsMap.has(defaultCaptainId)
+          const vcPlayed = defaultVcId && pointsMap.has(defaultVcId)
+
           const players = [...pointsMap.entries()].map(([playerId, pts]) => {
             const perf = performances.find((p) => p.playerId === playerId)!
+            const isCaptain = playerId === defaultCaptainId
+            const isVC = playerId === defaultVcId
+            let multipliedPts = pts
+            if (isCaptain && capPlayed) {
+              multipliedPts = pts * 2
+            } else if (isVC && !capPlayed && vcPlayed) {
+              multipliedPts = Math.round(pts * 1.5)
+            }
             return {
               id: playerId,
               name: perf.player.fullname,
@@ -178,14 +212,14 @@ export async function GET(
               slotType: 'XI' as const,
               basePoints: pts,
               chipBonus: 0,
-              isCaptain: false,
-              isVC: false,
-              multipliedPoints: pts,
+              isCaptain,
+              isVC,
+              multipliedPoints: multipliedPts,
               matchesPlayed: performances.filter((p) => p.playerId === playerId).length,
             }
           })
 
-          const totalPoints = [...pointsMap.values()].reduce((sum, pts) => sum + pts, 0)
+          const totalPoints = players.reduce((sum, p) => sum + p.multipliedPoints, 0)
 
           return Response.json({
             gameweekId,

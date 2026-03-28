@@ -184,15 +184,15 @@ function PlayerFigure({ player, isCaptain, isVC, isBench, points }: {
         {/* C/VC badge */}
         {(isCaptain || isVC) && (
           <div style={{
-            position: 'absolute', top: -2, right: isBench ? -2 : 2, zIndex: 5,
-            width: 16, height: 16, borderRadius: '50%',
+            position: 'absolute', top: -4, right: isBench ? -4 : 0, zIndex: 5,
+            width: 24, height: 24, borderRadius: '50%',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 8, fontWeight: 900,
+            fontSize: 12, fontWeight: 900,
             background: isCaptain ? '#F9CD05' : '#C0C7D0',
             color: '#1a1a1a',
             boxShadow: '0 1px 4px rgba(0,0,0,0.35)',
           }}>
-            {isCaptain ? 'C' : 'V'}
+            {isCaptain ? 'C' : 'VC'}
           </div>
         )}
         {/* Head */}
@@ -259,10 +259,7 @@ function PlayerFigure({ player, isCaptain, isVC, isBench, points }: {
           display: 'flex', alignItems: 'center', gap: 2,
         }}>
           {points !== undefined ? (
-            <>
-              <span>{points} pts</span>
-              {isCaptain && <span style={{ fontSize: 8, fontWeight: 700, color: light ? '#b58800' : '#F9CD05' }}>2&times;</span>}
-            </>
+            <span>{points} pts</span>
           ) : (
             code || 'IPL'
           )}
@@ -438,7 +435,7 @@ export default function ViewLineupPage() {
         if (scoresData.totalPoints !== undefined) {
           setGwTotal(scoresData.totalPoints)
         } else {
-          // Mid-GW fallback: sum all live points
+          // Mid-GW fallback: sum all live points (with multipliers applied)
           const liveTotal = Object.values(pointsMap).reduce((sum: number, pts) => sum + (pts as number), 0)
           setGwTotal(liveTotal)
         }
@@ -685,12 +682,6 @@ export default function ViewLineupPage() {
                 Read Only
               </span>
             </div>
-            <div style={{
-              fontSize: 10, fontWeight: 600, color: '#999', letterSpacing: -0.1,
-              marginTop: 1,
-            }}>
-              {selectedGWNumber ? `GW${selectedGWNumber}` : currentGWNumber ? `GW${currentGWNumber}` : 'Pre-season'} · {gwTotal} pts
-            </div>
           </div>
         </div>
       </div>
@@ -719,16 +710,24 @@ export default function ViewLineupPage() {
           >
             &#8592;
           </button>
-          <div style={{
-            fontSize: 14, fontWeight: 700, color: '#1a1a2e',
-            minWidth: 80, textAlign: 'center',
-            display: 'flex', flexDirection: 'column', alignItems: 'center',
-          }}>
-            <span>GW {selectedGWNumber}</span>
-            <span style={{ fontSize: 11, fontWeight: 600, color: '#999', marginTop: 1 }}>
-              {gwLoading ? 'Loading...' : `${gwTotal} pts`}
-            </span>
-          </div>
+          {(() => {
+            const selectedGwData = allGameweeks.find(g => g.number === selectedGWNumber)
+            const isInProgress = selectedGwData?.status === 'ACTIVE' || selectedGwData?.status === 'UPCOMING'
+            const ptsColor = isInProgress ? '#0d9e5f' : '#1a1a2e'
+            return (
+              <div style={{
+                fontSize: 14, fontWeight: 700, color: '#1a1a2e',
+                minWidth: 80, textAlign: 'center',
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+              }}>
+                <span>GW {selectedGWNumber}</span>
+                <span style={{ fontSize: 26, fontWeight: 800, color: ptsColor, marginTop: 2, letterSpacing: -1 }}>
+                  {gwLoading ? '...' : `${gwTotal}`}
+                </span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: '#999', marginTop: -2 }}>pts</span>
+              </div>
+            )
+          })()}
           <button
             onClick={() => navigateGW('next')}
             disabled={!canGoNext || gwLoading}
@@ -1041,12 +1040,6 @@ export default function ViewLineupPage() {
                     color: isCap ? '#b58800' : '#1a1a2e',
                     fontVariantNumeric: 'tabular-nums',
                   }}>{getPoints(p.id)}</span>
-                  {isCap && (
-                    <span style={{
-                      fontSize: 9, fontWeight: 700, color: '#004BA0',
-                      background: 'rgba(0,75,160,0.06)', padding: '1px 4px', borderRadius: 3,
-                    }}>2&times;</span>
-                  )}
                 </div>
               </div>
             )
