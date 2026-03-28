@@ -551,6 +551,151 @@ describe('Ensure Lineups - Integration Test', () => {
     await prisma.gameweek.delete({ where: { id: gw4.id } })
   })
 
+  it('AC1.4: Skip team with existing lineup for current GW', async () => {
+    if (shouldSkip) {
+      console.warn('Test skipped: prerequisites not met')
+      return
+    }
+
+    // Create a new team with a lineup already set for the current GW
+    const testUser = await prisma.user.create({
+      data: { email: `skip-user${TEST_SUFFIX}-${Date.now()}`, name: 'Skip Test User' },
+    })
+
+    const testLeague = await prisma.league.create({
+      data: {
+        name: `Skip Test League${Date.now()}`,
+        inviteCode: `SKIP-${Date.now()}`,
+        adminUserId: adminUser.id,
+      },
+    })
+
+    const testTeam = await prisma.team.create({
+      data: {
+        name: 'Skip Test Team',
+        userId: testUser.id,
+        leagueId: testLeague.id,
+      },
+    })
+
+    // Add 15 players to the squad
+    const prices = [10.0, 9.5, 9.0, 8.5, 8.0, 7.5, 7.0, 6.5, 6.0, 5.5, 5.0, 4.5, 4.0, 3.5, 3.0]
+    for (let i = 0; i < players.length && i < prices.length; i++) {
+      await prisma.teamPlayer.create({
+        data: {
+          teamId: testTeam.id,
+          playerId: players[i].id,
+          leagueId: testLeague.id,
+          purchasePrice: prices[i],
+        },
+      })
+    }
+
+    // Create a gameweek for this test with unique number
+    let skipGwNum = 8000 + Math.floor(Math.random() * 1000)
+    let existingSkipGw = await prisma.gameweek.findUnique({
+      where: { number: skipGwNum },
+    })
+    while (existingSkipGw) {
+      skipGwNum++
+      existingSkipGw = await prisma.gameweek.findUnique({
+        where: { number: skipGwNum },
+      })
+    }
+    const skipGw = await prisma.gameweek.create({
+      data: {
+        number: skipGwNum,
+        lockTime: new Date(),
+        status: 'ACTIVE',
+        aggregationStatus: 'PENDING',
+      },
+    })
+
+    // Create a lineup already set for this GW (with specific slots/captain/VC)
+    const existingLineup = await prisma.lineup.create({
+      data: {
+        teamId: testTeam.id,
+        gameweekId: skipGw.id,
+      },
+    })
+
+    const playerIds = players.map((p) => p.id)
+    await prisma.lineupSlot.createMany({
+      data: [
+        { lineupId: existingLineup.id, playerId: playerIds[0], slotType: 'XI', role: 'CAPTAIN', benchPriority: null },
+        { lineupId: existingLineup.id, playerId: playerIds[1], slotType: 'XI', role: 'VC', benchPriority: null },
+        { lineupId: existingLineup.id, playerId: playerIds[2], slotType: 'XI', role: null, benchPriority: null },
+        { lineupId: existingLineup.id, playerId: playerIds[3], slotType: 'XI', role: null, benchPriority: null },
+        { lineupId: existingLineup.id, playerId: playerIds[4], slotType: 'XI', role: null, benchPriority: null },
+        { lineupId: existingLineup.id, playerId: playerIds[5], slotType: 'XI', role: null, benchPriority: null },
+        { lineupId: existingLineup.id, playerId: playerIds[6], slotType: 'XI', role: null, benchPriority: null },
+        { lineupId: existingLineup.id, playerId: playerIds[7], slotType: 'XI', role: null, benchPriority: null },
+        { lineupId: existingLineup.id, playerId: playerIds[8], slotType: 'XI', role: null, benchPriority: null },
+        { lineupId: existingLineup.id, playerId: playerIds[9], slotType: 'XI', role: null, benchPriority: null },
+        { lineupId: existingLineup.id, playerId: playerIds[10], slotType: 'XI', role: null, benchPriority: null },
+        { lineupId: existingLineup.id, playerId: playerIds[11], slotType: 'BENCH', role: null, benchPriority: 1 },
+        { lineupId: existingLineup.id, playerId: playerIds[12], slotType: 'BENCH', role: null, benchPriority: 2 },
+        { lineupId: existingLineup.id, playerId: playerIds[13], slotType: 'BENCH', role: null, benchPriority: 3 },
+        { lineupId: existingLineup.id, playerId: playerIds[14], slotType: 'BENCH', role: null, benchPriority: 4 },
+      ],
+    })
+
+    // Verify: lineup exists before aggregation
+    const lineupsBefore = await prisma.lineup.findMany({
+      where: { teamId: testTeam.id, gameweekId: skipGw.id },
+      include: { slots: true },
+    })
+    expect(lineupsBefore).toHaveLength(1)
+    const originalSlots = lineupsBefore[0].slots
+
+    // Record the original captain and VC
+    const originalCaptain = originalSlots.find((s) => s.role === 'CAPTAIN')
+    const originalVc = originalSlots.find((s) => s.role === 'VC')
+
+    // Run aggregateGameweek for this GW
+    await aggregateGameweek(skipGw.id)
+
+    // Verify: no new lineups created, only the original lineup exists
+    const lineupsAfter = await prisma.lineup.findMany({
+      where: { teamId: testTeam.id, gameweekId: skipGw.id },
+      include: { slots: true },
+    })
+    expect(lineupsAfter).toHaveLength(1)
+
+    // Verify: the lineup is unchanged (same slots, same captain, same VC)
+    const afterLineup = lineupsAfter[0]
+    expect(afterLineup.slots).toHaveLength(originalSlots.length)
+
+    // Verify captain and VC are the same
+    const afterCaptain = afterLineup.slots.find((s) => s.role === 'CAPTAIN')
+    const afterVc = afterLineup.slots.find((s) => s.role === 'VC')
+    expect(afterCaptain?.playerId).toBe(originalCaptain?.playerId)
+    expect(afterVc?.playerId).toBe(originalVc?.playerId)
+
+    // Verify no duplicate lineups were created
+    const allLineupsForTeam = await prisma.lineup.findMany({
+      where: { teamId: testTeam.id },
+    })
+    expect(allLineupsForTeam).toHaveLength(1)
+
+    // Cleanup - must delete in correct order due to FKs
+    try {
+      await prisma.lineupSlot.deleteMany({ where: { lineup: { teamId: testTeam.id } } })
+      await prisma.lineup.deleteMany({ where: { teamId: testTeam.id } })
+      await prisma.gameweekScore.deleteMany({ where: { gameweekId: skipGw.id } })
+      await prisma.playerScore.deleteMany({ where: { gameweekId: skipGw.id } })
+      await prisma.teamPlayer.deleteMany({ where: { leagueId: testLeague.id } })
+      await prisma.team.delete({ where: { id: testTeam.id } })
+      await prisma.league.delete({ where: { id: testLeague.id } })
+      await prisma.user.delete({ where: { id: testUser.id } })
+      await prisma.gameweek.delete({ where: { id: skipGw.id } })
+    } catch (e) {
+      console.warn(
+        `AC1.4 cleanup failed (may be due to parallel test data creation): ${e instanceof Error ? e.message : String(e)}`,
+      )
+    }
+  })
+
   it('AC2.6: Carry-forward takes precedence over auto-generate', async () => {
     if (shouldSkip) {
       console.warn('Test skipped: prerequisites not met')
