@@ -195,29 +195,21 @@ function getRankStyle(rank: number, isYou: boolean): React.CSSProperties {
 function formatDeadline(lockTime: string | null): { label: string; time: string } {
   if (!lockTime) return { label: 'Deadline', time: 'TBD' }
   const d = new Date(lockTime)
-  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-  const h = d.getHours()
-  const m = d.getMinutes().toString().padStart(2, '0')
-  const ampm = h >= 12 ? 'PM' : 'AM'
-  const h12 = h % 12 || 12
+  const date = d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
+  const time = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' })
   return {
     label: 'Deadline',
-    time: `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}, ${h12}:${m} ${ampm}`,
+    time: `${date}, ${time}`,
   }
 }
 
 function formatMatchTime(startingAt: string): { display: string; day: string } {
   const d = new Date(startingAt)
-  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-  const dayName = days[d.getDay()]
-  const h = d.getHours()
-  const m = d.getMinutes().toString().padStart(2, '0')
-  const ampm = h >= 12 ? 'PM' : 'AM'
-  const h12 = h % 12 || 12
+  const dayName = d.toLocaleDateString(undefined, { weekday: 'short' })
+  const date = d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
+  const time = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
   return {
-    display: `${dayName}, ${months[d.getMonth()]} ${d.getDate()} \u00B7 ${h12}:${m} ${ampm}`,
+    display: `${date} \u00B7 ${time}`,
     day: dayName.toUpperCase(),
   }
 }
