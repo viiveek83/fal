@@ -68,6 +68,11 @@ export async function syncMatchStatuses(): Promise<MatchSyncResult> {
         note: fixture.note ?? undefined,
         winnerTeamId: fixture.winner_team_id ?? undefined,
         superOver: fixture.super_over ?? undefined,
+        // Reset scoring attempts when LIVE_SCORING → COMPLETED so final
+        // scoring gets full 3 retries in runScoringPipeline
+        ...(match.scoringStatus === 'LIVE_SCORING' && newScoringStatus === 'COMPLETED'
+          ? { scoringAttempts: 0 }
+          : {}),
       },
     })
     changes.push({
