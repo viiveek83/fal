@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   const { id: leagueId } = await params
   const gwNumber = request.nextUrl.searchParams.get('gw')
 
@@ -12,8 +18,13 @@ export async function GET(
     return NextResponse.json({ error: 'gw param required' }, { status: 400 })
   }
 
+  const gwNum = parseInt(gwNumber)
+  if (isNaN(gwNum)) {
+    return NextResponse.json({ error: 'Invalid gw param' }, { status: 400 })
+  }
+
   const gw = await prisma.gameweek.findUnique({
-    where: { number: parseInt(gwNumber) },
+    where: { number: gwNum },
     select: { id: true },
   })
 

@@ -2,7 +2,7 @@
 
 import { useSession } from 'next-auth/react'
 import { useState, useEffect, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { AppFrame } from '@/app/components/AppFrame'
 
 /* ─── Types ─── */
@@ -298,7 +298,9 @@ export default function ViewLineupPage() {
   const { data: session, status: sessionStatus } = useSession()
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const teamId = params?.teamId as string
+  const gwFromUrl = searchParams?.get('gw')
 
   const [squad, setSquad] = useState<SquadData | null>(null)
   const [teamDetail, setTeamDetail] = useState<TeamDetail | null>(null)
@@ -491,6 +493,14 @@ export default function ViewLineupPage() {
           currentGW = { id: completed[0].id, number: completed[0].number }
           setCurrentGWNumber(completed[0].number)
           setSelectedGWNumber(completed[0].number)
+        }
+      }
+
+      // Override with ?gw= URL param if present
+      if (gwFromUrl) {
+        const gwNum = parseInt(gwFromUrl)
+        if (!isNaN(gwNum) && allGws.some(g => g.number === gwNum)) {
+          setSelectedGWNumber(gwNum)
         }
       }
 
@@ -743,7 +753,7 @@ export default function ViewLineupPage() {
 
         {/* GW navigation */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-          {selectedGWNumber !== null && selectedGWNumber > 1 && (
+          {canGoPrev && (
             <button
               onClick={() => navigateGW('prev')}
               style={{
