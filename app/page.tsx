@@ -195,8 +195,8 @@ function getRankStyle(rank: number, isYou: boolean): React.CSSProperties {
 function formatDeadline(lockTime: string | null): { label: string; time: string } {
   if (!lockTime) return { label: 'Deadline', time: 'TBD' }
   const d = new Date(lockTime)
-  const date = d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
-  const time = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' })
+  const date = d.toLocaleDateString('en', { weekday: 'short', day: 'numeric', month: 'short' })
+  const time = d.toLocaleTimeString('en', { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' })
   return {
     label: 'Deadline',
     time: `${date}, ${time}`,
@@ -205,9 +205,9 @@ function formatDeadline(lockTime: string | null): { label: string; time: string 
 
 function formatMatchTime(startingAt: string): { display: string; day: string } {
   const d = new Date(startingAt)
-  const dayName = d.toLocaleDateString(undefined, { weekday: 'short' })
-  const date = d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
-  const time = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+  const dayName = d.toLocaleDateString('en', { weekday: 'short' })
+  const date = d.toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' })
+  const time = d.toLocaleTimeString('en', { hour: 'numeric', minute: '2-digit' })
   return {
     display: `${date} \u00B7 ${time}`,
     day: dayName.toUpperCase(),
