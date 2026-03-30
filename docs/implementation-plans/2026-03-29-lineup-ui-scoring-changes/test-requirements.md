@@ -11,6 +11,7 @@
 | 2.3 | Role labels removed from read-only lineup | e2e | `tests/simulation/playwright/lineup-ui-changes.spec.ts` | COVERED |
 | 2.4 | "Playing XI" header visible on read-only lineup | e2e | `tests/simulation/playwright/lineup-ui-changes.spec.ts` | COVERED |
 | 2.5 | Bench label still present on both screens | e2e | `tests/simulation/playwright/lineup-ui-changes.spec.ts` | COVERED |
+| 2.6 | Bench role labels (ALL/BOWL/BAT/WK above bench figures) removed on both screens | e2e | `tests/simulation/playwright/lineup-ui-changes.spec.ts` | COVERED |
 | 3.1 | Read-only lineup has gradient header with Average/Points/Highest | e2e | `tests/simulation/playwright/lineup-ui-changes.spec.ts` | COVERED |
 | 3.2 | GW navigation (prev/next) works in gradient header | e2e | `tests/simulation/playwright/lineup-ui-changes.spec.ts` | COVERED |
 | 3.3 | Highest score area is clickable and navigates to team lineup | e2e | `tests/simulation/playwright/lineup-ui-changes.spec.ts` | COVERED |
@@ -20,6 +21,7 @@
 | 4.1 | Edit lineup pitch view shows "vs XYZ" opponent labels | e2e | `tests/simulation/playwright/lineup-ui-changes.spec.ts` | COVERED |
 | 4.2 | Edit lineup list view shows "vs XYZ" opponent format | e2e | `tests/simulation/playwright/lineup-ui-changes.spec.ts` | COVERED |
 | 4.3 | Falls back to team code when no fixtures loaded | e2e | — | PARTIAL (implicit) |
+| 4.4 | Opponent text color is readable (black/white matching jersey) | visual | — | COVERED (human) |
 | 5.1 | Player popup shows "GW{N} Points Breakdown" section | e2e | `tests/simulation/playwright/lineup-ui-changes.spec.ts` | COVERED |
 | 5.2 | Breakdown shows match cards with "vs XYZ · date" header | e2e | `tests/simulation/playwright/lineup-ui-changes.spec.ts` | COVERED |
 | 5.3 | Formula rows show "rawValue × rate" pattern | e2e | `tests/simulation/playwright/lineup-ui-changes.spec.ts` | COVERED |
@@ -45,7 +47,8 @@
 | H3.1 | Gradient header matches dashboard visual style | Complex visual matching | Compare read-only lineup header side-by-side with dashboard hero |
 | H3.2 | Score trio layout matches dashboard (Average left, Points center 36px, Highest right) | Layout proportions and typography | Verify center points are prominently larger, side scores are equal width |
 | H3.3 | Glassmorphic "Read Only" pill styling | CSS blur/transparency effects | Verify translucent white background with border |
-| H4.1 | Teal color (#0d9488) for opponent labels on pitch view | Color accuracy | Verify "vs GT" text appears in teal color |
+| H2.2 | Bench role labels (ALL/BOWL/BAT/WK) no longer appear above bench player figures | Visual inspection of bench area | Open edit lineup and read-only lineup, verify no standalone role text above bench figures |
+| H4.1 | Opponent text color is readable (black on light jerseys, white on dark) | Color contrast on varied backgrounds | Check "vs GT" text on players with different jersey colors, verify readability |
 | H4.2 | Players with 2 GW matches show two "vs" lines, players with 1 show one | Data-dependent layout | Find players with 2 matches in the GW, verify two opponent lines |
 | H5.1 | Match card color coding: green >30pts, amber 15-30pts, red <15pts | Color thresholds | Click players with different scores, verify correct color on match total |
 | H5.2 | Formula pattern: "52 × 1pt" for multiplied stats, "✓ 50+ runs" for bonuses | Text formatting | Click a player with runs, verify formula formatting |

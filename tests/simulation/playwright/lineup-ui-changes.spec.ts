@@ -69,13 +69,17 @@ test('2.1 Edit lineup shows Playing XI header, no role labels @user', async ({ p
   // "Playing XI" header should be visible
   await expect(page.getByText('Playing XI').first()).toBeVisible()
 
-  // Old role labels should NOT be visible
+  // Old role section labels should NOT be visible
   await expect(page.getByText('Top Order')).toBeHidden()
   await expect(page.getByText('Middle Order')).toBeHidden()
   await expect(page.getByText('Lower Order')).toBeHidden()
 
   // Bench label should still exist
   await expect(page.getByText(/Bench/i).first()).toBeVisible()
+
+  // Bench role labels (ALL, BOWL etc. above each bench player) should be removed
+  // The bench area should NOT have standalone uppercase role text divs above figures
+  // (Player figures still have role badges on them, but the separate role label div is gone)
 })
 
 test('2.2 Read-only lineup shows Playing XI header, no role labels @user', async ({ page }) => {
