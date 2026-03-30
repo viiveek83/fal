@@ -2243,17 +2243,20 @@ test('54. Read-only lineup shows GW navigation bar @user', async ({ page }) => {
   await page.goto('/')
   await waitForApp(page)
 
+  // Wait for standings to load so "Your Points" link has a valid href
+  await expect(page.getByText(/Sim Team 1/)).toBeVisible({ timeout: 10000 })
+
   // Navigate to own read-only lineup
   await page.getByText('Your Points').click()
-  await page.waitForLoadState('domcontentloaded', { timeout: 15000 })
+  await page.waitForURL('**/view-lineup/**', { timeout: 15000 })
   await waitForApp(page)
   expect(page.url()).toContain('/view-lineup/')
 
   // GW navigation bar should show "GW" label with a number
   await expect(page.getByText(/GW \d+/)).toBeVisible({ timeout: 10000 })
 
-  // Points total should be displayed (either "X pts" in the nav bar)
-  await expect(page.getByText(/\d+ pts/)).toBeVisible({ timeout: 5000 })
+  // Points total should be displayed in the GW nav bar (e.g. "GW1 · 269 pts")
+  await expect(page.getByText(/GW\d+ · \d+ pts/)).toBeVisible({ timeout: 5000 })
 
   await expect(page).toHaveScreenshot('readonly-gw-nav-bar.png')
 })

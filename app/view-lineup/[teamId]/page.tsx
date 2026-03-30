@@ -176,7 +176,7 @@ function PlayerFigure({ player, isCaptain, isVC, isBench, points }: {
   const plateMaxW = isBench ? 72 : 90
   const platePx = isBench ? '2px 5px 1px' : '4px 8px'
   const nameFs = isBench ? 11 : 12
-  const valueFs = isBench ? 9 : 10
+  const valueFs = isBench ? 10 : 12
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -194,7 +194,7 @@ function PlayerFigure({ player, isCaptain, isVC, isBench, points }: {
             border: '2px solid #fff',
             boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
           }}>
-            {isCaptain ? 'C' : 'V'}
+            {isCaptain ? 'C' : 'VC'}
           </div>
         )}
         {/* Head */}
@@ -255,16 +255,13 @@ function PlayerFigure({ player, isCaptain, isVC, isBench, points }: {
           {shortName}
         </div>
         <div style={{
-          fontSize: valueFs, fontWeight: 600,
+          fontSize: valueFs, fontWeight: 700,
           color: light ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.8)',
           marginTop: 2, lineHeight: '1.55',
           display: 'flex', alignItems: 'center', gap: 2,
         }}>
           {points !== undefined ? (
-            <>
-              <span>{points} pts</span>
-              {isCaptain && <span style={{ fontSize: 8, fontWeight: 700, color: light ? '#b58800' : '#F9CD05' }}>2&times;</span>}
-            </>
+            <span>{points} pts</span>
           ) : (
             code || 'IPL'
           )}
@@ -436,14 +433,26 @@ export default function ViewLineupPage() {
         const scoresData = await scoresRes.json()
         const pointsMap: Record<string, number> = {}
         // New format: scoresData.players[] with { id, multipliedPoints }
-        if (Array.isArray(scoresData.players)) {
+        if (Array.isArray(scoresData.players) && scoresData.players.length > 0) {
           for (const p of scoresData.players) {
             pointsMap[p.id] = p.multipliedPoints ?? 0
+          }
+        } else if (Array.isArray(scoresData.performances) && scoresData.performances.length > 0) {
+          // Mid-GW fallback: sum per-match fantasy points from PlayerPerformance
+          for (const perf of scoresData.performances) {
+            const pid = perf.player.id
+            pointsMap[pid] = (pointsMap[pid] || 0) + perf.fantasyPoints
           }
         }
         setPlayerPoints(pointsMap)
         // totalPoints at top level (both LIVE and FINAL modes)
-        setGwTotal(scoresData.totalPoints ?? 0)
+        if (scoresData.totalPoints !== undefined) {
+          setGwTotal(scoresData.totalPoints)
+        } else {
+          // Mid-GW fallback: sum all live points (with multipliers applied)
+          const liveTotal = Object.values(pointsMap).reduce((sum: number, pts) => sum + (pts as number), 0)
+          setGwTotal(liveTotal)
+        }
       } else {
         setPlayerPoints({})
         setGwTotal(0)
@@ -532,14 +541,23 @@ export default function ViewLineupPage() {
             if (scoresRes.ok) {
               const scoresData = await scoresRes.json()
               const pointsMap: Record<string, number> = {}
-              if (Array.isArray(scoresData.players)) {
+              if (Array.isArray(scoresData.players) && scoresData.players.length > 0) {
                 for (const p of scoresData.players) {
                   pointsMap[p.id] = p.multipliedPoints ?? 0
+                }
+              } else if (Array.isArray(scoresData.performances) && scoresData.performances.length > 0) {
+                // Mid-GW fallback: sum per-match fantasy points from PlayerPerformance
+                for (const perf of scoresData.performances) {
+                  const pid = perf.player.id
+                  pointsMap[pid] = (pointsMap[pid] || 0) + perf.fantasyPoints
                 }
               }
               setPlayerPoints(pointsMap)
               if (scoresData.totalPoints !== undefined) {
                 setGwTotal(scoresData.totalPoints)
+              } else {
+                const liveTotal = Object.values(pointsMap).reduce((sum: number, pts) => sum + (pts as number), 0)
+                setGwTotal(liveTotal)
               }
             }
           } catch {
@@ -1058,12 +1076,6 @@ export default function ViewLineupPage() {
                     color: isCap ? '#b58800' : '#1a1a2e',
                     fontVariantNumeric: 'tabular-nums',
                   }}>{getPoints(p.id)}</span>
-                  {isCap && (
-                    <span style={{
-                      fontSize: 9, fontWeight: 700, color: '#004BA0',
-                      background: 'rgba(0,75,160,0.06)', padding: '1px 4px', borderRadius: 3,
-                    }}>2&times;</span>
-                  )}
                 </div>
               </div>
             )
