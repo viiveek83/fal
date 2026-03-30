@@ -2,9 +2,8 @@
  * Client-side scoring breakdown utility for the player popup.
  *
  * These formulas mirror the server-side scoring in batting.ts, bowling.ts,
- * and fielding.ts. Where the performance data lacks a field (e.g. dotBalls,
- * lbwBowledCount, runouts, wicketId) the points will appear in a catch-all
- * "remainder" line calculated by the caller.
+ * and fielding.ts. The only field not available from PlayerPerformance is
+ * lbwBowledCount (derived from ball-by-ball API data at score time).
  */
 
 import { oversToDecimal } from '../sportmonks/utils'
@@ -16,13 +15,14 @@ export interface ScoringLine {
   points: number
 }
 
-const DUCK_EXEMPT_ROLES = ['BOWL']
+const DUCK_EXEMPT_WICKET_IDS = [84, 138] // 84=Not Out, 138=Retired Out
 
 export function computeBattingBreakdown(stats: {
   runs: number | null
   balls: number | null
   fours: number | null
   sixes: number | null
+  wicketId?: number | null
 }, role: string): ScoringLine[] {
   const lines: ScoringLine[] = []
   const runs = stats.runs ?? 0
@@ -40,19 +40,15 @@ export function computeBattingBreakdown(stats: {
     lines.push({ category: 'Sixes', rawValue: `${sixes}`, formula: '× 6pts', points: sixes * 6 })
   }
 
-  // Milestone bonuses: century replaces all lower; below century they STACK
+  // Milestone bonuses (highest only — do NOT stack)
   if (runs >= 100) {
     lines.push({ category: '100 Bonus', rawValue: '✓', formula: '100+ runs', points: 16 })
-  } else {
-    if (runs >= 75) {
-      lines.push({ category: '75 Bonus', rawValue: '✓', formula: '75+ runs', points: 12 })
-    }
-    if (runs >= 50) {
-      lines.push({ category: '50 Bonus', rawValue: '✓', formula: '50+ runs', points: 8 })
-    }
-    if (runs >= 25) {
-      lines.push({ category: '25 Bonus', rawValue: '✓', formula: '25+ runs', points: 4 })
-    }
+  } else if (runs >= 75) {
+    lines.push({ category: '75 Bonus', rawValue: '✓', formula: '75+ runs', points: 12 })
+  } else if (runs >= 50) {
+    lines.push({ category: '50 Bonus', rawValue: '✓', formula: '50+ runs', points: 8 })
+  } else if (runs >= 25) {
+    lines.push({ category: '25 Bonus', rawValue: '✓', formula: '25+ runs', points: 4 })
   }
 
   // Strike rate bonus/penalty (min 10 balls, bowlers exempt)
@@ -71,8 +67,13 @@ export function computeBattingBreakdown(stats: {
     }
   }
 
-  // Duck penalty: we can't check wicketId from performance data, so we skip
-  // the duck line here. It will be captured in the remainder if applicable.
+  // Duck penalty: 0 runs, 1+ balls, dismissed, non-BOWL
+  if (runs === 0 && balls >= 1 &&
+      stats.wicketId !== null && stats.wicketId !== undefined &&
+      !DUCK_EXEMPT_WICKET_IDS.includes(stats.wicketId) &&
+      role !== 'BOWL') {
+    lines.push({ category: 'Duck', rawValue: '✗', formula: '0 runs, out', points: -2 })
+  }
 
   return lines
 }
@@ -82,18 +83,23 @@ export function computeBowlingBreakdown(stats: {
   overs: number | null
   maidens: number | null
   runsConceded: number | null
+  dotBalls?: number | null
 }): ScoringLine[] {
   const lines: ScoringLine[] = []
   const wickets = stats.wickets ?? 0
   const overs = stats.overs ?? 0
   const maidens = stats.maidens ?? 0
   const runsConceded = stats.runsConceded ?? 0
+  const dotBalls = stats.dotBalls ?? 0
 
   if (wickets > 0) {
     lines.push({ category: 'Wickets', rawValue: `${wickets}`, formula: '× 30pts', points: wickets * 30 })
   }
   if (maidens > 0) {
     lines.push({ category: 'Maidens', rawValue: `${maidens}`, formula: '× 12pts', points: maidens * 12 })
+  }
+  if (dotBalls > 0) {
+    lines.push({ category: 'Dot Balls', rawValue: `${dotBalls}`, formula: '× 1pt', points: dotBalls })
   }
 
   // Wicket milestone bonuses (don't stack — highest only)
@@ -122,8 +128,8 @@ export function computeBowlingBreakdown(stats: {
     }
   }
 
-  // Note: dotBalls (× 1pt) and lbwBowledCount (× 8pts) are not available
-  // in performance data — they will appear in the remainder line.
+  // Note: lbwBowledCount (× 8pts) is derived from ball-by-ball API data at
+  // score time and not stored in PlayerPerformance — captured in remainder.
 
   return lines
 }
@@ -131,6 +137,8 @@ export function computeBowlingBreakdown(stats: {
 export function computeFieldingBreakdown(stats: {
   catches: number
   stumpings: number
+  runoutsDirect?: number
+  runoutsAssisted?: number
 }): ScoringLine[] {
   const lines: ScoringLine[] = []
 
@@ -143,9 +151,28 @@ export function computeFieldingBreakdown(stats: {
   if (stats.stumpings > 0) {
     lines.push({ category: 'Stumpings', rawValue: `${stats.stumpings}`, formula: '× 12pts', points: stats.stumpings * 12 })
   }
+  if (stats.runoutsDirect && stats.runoutsDirect > 0) {
+    lines.push({ category: 'Direct Runouts', rawValue: `${stats.runoutsDirect}`, formula: '× 12pts', points: stats.runoutsDirect * 12 })
+  }
+  if (stats.runoutsAssisted && stats.runoutsAssisted > 0) {
+    lines.push({ category: 'Runout Assists', rawValue: `${stats.runoutsAssisted}`, formula: '× 6pts', points: stats.runoutsAssisted * 6 })
+  }
 
-  // Note: runoutsDirect (× 12pts) and runoutsAssisted (× 6pts) are not
-  // available in performance data — they will appear in the remainder line.
+  return lines
+}
+
+export function computeParticipationBreakdown(stats: {
+  inStartingXI: boolean
+  isImpactPlayer: boolean
+}): ScoringLine[] {
+  const lines: ScoringLine[] = []
+
+  if (stats.inStartingXI) {
+    lines.push({ category: 'Playing', rawValue: '✓', formula: 'Starting XI', points: 4 })
+  }
+  if (stats.isImpactPlayer) {
+    lines.push({ category: 'Impact Player', rawValue: '✓', formula: 'Impact sub', points: 4 })
+  }
 
   return lines
 }

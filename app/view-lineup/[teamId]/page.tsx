@@ -4,7 +4,7 @@ import { useSession } from 'next-auth/react'
 import { useState, useEffect, useCallback, Fragment } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { AppFrame } from '@/app/components/AppFrame'
-import { computeBattingBreakdown, computeBowlingBreakdown, computeFieldingBreakdown, type ScoringLine } from '@/lib/scoring/breakdown'
+import { computeBattingBreakdown, computeBowlingBreakdown, computeFieldingBreakdown, computeParticipationBreakdown, type ScoringLine } from '@/lib/scoring/breakdown'
 
 /* ─── Types ─── */
 interface SquadPlayer {
@@ -86,6 +86,8 @@ interface SheetPlayerDetail {
     runs: number | null; balls: number | null; fours: number | null; sixes: number | null
     wickets: number | null; overs: number | null; maidens: number | null; runsConceded: number | null
     catches: number; stumpings: number; fantasyPoints: number
+    dotBalls: number | null; runoutsDirect: number; runoutsAssisted: number
+    inStartingXI: boolean; isImpactPlayer: boolean; wicketId: number | null
     match?: { localTeamName: string | null; visitorTeamName: string | null; startingAt?: string; gameweek?: { number: number } | null }
   }[]
   upcomingFixtures?: { opponent: string; startingAt: string; gameweek: number | null }[]
@@ -349,6 +351,12 @@ export default function ViewLineupPage() {
           maidens: p.maidens as number | null, runsConceded: p.runsConceded as number | null,
           catches: (p.catches as number) || 0, stumpings: (p.stumpings as number) || 0,
           fantasyPoints: (p.fantasyPoints as number) || 0,
+          dotBalls: p.dotBalls as number | null,
+          runoutsDirect: (p.runoutsDirect as number) || 0,
+          runoutsAssisted: (p.runoutsAssisted as number) || 0,
+          inStartingXI: (p.inStartingXI as boolean) || false,
+          isImpactPlayer: (p.isImpactPlayer as boolean) || false,
+          wicketId: p.wicketId as number | null,
           match: p.match as { localTeamName: string | null; visitorTeamName: string | null; startingAt?: string; gameweek?: { number: number } | null } | undefined,
         }))
         setSheetDetail({
@@ -1392,14 +1400,14 @@ export default function ViewLineupPage() {
                       const batLines = computeBattingBreakdown(perf, perfRole)
                       const bowlLines = computeBowlingBreakdown(perf)
                       const fieldLines = computeFieldingBreakdown(perf)
-                      const batTotal = batLines.reduce((s, l) => s + l.points, 0)
-                      const bowlTotal = bowlLines.reduce((s, l) => s + l.points, 0)
-                      const fieldTotal = fieldLines.reduce((s, l) => s + l.points, 0)
-                      const remainder = pts - batTotal - bowlTotal - fieldTotal
+                      const participationLines = computeParticipationBreakdown(perf)
+                      const breakdownTotal = [...batLines, ...bowlLines, ...fieldLines, ...participationLines].reduce((s, l) => s + l.points, 0)
+                      const remainder = pts - breakdownTotal
+                      // Remainder is LBW/Bowled bonus (not stored in PlayerPerformance)
                       const otherLines: ScoringLine[] = remainder !== 0
-                        ? [{ category: 'Other', rawValue: '', formula: 'dots, lbw/b, etc.', points: remainder }]
+                        ? [{ category: 'LBW/Bowled', rawValue: '', formula: `${Math.round(remainder / 8)} × 8pts`, points: remainder }]
                         : []
-                      const allLines = [...batLines, ...bowlLines, ...fieldLines, ...otherLines]
+                      const allLines = [...participationLines, ...batLines, ...bowlLines, ...fieldLines, ...otherLines]
 
                       return (
                         <div key={perfIdx} style={{
