@@ -806,7 +806,7 @@ export default function LineupPage() {
           {(() => {
             const opponents = getGwOpponents(player.iplTeamName, gwFixtures)
             return opponents.length > 0 ? opponents.map((opp, i) => (
-              <div key={i} style={{ fontSize: valueFs, color: '#0d9488', fontWeight: 600, lineHeight: 1.3 }}>
+              <div key={i} style={{ fontSize: valueFs, color: light ? '#1a1a1a' : '#fff', fontWeight: 600, lineHeight: 1.3 }}>
                 vs {opp}
               </div>
             )) : (
@@ -1149,13 +1149,6 @@ export default function LineupPage() {
                         transition: 'all 0.2s',
                       }}
                     >
-                      <div style={{
-                        fontSize: 9, fontWeight: 700, textAlign: 'center', marginBottom: 2,
-                        textTransform: 'uppercase', letterSpacing: 0.5,
-                        color: benchRoleColors[role] || 'rgba(255,255,255,0.3)',
-                      }}>
-                        {role}
-                      </div>
                       <PlayerFigure player={p} isCaptain={captainId === p.id} isVC={vcId === p.id} isBench />
                     </div>
                   )

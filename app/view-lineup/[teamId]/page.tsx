@@ -964,13 +964,6 @@ export default function ViewLineupPage() {
                         display: 'flex', flexDirection: 'column', alignItems: 'center',
                       }}
                     >
-                      <div style={{
-                        fontSize: 9, fontWeight: 700, textAlign: 'center', marginBottom: 2,
-                        textTransform: 'uppercase', letterSpacing: 0.5,
-                        color: benchRoleColors[role] || 'rgba(255,255,255,0.3)',
-                      }}>
-                        {role}
-                      </div>
                       <PlayerFigure player={p} isCaptain={captainId === p.id} isVC={vcId === p.id} isBench points={getPoints(p.id)} />
                     </div>
                   )
