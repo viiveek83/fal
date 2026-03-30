@@ -321,6 +321,16 @@ export default function ViewLineupPage() {
   const [gwTotal, setGwTotal] = useState<number>(0)
   const [gwLoading, setGwLoading] = useState(false)
   const [noLineupForGW, setNoLineupForGW] = useState(false)
+  const [gwStats, setGwStats] = useState<{ average: number; highest: number; highestTeamId: string | null } | null>(null)
+
+  /* ─── Fetch league GW stats (average / highest) ─── */
+  useEffect(() => {
+    if (!teamDetail?.league?.id || selectedGWNumber === null) return
+    fetch(`/api/leagues/${teamDetail.league.id}/gw-stats?gw=${selectedGWNumber}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => setGwStats(data))
+      .catch(() => setGwStats(null))
+  }, [teamDetail?.league?.id, selectedGWNumber])
 
   /* ─── Fetch player detail when stats sheet opens ─── */
   useEffect(() => {
@@ -576,6 +586,11 @@ export default function ViewLineupPage() {
   const canGoPrev = selectedGWNumber !== null && selectedGWNumber > minGWNumber
   const canGoNext = selectedGWNumber !== null && selectedGWNumber < maxGWNumber
 
+  /* ─── Derive GW status from allGameweeks ─── */
+  const gwStatus = selectedGWNumber !== null
+    ? allGameweeks.find(g => g.number === selectedGWNumber)?.status ?? null
+    : null
+
   /* ─── Helper: get player points ─── */
   const getPoints = (playerId: string): number => playerPoints[playerId] ?? 0
 
@@ -624,110 +639,136 @@ export default function ViewLineupPage() {
       fontFamily: "'Plus Jakarta Sans', -apple-system, sans-serif",
       WebkitFontSmoothing: 'antialiased',
     }}>
-      {/* ── Header Bar ── */}
+      {/* ── Dashboard-Style Hero Header ── */}
       <div style={{
-        background: '#fff',
-        padding: '14px 18px 8px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        background: 'linear-gradient(160deg, #1a0a3e 0%, #2d1b69 25%, #004BA0 50%, #0EB1A2 80%, #00AEEF 100%)',
+        padding: '20px 18px 16px',
+        position: 'relative',
+        overflow: 'hidden',
         flexShrink: 0,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {/* Back arrow */}
+        {/* Radial glow */}
+        <div style={{
+          position: 'absolute', top: '-30%', right: '-20%',
+          width: 300, height: 300,
+          background: 'radial-gradient(circle, rgba(249,205,5,0.07) 0%, transparent 70%)',
+          pointerEvents: 'none',
+        }} />
+
+        {/* Top row: back + title + read only badge */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <button
             onClick={() => router.back()}
             style={{
               width: 30, height: 30, borderRadius: 8,
-              background: '#f2f3f8', border: '1px solid rgba(0,0,0,0.06)',
+              background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', color: '#333',
+              cursor: 'pointer', color: 'rgba(255,255,255,0.7)',
               fontSize: 15, fontWeight: 600,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
             }}
           >
             &#8592;
           </button>
-          {/* Title group */}
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <div style={{
-              fontSize: 15, fontWeight: 700, color: '#1a1a2e', letterSpacing: -0.3,
-              display: 'flex', alignItems: 'center', gap: 6,
-            }}>
-              {managerFirstName}&apos;s Lineup
-              {/* Read Only badge */}
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: 3,
-                fontSize: 9, fontWeight: 700, color: '#888',
-                background: '#f2f3f8', padding: '2px 7px', borderRadius: 5,
-                border: '1px solid rgba(0,0,0,0.06)',
-                letterSpacing: 0.3, textTransform: 'uppercase' as const,
-              }}>
-                <LockIcon />
-                Read Only
-              </span>
-            </div>
-            <div style={{
-              fontSize: 10, fontWeight: 600, color: '#999', letterSpacing: -0.1,
-              marginTop: 1,
-            }}>
-              {selectedGWNumber ? `GW${selectedGWNumber}` : currentGWNumber ? `GW${currentGWNumber}` : 'Pre-season'} · {gwTotal} pts
-            </div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', letterSpacing: -0.3 }}>
+            {managerFirstName}&apos;s Lineup
           </div>
+          <span style={{
+            marginLeft: 'auto',
+            display: 'inline-flex', alignItems: 'center', gap: 3,
+            fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.6)',
+            background: 'rgba(255,255,255,0.12)', padding: '2px 7px', borderRadius: 5,
+            border: '1px solid rgba(255,255,255,0.15)',
+            letterSpacing: 0.3, textTransform: 'uppercase' as const,
+          }}>
+            <LockIcon />
+            Read Only
+          </span>
+        </div>
+
+        {/* GW label with status badge */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 8 }}>
+          <div style={{
+            fontSize: 10, color: 'rgba(255,255,255,0.5)',
+            fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase' as const,
+          }}>
+            Gameweek {selectedGWNumber}
+          </div>
+          {gwStatus && (
+            <div style={{
+              fontSize: 9, fontWeight: 700,
+              color: gwStatus === 'ACTIVE' ? '#4ade80' : 'rgba(255,255,255,0.5)',
+              background: gwStatus === 'ACTIVE' ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.1)',
+              padding: '2px 6px', borderRadius: 4,
+            }}>
+              {gwStatus === 'ACTIVE' ? 'LIVE' : 'FINAL'}
+            </div>
+          )}
+        </div>
+
+        {/* Score trio */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: 12 }}>
+          {/* Average */}
+          <div style={{ flex: 1, textAlign: 'center' }}>
+            <div style={{ fontSize: 22, fontWeight: 700, color: 'rgba(255,255,255,0.9)', fontVariantNumeric: 'tabular-nums' }}>
+              {gwStats?.average ?? '\u2014'}
+            </div>
+            <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: 0.8, marginTop: 1 }}>Average</div>
+          </div>
+
+          {/* This team's points (center, large) */}
+          <div style={{ flex: 1.3, textAlign: 'center', position: 'relative' }}>
+            <div style={{ position: 'absolute', top: '10%', bottom: '20%', left: 0, width: 1, background: 'rgba(255,255,255,0.12)' }} />
+            <div style={{ position: 'absolute', top: '10%', bottom: '20%', right: 0, width: 1, background: 'rgba(255,255,255,0.12)' }} />
+            <div style={{ fontSize: 36, fontWeight: 900, color: '#fff', letterSpacing: -1.5, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+              {gwTotal > 0 ? gwTotal : '\u2014'}
+            </div>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', fontWeight: 600, marginTop: 2 }}>Points</div>
+          </div>
+
+          {/* Highest (clickable) */}
+          <div
+            onClick={() => {
+              if (gwStats?.highestTeamId && gwStats.highestTeamId !== teamId) {
+                router.push(`/view-lineup/${gwStats.highestTeamId}?gw=${selectedGWNumber}`)
+              }
+            }}
+            style={{ flex: 1, textAlign: 'center', cursor: gwStats?.highestTeamId ? 'pointer' : 'default' }}
+          >
+            <div style={{ fontSize: 22, fontWeight: 700, color: 'rgba(255,255,255,0.9)', fontVariantNumeric: 'tabular-nums' }}>
+              {gwStats?.highest ?? '\u2014'}
+            </div>
+            <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: 0.8, marginTop: 1 }}>Highest</div>
+          </div>
+        </div>
+
+        {/* GW navigation */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+          {selectedGWNumber !== null && selectedGWNumber > 1 && (
+            <button
+              onClick={() => navigateGW('prev')}
+              style={{
+                background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8,
+                padding: '4px 12px', fontSize: 11, color: 'rgba(255,255,255,0.6)',
+                fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              &larr; GW{selectedGWNumber - 1}
+            </button>
+          )}
+          {selectedGWNumber !== null && canGoNext && (
+            <button
+              onClick={() => navigateGW('next')}
+              style={{
+                background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8,
+                padding: '4px 12px', fontSize: 11, color: 'rgba(255,255,255,0.6)',
+                fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              GW{selectedGWNumber + 1} &rarr;
+            </button>
+          )}
         </div>
       </div>
-
-      {/* ── GW Navigation Bar ── */}
-      {selectedGWNumber !== null && (
-        <div style={{
-          background: '#fff', padding: '8px 16px 6px',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16,
-          flexShrink: 0,
-        }}>
-          <button
-            onClick={() => navigateGW('prev')}
-            disabled={!canGoPrev || gwLoading}
-            style={{
-              width: 32, height: 32, borderRadius: 8,
-              background: canGoPrev ? '#f2f3f8' : 'transparent',
-              border: canGoPrev ? '1px solid rgba(0,0,0,0.06)' : 'none',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: canGoPrev ? 'pointer' : 'default',
-              color: canGoPrev ? '#333' : 'transparent',
-              fontSize: 15, fontWeight: 600,
-              opacity: canGoPrev ? 1 : 0,
-              transition: 'opacity 0.2s ease',
-            }}
-          >
-            &#8592;
-          </button>
-          <div style={{
-            fontSize: 14, fontWeight: 700, color: '#1a1a2e',
-            minWidth: 80, textAlign: 'center',
-            display: 'flex', flexDirection: 'column', alignItems: 'center',
-          }}>
-            <span>GW {selectedGWNumber}</span>
-            <span style={{ fontSize: 11, fontWeight: 600, color: '#999', marginTop: 1 }}>
-              {gwLoading ? 'Loading...' : `${gwTotal} pts`}
-            </span>
-          </div>
-          <button
-            onClick={() => navigateGW('next')}
-            disabled={!canGoNext || gwLoading}
-            style={{
-              width: 32, height: 32, borderRadius: 8,
-              background: canGoNext ? '#f2f3f8' : 'transparent',
-              border: canGoNext ? '1px solid rgba(0,0,0,0.06)' : 'none',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: canGoNext ? 'pointer' : 'default',
-              color: canGoNext ? '#333' : 'transparent',
-              fontSize: 15, fontWeight: 600,
-              opacity: canGoNext ? 1 : 0,
-              transition: 'opacity 0.2s ease',
-            }}
-          >
-            &#8594;
-          </button>
-        </div>
-      )}
 
       {/* ── View Toggle ── */}
       <div style={{
