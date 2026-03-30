@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react'
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { AppFrame } from '@/app/components/AppFrame'
+import { computeBattingBreakdown, computeBowlingBreakdown, computeFieldingBreakdown, type ScoringLine } from '@/lib/scoring/breakdown'
 
 /* ─── Types ─── */
 interface SquadPlayer {
@@ -351,7 +352,7 @@ export default function ViewLineupPage() {
           maidens: p.maidens as number | null, runsConceded: p.runsConceded as number | null,
           catches: (p.catches as number) || 0, stumpings: (p.stumpings as number) || 0,
           fantasyPoints: (p.fantasyPoints as number) || 0,
-          match: p.match as { localTeamName: string | null; visitorTeamName: string | null; gameweek?: { number: number } | null } | undefined,
+          match: p.match as { localTeamName: string | null; visitorTeamName: string | null; startingAt?: string; gameweek?: { number: number } | null } | undefined,
         }))
         setSheetDetail({
           totalPoints: data.stats?.totalPoints ?? 0,
@@ -1345,6 +1346,90 @@ export default function ViewLineupPage() {
                         )
                       })}
                     </div>
+                  </div>
+                )
+              })()}
+
+              {/* GW Points Breakdown */}
+              {!sheetDetailLoading && sheetDetail && (() => {
+                const gwPerfs = sheetDetail.performances.filter(perf => {
+                  const gwNum = perf.match?.gameweek?.number
+                  return gwNum === selectedGWNumber
+                })
+                if (gwPerfs.length === 0) return null
+
+                const gwMatchTotal = gwPerfs.reduce((sum, pr) => sum + pr.fantasyPoints, 0)
+                const playerTeam = p.iplTeamName
+
+                return (
+                  <div style={{ padding: '8px 16px 4px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <div style={{ fontSize: 8, fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                        GW{selectedGWNumber} Points Breakdown
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: '#004BA0' }}>{gwMatchTotal} pts</div>
+                    </div>
+
+                    {gwPerfs.map((perf, perfIdx) => {
+                      const m = perf.match
+                      if (!m) return null
+                      const opponentName = m.localTeamName === playerTeam ? m.visitorTeamName : m.localTeamName
+                      const oppCode = teamNameToCode[opponentName ?? ''] || opponentName?.slice(0, 3).toUpperCase() || '?'
+                      const fmtDate = (iso: string) => {
+                        const d = new Date(iso)
+                        return `${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                      }
+                      const matchDate = m.startingAt ? fmtDate(m.startingAt) : ''
+                      const pts = perf.fantasyPoints
+                      const ptsColor = pts > 30 ? '#0d9e5f' : pts >= 15 ? '#c88a00' : '#d44'
+
+                      const perfRole = normalizeRole(p.role)
+                      const batLines = computeBattingBreakdown(perf, perfRole)
+                      const bowlLines = computeBowlingBreakdown(perf)
+                      const fieldLines = computeFieldingBreakdown(perf)
+                      const batTotal = batLines.reduce((s, l) => s + l.points, 0)
+                      const bowlTotal = bowlLines.reduce((s, l) => s + l.points, 0)
+                      const fieldTotal = fieldLines.reduce((s, l) => s + l.points, 0)
+                      const remainder = pts - batTotal - bowlTotal - fieldTotal
+                      const otherLines: ScoringLine[] = remainder !== 0
+                        ? [{ category: 'Other', rawValue: '', formula: 'dots, lbw/b, etc.', points: remainder }]
+                        : []
+                      const allLines = [...batLines, ...bowlLines, ...fieldLines, ...otherLines]
+
+                      return (
+                        <div key={perfIdx} style={{
+                          background: '#fff', border: '1.5px solid #e8eaf0', borderRadius: 12,
+                          padding: '12px 14px', marginBottom: 8, boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                        }}>
+                          <div style={{
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                            marginBottom: 10, paddingBottom: 8, borderBottom: '1.5px solid #f0f1f5',
+                          }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: '#1a1a2e' }}>
+                              vs {oppCode} {matchDate ? `· ${matchDate}` : ''}
+                            </div>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: ptsColor }}>{pts}</div>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            {allLines.map((line, i) => (
+                              <div key={i} style={{
+                                display: 'flex', alignItems: 'center', fontSize: 12, padding: '5px 0',
+                                borderBottom: i < allLines.length - 1 ? '1px solid #f5f6f9' : 'none',
+                              }}>
+                                <span style={{ flex: 1.2, color: '#555', fontWeight: 500 }}>{line.category}</span>
+                                <span style={{ flex: 2, textAlign: 'center', color: '#1a1a2e' }}>
+                                  <span style={{ fontWeight: 700, fontSize: 13 }}>{line.rawValue}</span>
+                                  <span style={{ color: '#999', fontSize: 11, marginLeft: 2 }}>{line.formula}</span>
+                                </span>
+                                <span style={{ flex: 0.8, textAlign: 'right', fontWeight: 700, color: line.points >= 0 ? '#004BA0' : '#d44', fontSize: 12 }}>
+                                  {line.points > 0 ? '+' : ''}{line.points} pts
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 )
               })()}
