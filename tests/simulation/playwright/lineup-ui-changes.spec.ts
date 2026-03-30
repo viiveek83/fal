@@ -233,7 +233,7 @@ test('4.2 Edit lineup list view shows opponent teams @user', async ({ page }) =>
    Change 5: Player popup shows GW points breakdown with formulas
    ═══════════════════════════════════════════════════════════════════════════ */
 
-test('5.1 Read-only lineup player popup shows GW breakdown @user', async ({ page }) => {
+test('5.1 Read-only lineup player popup shows GW breakdown with itemized rows @user', async ({ page }) => {
   test.setTimeout(60000)
   await page.goto('/standings')
   await waitForApp(page)
@@ -252,8 +252,6 @@ test('5.1 Read-only lineup player popup shows GW breakdown @user', async ({ page
       await page.waitForTimeout(1500)
 
       // Popup should open — look for player details
-      // The breakdown section header "GW{N} Points Breakdown" may or may not appear
-      // depending on whether scoring data exists for this GW
       const breakdownHeader = page.getByText(/GW\d+ Points Breakdown/i)
       const hasBreakdown = await breakdownHeader.isVisible({ timeout: 3000 }).catch(() => false)
 
@@ -264,12 +262,23 @@ test('5.1 Read-only lineup player popup shows GW breakdown @user', async ({ page
         // Should show formula rows (e.g., "× 1pt", "× 4pts", "× 30pts")
         const formulaText = page.locator('span').filter({ hasText: /× \d+pts?/ })
         const hasFormula = await formulaText.first().isVisible({ timeout: 2000 }).catch(() => false)
-        // Formula rows appear when player has scored points
         if (hasFormula) {
           await expect(formulaText.first()).toBeVisible()
         }
 
-        // Points should be in blue (#004BA0) — verify "pts" text exists
+        // Should show "Playing" participation row (Starting XI bonus)
+        const playingRow = page.getByText('Playing')
+        const hasPlaying = await playingRow.first().isVisible({ timeout: 2000 }).catch(() => false)
+        if (hasPlaying) {
+          await expect(page.getByText('Starting XI')).toBeVisible()
+        }
+
+        // "Other" row should NOT appear — replaced by itemized rows
+        const otherRow = page.getByText('Other', { exact: true })
+        const hasOther = await otherRow.isVisible({ timeout: 1000 }).catch(() => false)
+        expect(hasOther).toBe(false)
+
+        // Points total should be visible
         await expect(page.getByText(/\d+ pts/).first()).toBeVisible()
       }
 
