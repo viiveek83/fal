@@ -184,13 +184,14 @@ function PlayerFigure({ player, isCaptain, isVC, isBench, points }: {
         {/* C/VC badge */}
         {(isCaptain || isVC) && (
           <div style={{
-            position: 'absolute', top: -2, right: isBench ? -2 : 2, zIndex: 5,
-            width: 16, height: 16, borderRadius: '50%',
+            position: 'absolute', top: -4, right: isBench ? -4 : 0, zIndex: 5,
+            width: 22, height: 22, borderRadius: '50%',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 8, fontWeight: 900,
+            fontSize: 11, fontWeight: 900,
             background: isCaptain ? '#F9CD05' : '#C0C7D0',
             color: '#1a1a1a',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.35)',
+            border: '2px solid #fff',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
           }}>
             {isCaptain ? 'C' : 'V'}
           </div>
