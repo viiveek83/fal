@@ -3,6 +3,7 @@
 import { useSession } from 'next-auth/react'
 import { useState, useEffect, useCallback, Fragment } from 'react'
 import { AppFrame } from '@/app/components/AppFrame'
+import { trackEvent, GA_EVENTS } from '@/lib/analytics'
 
 interface CurrentGameweek {
   id: string
@@ -196,6 +197,7 @@ const ListViewIcon = ({ color }: { color: string }) => (
 )
 
 export default function LineupPage() {
+  useEffect(() => { trackEvent(GA_EVENTS.VIEW_LINEUP) }, [])
   const { data: session, status: sessionStatus } = useSession()
 
   const [squad, setSquad] = useState<SquadData | null>(null)
@@ -473,6 +475,7 @@ export default function LineupPage() {
       }
       setDirty(false)
       setSaveMessage({ type: 'success', text: 'Lineup saved!' })
+      trackEvent(GA_EVENTS.LINEUP_SAVE)
       setTimeout(() => setSaveMessage(null), 3000)
     } catch (err) {
       setSaveMessage({ type: 'error', text: err instanceof Error ? err.message : 'Failed to save lineup' })
@@ -562,6 +565,7 @@ export default function LineupPage() {
         setActiveChip(chipModalType)
         setChipModalType(null)
         setDirty(true)
+        trackEvent(GA_EVENTS.LINEUP_CHIP_ACTIVATE, { chip_type: chipModalType || '' })
       } else {
         const data = await res.json().catch(() => ({ error: 'Failed to activate chip' }))
         setSaveMessage({ type: 'error', text: data.error || 'Failed to activate chip' })

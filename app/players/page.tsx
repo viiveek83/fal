@@ -3,6 +3,7 @@
 import { useSession } from 'next-auth/react'
 import { useState, useEffect, useCallback, useRef, Fragment } from 'react'
 import { AppFrame } from '@/app/components/AppFrame'
+import { trackEvent, GA_EVENTS } from '@/lib/analytics'
 
 /* ─── IPL teams ─── */
 const teams = [
@@ -193,6 +194,7 @@ const SearchIcon = () => (
 )
 
 export default function PlayersPage() {
+  useEffect(() => { trackEvent(GA_EVENTS.VIEW_PLAYERS) }, [])
   const { data: session, status: sessionStatus } = useSession()
 
   const [players, setPlayers] = useState<Player[]>([])
