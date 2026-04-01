@@ -56,6 +56,7 @@ Required in `.env.local`:
 - `ADMIN_SECRET` — Bootstrap secret for first admin account
 - `APP_ADMIN_EMAILS` — Comma-separated emails for /app-admin access
 - `CRON_SECRET` — Bearer token for cron endpoint auth
+- `NEXT_PUBLIC_GA_ID` — Google Analytics 4 measurement ID (client-side, inlined at build time)
 
 ## Database
 

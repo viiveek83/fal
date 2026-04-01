@@ -3,6 +3,7 @@
 import { useSession, signOut } from 'next-auth/react'
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { AppFrame } from '@/app/components/AppFrame'
+import { trackEvent, GA_EVENTS } from '@/lib/analytics'
 
 /* ─── IPL team colors ─── */
 const teamColors: Record<string, string> = {
@@ -240,6 +241,7 @@ export default function AdminPage() {
       if (detail.ok) setLeague(await detail.json())
       else setLeague(data)
       setSuccess('League created!')
+      trackEvent(GA_EVENTS.LEAGUE_CREATE)
       setLeagueName('')
       setShowCreateForm(false)
     } catch { setError('Network error') }
@@ -271,6 +273,7 @@ export default function AdminPage() {
       if (!res.ok && data.error) setError(data.error)
       if (res.ok) {
         setSuccess('Roster uploaded successfully!')
+        trackEvent(GA_EVENTS.LEAGUE_ROSTER_UPLOAD)
         const detail = await fetch(`/api/leagues/${league.id}`)
         if (detail.ok) setLeague(await detail.json())
         await fetchAllSquads()
