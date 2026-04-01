@@ -247,6 +247,9 @@ export async function scoreMatch(match: {
         }
       } else if (b.runout_by_id) {
         getFielding(b.runout_by_id).runoutsDirect++
+      } else if (b.catch_stump_player_id) {
+        // SportMonks sometimes only populates catch_stump_player_id for runouts
+        getFielding(b.catch_stump_player_id).runoutsDirect++
       }
     }
   }
